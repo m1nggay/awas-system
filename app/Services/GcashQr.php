@@ -25,15 +25,9 @@ class GcashQr
         return $this->files()->isValidName($name) ? $name : null;
     }
 
-    public function path(): ?string
-    {
-        $path = $this->files()->path($this->fileName());
-        return $path && is_file($path) ? $path : null;
-    }
-
     public function isConfigured(): bool
     {
-        return $this->path() !== null;
+        return $this->files()->exists($this->fileName());
     }
 
     public function accountName(): string

@@ -8,7 +8,6 @@ use App\Services\ApplicationFiles;
 use App\Services\BillingService;
 use App\Services\Mailer;
 use DateTime;
-use finfo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -214,20 +213,15 @@ class MembershipReviewController extends Controller
     /** The only way to see an applicant's ID or selfie; every view is audit-logged. */
     public function file(Request $request, MembershipApplication $application, string $type, ApplicationFiles $files)
     {
-        $path = $files->path($type === 'id' ? $application->id_file : $application->face_file);
-        abort_if(!$path || !is_file($path), 404, 'File not found.');
-
-        $mime = (new finfo(FILEINFO_MIME_TYPE))->file($path);
-        abort_unless(isset(ApplicationFiles::ALLOWED_TYPES[$mime]), 404, 'File not found.');
+        $name = $type === 'id' ? $application->id_file : $application->face_file;
+        abort_unless($files->exists($name), 404, 'File not found.');
 
         log_activity($request->user()->user_id, 'application_file_view', "Viewed $type image of application {$application->reference_code}");
 
-        return response()->file($path, [
-            'Content-Type'           => $mime,
-            'X-Content-Type-Options' => 'nosniff',
-            'Content-Disposition'    => 'inline; filename="' . $type . '-' . $application->reference_code . '.' . ApplicationFiles::ALLOWED_TYPES[$mime] . '"',
-            'Cache-Control'          => 'private, no-store, max-age=0',
-            'Pragma'                 => 'no-cache',
+        return $files->response($name, [
+            'Content-Disposition' => 'inline; filename="' . $type . '-' . $application->reference_code . '.' . pathinfo($name, PATHINFO_EXTENSION) . '"',
+            'Cache-Control'       => 'private, no-store, max-age=0',
+            'Pragma'              => 'no-cache',
         ]);
     }
 

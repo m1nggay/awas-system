@@ -4,12 +4,18 @@ namespace App\Services;
 
 use finfo;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Private storage for membership applicants' valid-ID photos and selfies.
- * Files live in storage/app/applications — outside public/, so they are
- * never directly reachable; admins view them through an authenticated route.
+ * Private storage for uploaded images: membership applicants' valid-ID photos
+ * and selfies, payment receipt screenshots, the GCash QR code.
+ *
+ * Files are kept in the database (stored_files) so they survive on hosts
+ * whose disk is wiped on every restart. They are never publicly reachable;
+ * signed-in users get them only through authenticated routes. Files saved on
+ * disk by older versions (storage/app/<folder>) are still found and are
+ * copied into the database the first time they are read.
  */
 class ApplicationFiles
 {
@@ -47,17 +53,81 @@ class ApplicationFiles
         return is_string($name) && preg_match('/^[a-f0-9]{32}\.(jpg|png|webp)$/', $name) === 1;
     }
 
-    public function path(?string $name): ?string
+    /** Location an older version would have saved the file on disk. */
+    protected function legacyPath(string $name): string
     {
-        return $this->isValidName($name) ? $this->directory() . '/' . $name : null;
+        return $this->directory() . '/' . $name;
+    }
+
+    /** The file's bytes, or null when it doesn't exist. */
+    public function contents(?string $name): ?string
+    {
+        if (!$this->isValidName($name)) {
+            return null;
+        }
+        $data = DB::table('stored_files')->where('name', $name)->where('folder', $this->folder)->value('data');
+        if ($data !== null) {
+            $bytes = base64_decode($data, true);
+            return $bytes === false ? null : $bytes;
+        }
+
+        // Saved on disk by an older version: copy it into the database so it survives a restart.
+        $path = $this->legacyPath($name);
+        if (!is_file($path) || ($bytes = file_get_contents($path)) === false) {
+            return null;
+        }
+        try {
+            $this->put($name, $bytes);
+        } catch (\Throwable $e) {
+            // Another request copied it at the same moment — the file is still served.
+        }
+        return $bytes;
+    }
+
+    public function exists(?string $name): bool
+    {
+        return $this->isValidName($name)
+            && (DB::table('stored_files')->where('name', $name)->where('folder', $this->folder)->exists()
+                || is_file($this->legacyPath($name)));
+    }
+
+    /** Sends the image to the browser; 404 when it doesn't exist. */
+    public function response(?string $name, array $headers = [], string $missing = 'File not found.')
+    {
+        $bytes = $this->contents($name);
+        abort_if($bytes === null, 404, $missing);
+        $mime = (new finfo(FILEINFO_MIME_TYPE))->buffer($bytes);
+        abort_unless(isset(self::ALLOWED_TYPES[$mime]), 404, $missing);
+
+        return response($bytes, 200, $headers + [
+            'Content-Type'           => $mime,
+            'Content-Length'         => strlen($bytes),
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     public function delete(?string $name): void
     {
-        $path = $this->path($name);
-        if ($path && is_file($path)) {
+        if (!$this->isValidName($name)) {
+            return;
+        }
+        DB::table('stored_files')->where('name', $name)->where('folder', $this->folder)->delete();
+        $path = $this->legacyPath($name);
+        if (is_file($path)) {
             @unlink($path);
         }
+    }
+
+    protected function put(string $name, string $bytes): void
+    {
+        DB::table('stored_files')->insert([
+            'name'       => $name,
+            'folder'     => $this->folder,
+            'mime'       => (new finfo(FILEINFO_MIME_TYPE))->buffer($bytes),
+            'size'       => strlen($bytes),
+            'data'       => base64_encode($bytes),
+            'created_at' => now(),
+        ]);
     }
 
     /**
@@ -122,17 +192,12 @@ class ApplicationFiles
 
         $name = bin2hex(random_bytes(16)) . '.' . self::ALLOWED_TYPES[$mime];
         try {
-            if ($upload !== null) {
-                $upload->move($this->directory(), $name);
-            } elseif (file_put_contents($this->directory() . '/' . $name, $bytes) === false) {
-                throw new \RuntimeException('write failed');
-            }
+            $this->put($name, $bytes ?? file_get_contents($tmpPath));
         } catch (\Throwable $e) {
             Log::error("ApplicationFiles: could not save $name: " . $e->getMessage());
             $errors[] = "The $label could not be saved. Please try again.";
             return null;
         }
-        @chmod($this->directory() . '/' . $name, 0640);
         return $name;
     }
 }

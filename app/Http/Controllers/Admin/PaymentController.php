@@ -7,7 +7,6 @@ use App\Models\Payment;
 use App\Services\ApplicationFiles;
 use App\Services\GcashQr;
 use App\Services\PaymentService;
-use finfo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -132,15 +131,8 @@ class PaymentController extends Controller
     /** The receipt screenshot a consumer attached (private file, admins only). */
     public function receipt(Payment $payment, ApplicationFiles $files)
     {
-        $store = $files->in('payment-receipts');
-        $path = $store->path($payment->receipt_file);
-        abort_if(!$path || !is_file($path), 404, 'No receipt attached.');
-        $mime = (new finfo(FILEINFO_MIME_TYPE))->file($path);
-
-        return response()->file($path, [
-            'Content-Type'           => $mime,
-            'X-Content-Type-Options' => 'nosniff',
-            'Cache-Control'          => 'private, no-store, max-age=0',
-        ]);
+        return $files->in('payment-receipts')->response($payment->receipt_file, [
+            'Cache-Control' => 'private, no-store, max-age=0',
+        ], 'No receipt attached.');
     }
 }
