@@ -1,0 +1,392 @@
+/* =====================================================================
+   AGAS Water Management System — Main Stylesheet
+   Water-themed, responsive, mobile-friendly.
+   ===================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:root{
+  --primary-dark:#023e8a;
+  --primary:#0077b6;
+  --primary-light:#00b4d8;
+  --accent:#90e0ef;
+  --accent-light:#caf0f8;
+  --bg:#f4fbfd;
+  --card-bg:#ffffff;
+  --text-dark:#1b2b34;
+  --text-muted:#6b7f89;
+  --success:#2a9d8f;
+  --warning:#e9a23b;
+  --danger:#e5533d;
+  --info:#3a86ff;
+  --border:#dfeef3;
+  --radius:12px;
+  --shadow:0 2px 10px rgba(2,62,138,0.07);
+  --sidebar-w:250px;
+
+  /* Map the brand palette onto Bootstrap's own theme variables so new,
+     plain Bootstrap components (offcanvas, dropdown, grid, table, forms)
+     inherit AGAS colors without per-component overrides. */
+  --bs-primary:var(--primary);
+  --bs-primary-rgb:0,119,182;
+  --bs-secondary-rgb:107,127,137;
+  --bs-success:var(--success);
+  --bs-success-rgb:42,157,143;
+  --bs-warning:var(--warning);
+  --bs-warning-rgb:233,162,59;
+  --bs-danger:var(--danger);
+  --bs-danger-rgb:229,83,61;
+  --bs-info:var(--info);
+  --bs-info-rgb:58,134,255;
+  --bs-body-bg:var(--bg);
+  --bs-body-color:var(--text-dark);
+  --bs-border-color:var(--border);
+  --bs-border-radius:8px;
+  --bs-border-radius-lg:var(--radius);
+  --bs-link-color:var(--primary);
+  --bs-link-hover-color:var(--primary-dark);
+  --bs-font-sans-serif:'Poppins',sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+
+body{
+  font-family:'Poppins',sans-serif;
+  background:var(--bg);
+  color:var(--text-dark);
+  font-size:14px;
+  line-height:1.5;
+}
+
+a{text-decoration:none;color:inherit;}
+ul{list-style:none;}
+button{font-family:inherit;cursor:pointer;}
+img{max-width:100%;display:block;}
+
+/* Kill the browser's default blue tap-highlight/focus-ring flash that
+   appears the instant a link or button is clicked (that's the "blue
+   glitch on click") — replaced with a visible ring only for keyboard
+   focus, so accessibility isn't lost. */
+a, button{-webkit-tap-highlight-color:transparent;}
+a:focus, button:focus{outline:none;}
+a:focus-visible, button:focus-visible{outline:2px solid var(--primary-light);outline-offset:2px;}
+
+/* ---------------------------------------------------------------
+   Page transitions — a brief plain-white curtain covers the screen
+   right before navigating, instead of fading the page's own content
+   (and whatever color that page happens to be — e.g. the blue auth
+   pages) in or out. Always neutral, always quick. See
+   assets/js/transitions.js for the click-intercept that toggles this.
+--------------------------------------------------------------- */
+#pageTransitionOverlay{
+  position:fixed;inset:0;background:var(--bg);z-index:9999; /* same off-white as the site background, not stark white */
+  opacity:0;pointer-events:none;
+}
+@media (prefers-reduced-motion: no-preference){
+  #pageTransitionOverlay{transition:opacity .06s ease;}
+}
+#pageTransitionOverlay.active{opacity:1;}
+
+/* ---------------------------------------------------------------
+   Auth pages (login/register)
+--------------------------------------------------------------- */
+.auth-body{
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow-x:hidden;overflow-y:auto; /* tall forms (e.g. register.php) must be able to scroll instead of clipping off-screen */
+  background:linear-gradient(135deg,var(--primary-dark),var(--primary) 45%,var(--primary-light)); /* base look — the video crossfades on top once ready, so this never reads as a broken flat flash */
+  padding:20px;
+}
+.bg-video{
+  position:fixed;inset:0;width:100%;height:100%;object-fit:cover;
+  z-index:0;pointer-events:none;
+  opacity:0;transition:opacity .6s ease; /* crossfade in once a frame is ready, no hard "pop" */
+}
+.bg-video.loaded{opacity:1;}
+.bg-video-tint{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:linear-gradient(135deg,rgba(2,62,138,0.62),rgba(0,119,182,0.5) 45%,rgba(0,180,216,0.4));
+}
+.auth-card{
+  position:relative;z-index:1;
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  padding:40px 36px;
+  width:100%;max-width:420px;
+  box-shadow:0 10px 40px rgba(0,0,0,0.35);
+}
+.auth-logo{
+  display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:8px;
+}
+.auth-logo .drop{font-size:34px;}
+.auth-logo img{width:70px;height:70px;object-fit:contain;border-radius:8px;}
+.auth-card h1{font-size:22px;color:var(--primary-dark);text-align:center;}
+.auth-card p.subtitle{text-align:center;color:var(--text-muted);margin-bottom:24px;font-size:13px;}
+.auth-footer-link{text-align:center;margin-top:18px;font-size:13px;color:var(--text-muted);}
+.auth-footer-link a{color:var(--primary);font-weight:600;}
+
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-weight:500;margin-bottom:6px;font-size:13px;color:var(--text-dark);}
+.form-control{
+  width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;
+  font-family:inherit;font-size:14px;background:#fbfeff;transition:.15s;
+}
+.form-control:focus{outline:none;border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(0,180,216,0.15);}
+select.form-control{appearance:auto;}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:10px 20px;border:none;border-radius:8px;font-weight:600;font-size:14px;
+  cursor:pointer;transition:.15s;
+}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-dark);}
+.btn-secondary{background:#eef4f6;color:var(--text-dark);}
+.btn-secondary:hover{background:#e0eaed;}
+.btn-success{background:var(--success);color:#fff;}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-warning{background:var(--warning);color:#fff;}
+.btn-sm{padding:6px 12px;font-size:12.5px;}
+.btn-outline{background:transparent;border:1px solid var(--primary);color:var(--primary);}
+.btn:disabled{opacity:.55;cursor:not-allowed;}
+
+.alert{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13.5px;border-left:4px solid;}
+.alert-success{background:#e6f7f3;border-color:var(--success);color:#146c5e;}
+.alert-danger{background:#fdeceb;border-color:var(--danger);color:#a3352a;}
+.alert-warning{background:#fff7e8;border-color:var(--warning);color:#8a5c11;}
+.alert-info{background:#e9f4ff;border-color:var(--info);color:#204d8f;}
+
+/* ---------------------------------------------------------------
+   App shell: sidebar + main content
+--------------------------------------------------------------- */
+.app-shell{display:flex;min-height:100vh;}
+
+/* Sidebar is a Bootstrap responsive offcanvas (drawer below lg, docked
+   column at lg+). Bootstrap owns position/transform/visibility; we only
+   theme it and, at lg+, give it an explicit width + independent scroll. */
+.sidebar.offcanvas-lg{
+  --bs-offcanvas-width:var(--sidebar-w);
+  --bs-offcanvas-color:#fff;
+  --bs-offcanvas-border-width:0;
+  background:linear-gradient(180deg,var(--primary-dark),var(--primary)) !important;
+  /* Bootstrap only applies --bs-offcanvas-color in drawer mode (below lg);
+     set it directly so the docked sidebar's text is white too. */
+  color:#fff;
+}
+.sidebar-brand,.sidebar-user,.sidebar-nav .nav-label{color:#fff;}
+.sidebar .offcanvas-body{overflow-y:auto;}
+@media (min-width:992px){
+  .sidebar.offcanvas-lg{
+    width:var(--sidebar-w);flex-shrink:0;
+    position:sticky;top:0;align-self:flex-start;
+    height:100vh;overflow-y:auto;
+  }
+}
+.sidebar-brand{
+  display:flex;align-items:center;gap:10px;padding:22px 20px;
+  border-bottom:1px solid rgba(255,255,255,0.15);
+}
+.sidebar-brand .drop{font-size:26px;}
+.sidebar-brand img{width:40px;height:40px;object-fit:contain;border-radius:8px;flex-shrink:0;}
+.sidebar-brand .name{font-weight:700;font-size:17px;line-height:1.1;}
+.sidebar-brand .sub{font-size:10.5px;opacity:.75;letter-spacing:.5px;}
+
+.sidebar-user{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.12);}
+.sidebar-user .u-name{font-weight:600;font-size:13.5px;}
+.sidebar-user .u-role{font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.5px;}
+
+.sidebar-nav{padding:14px 10px;}
+.sidebar-nav .nav-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;opacity:.55;padding:12px 12px 6px;}
+.sidebar-nav a{
+  display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:8px;
+  font-size:13.5px;font-weight:500;color:rgba(255,255,255,0.88);margin-bottom:2px;
+}
+.sidebar-nav a:hover{background:rgba(255,255,255,0.1);}
+.sidebar-nav a.active{background:rgba(255,255,255,0.18);color:#fff;font-weight:600;}
+.sidebar-nav a .ic{width:18px;text-align:center;font-size:15px;}
+
+.main-content{margin-left:0;flex:1;min-width:0;display:flex;flex-direction:column;}
+
+.topbar{
+  background:#fff;border-bottom:1px solid var(--border);
+  padding:14px 26px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+}
+.topbar-title{font-size:17px;font-weight:600;color:var(--primary-dark);}
+.topbar-right{display:flex;align-items:center;gap:16px;}
+.menu-toggle{display:inline-flex;align-items:center;justify-content:center;background:none;border:none;font-size:20px;color:var(--primary-dark);}
+
+.notif-btn{position:relative;background:#eef7fb;border:none;width:38px;height:38px;border-radius:50%;font-size:16px;color:var(--primary-dark);display:flex;align-items:center;justify-content:center;}
+.notif-badge{
+  position:absolute;top:-2px;right:-2px;background:var(--danger);color:#fff;
+  font-size:10px;font-weight:700;border-radius:50%;min-width:16px;height:16px;
+  display:flex;align-items:center;justify-content:center;padding:0 3px;
+}
+.notif-panel{width:320px;max-height:380px;overflow-y:auto;padding:0;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.15);}
+.notif-panel-header{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:600;font-size:13.5px;}
+.notif-panel-empty{padding:24px;text-align:center;color:var(--text-muted);font-size:13px;}
+.notif-panel-item{padding:12px 16px;border-bottom:1px solid var(--border);}
+.notif-panel-item.unread{background:#f0fbff;}
+.notif-panel-title{font-weight:600;font-size:12.5px;}
+.notif-panel-msg{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.notif-panel-time{font-size:10.5px;color:#a3b3ba;margin-top:4px;}
+
+.page-body{padding:24px 26px;flex:1;}
+
+/* ---------------------------------------------------------------
+   Cards / stats
+--------------------------------------------------------------- */
+.stat-card{
+  background:var(--card-bg);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);
+  border-left:4px solid var(--primary-light);display:flex;justify-content:space-between;align-items:flex-start;
+}
+.stat-card .stat-info .label{font-size:12px;color:var(--text-muted);font-weight:500;margin-bottom:6px;}
+.stat-card .stat-info .value{font-size:24px;font-weight:700;color:var(--text-dark);}
+.stat-card .stat-icon{
+  width:44px;height:44px;border-radius:10px;background:var(--accent-light);color:var(--primary-dark);
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+}
+.stat-card.success{border-left-color:var(--success);}
+.stat-card.warning{border-left-color:var(--warning);}
+.stat-card.danger{border-left-color:var(--danger);}
+
+.card{background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:22px;}
+.card-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;
+}
+.card-header h3{font-size:15.5px;font-weight:600;color:var(--text-dark);}
+.card-body{padding:20px;}
+.card-body.no-pad{padding:0;}
+
+.grid-2{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+
+/* ---------------------------------------------------------------
+   Tables
+--------------------------------------------------------------- */
+table.data-table{width:100%;border-collapse:collapse;font-size:13.5px;}
+table.data-table th{
+  text-align:left;padding:12px 16px;background:#f4fafc;color:var(--text-muted);
+  font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;
+  border-bottom:1px solid var(--border);white-space:nowrap;
+}
+table.data-table td{padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:middle;}
+table.data-table tbody tr:hover{background:#f9fdfe;}
+table.data-table td.actions{white-space:nowrap;display:flex;gap:6px;}
+.empty-row td{text-align:center;color:var(--text-muted);padding:30px;}
+
+.badge{display:inline-block;padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;text-transform:capitalize;}
+.badge-success{background:#e0f5f0;color:#1a7a68;}
+.badge-warning{background:#fff2dc;color:#946313;}
+.badge-info{background:#e4f0ff;color:#2158a8;}
+.badge-danger{background:#fde5e2;color:#b8382a;}
+.badge-secondary{background:#eef1f2;color:#5c6b73;}
+
+/* ---------------------------------------------------------------
+   Modal (styling for Bootstrap's own .modal component)
+--------------------------------------------------------------- */
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-header h3{font-size:16px;font-weight:600;}
+.modal-body{padding:22px;}
+.modal-footer{padding:16px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+
+/* ---------------------------------------------------------------
+   Misc
+--------------------------------------------------------------- */
+.text-muted{color:var(--text-muted);}
+.text-right{text-align:right;}
+.text-center{text-align:center;}
+.text-primary-dark{color:var(--primary-dark) !important;}
+.mt-2{margin-top:10px;} .mt-3{margin-top:18px;} .mb-2{margin-bottom:10px;}
+.print-only{display:none;}
+
+.consumption-value{font-weight:700;color:var(--primary-dark);}
+
+.landing-hero{
+  background:linear-gradient(135deg,var(--primary-dark),var(--primary) 55%,var(--primary-light));
+  color:#fff;min-height:100vh;display:flex;align-items:center;
+}
+.landing-hero .container{max-width:1100px;margin:0 auto;padding:40px 24px;display:flex;align-items:center;gap:50px;flex-wrap:wrap;}
+.landing-hero h1{font-size:38px;font-weight:700;margin-bottom:16px;}
+
+/* =====================================================================
+   AGAS Assistant — floating chatbot widget
+   ===================================================================== */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+.chatbot-widget{position:fixed;right:22px;bottom:22px;z-index:999;}
+.chatbot-fab{
+  width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--primary-dark),var(--primary) 60%,var(--primary-light));
+  color:#fff;font-size:24px;box-shadow:0 8px 24px rgba(2,62,138,0.35);
+  display:flex;align-items:center;justify-content:center;transition:transform .2s;
+}
+.chatbot-fab:hover{transform:scale(1.06);}
+.chatbot-fab.active{transform:scale(0.92);}
+.chatbot-panel{
+  position:fixed;right:22px;bottom:96px;width:370px;max-width:calc(100vw - 32px);
+  height:540px;max-height:calc(100vh - 140px);background:#fff;border-radius:18px;
+  box-shadow:0 20px 60px rgba(2,62,138,0.28);display:flex;flex-direction:column;
+  overflow:hidden;opacity:0;visibility:hidden;transform:translateY(16px) scale(0.98);
+  transition:opacity .18s ease,transform .18s ease,visibility .18s;
+}
+.chatbot-panel.open{opacity:1;visibility:visible;transform:translateY(0) scale(1);}
+.chatbot-header{
+  background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:#fff;
+  padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.chatbot-header-info{display:flex;align-items:center;gap:10px;}
+.chatbot-avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.chatbot-title{font-weight:700;font-size:14.5px;}
+.chatbot-subtitle{font-size:11px;opacity:0.85;}
+.chatbot-header-actions{display:flex;gap:6px;flex-shrink:0;}
+.chatbot-icon-btn{background:rgba(255,255,255,0.15);border:none;color:#fff;width:26px;height:26px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+.chatbot-icon-btn:hover{background:rgba(255,255,255,0.3);}
+.chatbot-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--bg);}
+.chatbot-msg{display:flex;}
+.chatbot-msg.user{justify-content:flex-end;}
+.chatbot-msg.bot{justify-content:flex-start;}
+.chatbot-bubble{max-width:82%;padding:10px 14px;border-radius:14px;font-size:13.5px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word;}
+.chatbot-msg.bot .chatbot-bubble{background:#fff;border:1px solid var(--border);color:var(--text-dark);border-bottom-left-radius:4px;}
+.chatbot-msg.user .chatbot-bubble{background:var(--primary);color:#fff;border-bottom-right-radius:4px;}
+.chatbot-typing{display:flex;gap:3px;align-items:center;padding:13px 14px;}
+.chatbot-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--primary-light);animation:chatbotBlink 1.2s infinite ease-in-out;}
+.chatbot-dot:nth-child(2){animation-delay:.2s;}
+.chatbot-dot:nth-child(3){animation-delay:.4s;}
+@keyframes chatbotBlink{0%,80%,100%{opacity:0.25;}40%{opacity:1;}}
+.chatbot-quick-replies{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;border-top:1px solid var(--border);background:#fff;flex-shrink:0;max-height:92px;overflow-y:auto;}
+.chatbot-chip{border:1px solid var(--border);background:var(--accent-light);color:var(--primary-dark);border-radius:16px;padding:6px 11px;font-size:11.5px;cursor:pointer;white-space:nowrap;font-family:inherit;}
+.chatbot-chip:hover{background:var(--primary-light);color:#fff;border-color:var(--primary-light);}
+.chatbot-input-row{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--border);background:#fff;flex-shrink:0;}
+.chatbot-input{flex:1;border:1px solid var(--border);border-radius:20px;padding:10px 16px;font-size:13.5px;font-family:inherit;}
+.chatbot-input:focus{outline:none;border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(0,180,216,0.15);}
+.chatbot-send{width:38px;height:38px;border-radius:50%;border:none;background:var(--primary);color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.chatbot-send:hover{background:var(--primary-dark);}
+.chatbot-disclaimer{font-size:10px;color:var(--text-muted);text-align:center;padding:6px 10px 10px;background:#fff;flex-shrink:0;}
+@media (max-width:480px){
+  .chatbot-panel{right:12px;left:12px;width:auto;bottom:88px;height:calc(100vh - 130px);}
+  .chatbot-widget{right:14px;bottom:14px;}
+}
+.landing-hero p{font-size:15.5px;opacity:.9;margin-bottom:26px;max-width:480px;}
+.landing-hero .btns{display:flex;gap:12px;flex-wrap:wrap;}
+.landing-hero .btn-outline-white{background:transparent;border:1.5px solid #fff;color:#fff;}
+.landing-hero .wave{font-size:120px;opacity:.9;}
+
+/* ---------------------------------------------------------------
+   Responsive
+--------------------------------------------------------------- */
+@media (max-width: 960px){
+  .grid-2, .grid-3{grid-template-columns:1fr;}
+}
+
+/* ---------------------------------------------------------------
+   Print styles (bills / reports)
+--------------------------------------------------------------- */
+@media print{
+  .sidebar,.topbar,.no-print,.pagination{display:none !important;}
+  .main-content{margin-left:0 !important;}
+  .page-body{padding:0 !important;}
+  .print-only{display:block;}
+  body{background:#fff;}
+  .card{box-shadow:none;border:1px solid #ccc;}
+}
