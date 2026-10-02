@@ -11,8 +11,9 @@ return [
     /* Idle minutes before a logged-in user is signed out (original: 30). */
     'idle_timeout_minutes' => (int)env('AGAS_IDLE_TIMEOUT', 30),
 
-    /* Hosting proxy to trust for HTTPS detection ("*" on Render); empty on XAMPP. */
-    'trusted_proxies' => env('TRUSTED_PROXIES'),
+    /* Hosting proxy to trust for HTTPS detection; empty on XAMPP. Render (which
+       sets RENDER=true) ends HTTPS at its proxy, so it is trusted automatically there. */
+    'trusted_proxies' => env('TRUSTED_PROXIES', env('RENDER') ? '*' : null),
 
     /* Outbound email via the Brevo transactional HTTP API (OTP codes, application updates). */
     'brevo' => [
