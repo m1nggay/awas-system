@@ -213,7 +213,11 @@ class MembershipReviewController extends Controller
     /** The only way to see an applicant's ID or selfie; every view is audit-logged. */
     public function file(Request $request, MembershipApplication $application, string $type, ApplicationFiles $files)
     {
-        $name = $type === 'id' ? $application->id_file : $application->face_file;
+        $name = match ($type) {
+            'id'      => $application->id_file,
+            'id_back' => $application->id_back_file,
+            default   => $application->face_file,
+        };
         abort_unless($files->exists($name), 404, 'File not found.');
 
         log_activity($request->user()->user_id, 'application_file_view', "Viewed $type image of application {$application->reference_code}");

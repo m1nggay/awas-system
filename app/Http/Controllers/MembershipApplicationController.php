@@ -26,15 +26,22 @@ use Illuminate\Support\Facades\Log;
 class MembershipApplicationController extends Controller
 {
     private const FIELDS = [
-        'full_name', 'birth_date', 'sex', 'contact_number', 'email', 'address', 'purok_id', 'barangay',
-        'municipality', 'province', 'household_number', 'household_members', 'residence_type', 'consumer_type', 'id_type',
+        'full_name', 'birth_date', 'sex', 'contact_number', 'email', 'username', 'purok_id',
+        'household_number', 'household_members', 'residence_type', 'consumer_type', 'id_type',
     ];
+
+    /** The water system only serves this barangay, so these parts of the address are fixed. */
+    public const BARANGAY = 'Adlay';
+    public const MUNICIPALITY = 'Carrascal';
+    public const PROVINCE = 'Surigao del Sur';
 
     public function create()
     {
         return view('apply', [
             'puroks' => Purok::orderBy('purok_name')->get(),
-            'defaultBarangay' => trim(preg_replace('/^barangay\s+/i', '', (string)setting('barangay_name', 'Barangay Adlay'))),
+            'barangay' => self::BARANGAY,
+            'municipality' => self::MUNICIPALITY,
+            'province' => self::PROVINCE,
         ]);
     }
 
@@ -49,16 +56,15 @@ class MembershipApplicationController extends Controller
         $errors = [];
 
         // --- Personal information --------------------------------------------
-        foreach (['full_name', 'birth_date', 'sex', 'contact_number', 'email', 'address', 'purok_id',
-                  'barangay', 'municipality', 'province', 'household_members', 'residence_type', 'consumer_type', 'id_type'] as $field) {
+        foreach (['full_name', 'birth_date', 'sex', 'contact_number', 'email', 'username', 'purok_id',
+                  'household_members', 'residence_type', 'consumer_type', 'id_type'] as $field) {
             if ($old[$field] === '') {
                 $errors[] = 'Please fill in all required fields.';
                 break;
             }
         }
-        if (mb_strlen($old['full_name']) > 150 || mb_strlen($old['address']) > 255
-            || mb_strlen($old['barangay']) > 100 || mb_strlen($old['municipality']) > 100 || mb_strlen($old['province']) > 100) {
-            $errors[] = 'One of the fields is too long. Please shorten it.';
+        if (mb_strlen($old['full_name']) > 150) {
+            $errors[] = 'The full name is too long. Please shorten it.';
         }
         if ($old['birth_date'] !== '') {
             $dob = DateTime::createFromFormat('!Y-m-d', $old['birth_date']);
@@ -78,7 +84,8 @@ class MembershipApplicationController extends Controller
         if ($old['email'] !== '' && (!filter_var($old['email'], FILTER_VALIDATE_EMAIL) || mb_strlen($old['email']) > 150)) {
             $errors[] = 'Please enter a valid email address — we send a verification code to it.';
         }
-        if ($old['purok_id'] !== '' && !Purok::whereKey((int)$old['purok_id'])->exists()) {
+        $purokName = $old['purok_id'] !== '' ? Purok::whereKey((int)$old['purok_id'])->value('purok_name') : null;
+        if ($old['purok_id'] !== '' && $purokName === null) {
             $errors[] = 'Please select a valid purok.';
         }
 
@@ -108,6 +115,9 @@ class MembershipApplicationController extends Controller
         }
 
         // --- Account information ----------------------------------------------
+        if ($old['username'] !== '' && !preg_match('/^[A-Za-z0-9._-]{4,30}$/', $old['username'])) {
+            $errors[] = 'Username must be 4–30 characters: letters, numbers, dots (.), dashes (-) or underscores (_), with no spaces.';
+        }
         if ($policy = passwordPolicyError($password)) {
             $errors[] = $policy;
         } elseif ($password !== $confirmPassword) {
@@ -128,6 +138,10 @@ class MembershipApplicationController extends Controller
                 }
             }
         }
+        if (!$errors && DB::table('users')->whereRaw('LOWER(username) = ?', [mb_strtolower($old['username'])])
+                ->whereNotIn('user_id', $staleUserIds ?: [0])->exists()) {
+            $errors[] = 'That username is already taken. Please choose another.';
+        }
         if (!$errors) {
             $recent = DB::table('membership_applications')->where('ip_address', $request->ip())
                 ->where('created_at', '>', now()->subHour())->count();
@@ -136,16 +150,20 @@ class MembershipApplicationController extends Controller
             }
         }
 
-        // --- Valid ID photo + the frame captured by the passed blink check -----
-        // (only stored once everything else is valid)
-        $idFile = $faceFile = null;
+        // --- Valid ID (front and back, landscape) + the portrait frame captured
+        // by the passed blink check (only stored once everything else is valid)
+        $idFile = $idBackFile = $faceFile = null;
         if (!$errors) {
-            $idFile = $files->store($request->file('id_file'), (string)$request->input('id_capture', ''), 'valid ID', true, $errors);
+            $idFile = $files->store($request->file('id_file'), (string)$request->input('id_capture', ''),
+                'front of your valid ID', true, $errors, 'landscape');
+            $idBackFile = $files->store($request->file('id_back_file'), (string)$request->input('id_back_capture', ''),
+                'back of your valid ID', true, $errors, 'landscape');
             if ($livenessPassed) {
-                $faceFile = $files->store(null, (string)$request->input('selfie_capture', ''), 'face verification', true, $errors);
+                $faceFile = $files->store(null, (string)$request->input('selfie_capture', ''), 'face verification', true, $errors, 'portrait');
             }
             if ($errors) {
                 $files->delete($idFile);
+                $files->delete($idBackFile);
                 $files->delete($faceFile);
             }
         }
@@ -155,10 +173,11 @@ class MembershipApplicationController extends Controller
         }
 
         try {
-            [$newUserId, $referenceCode] = DB::transaction(function () use ($staleUserIds, $old, $password, $idFile, $faceFile, $livenessPassed, $request, $files, $billing) {
+            [$newUserId, $referenceCode] = DB::transaction(function () use ($staleUserIds, $old, $password, $idFile, $idBackFile, $faceFile, $livenessPassed, $purokName, $request, $files, $billing) {
                 foreach ($staleUserIds as $staleId) {
-                    foreach (DB::table('membership_applications')->where('user_id', $staleId)->get(['id_file', 'face_file']) as $f) {
+                    foreach (DB::table('membership_applications')->where('user_id', $staleId)->get(['id_file', 'id_back_file', 'face_file']) as $f) {
                         $files->delete($f->id_file);
+                        $files->delete($f->id_back_file);
                         $files->delete($f->face_file);
                     }
                     DB::table('membership_applications')->where('user_id', $staleId)->delete();
@@ -166,7 +185,7 @@ class MembershipApplicationController extends Controller
                 }
 
                 $userId = DB::table('users')->insertGetId([
-                    'username'       => 'applicant_' . bin2hex(random_bytes(6)),
+                    'username'       => $old['username'],
                     'password_hash'  => Hash::make($password),
                     'full_name'      => $old['full_name'],
                     'email'          => $old['email'],
@@ -178,14 +197,15 @@ class MembershipApplicationController extends Controller
                 $ref = $billing->generateApplicationReference();
                 DB::table('membership_applications')->insert([
                     'reference_code' => $ref, 'user_id' => $userId, 'full_name' => $old['full_name'],
-                    'birth_date' => $old['birth_date'], 'sex' => $old['sex'], 'address' => $old['address'],
-                    'purok_id' => (int)$old['purok_id'], 'barangay' => $old['barangay'],
-                    'municipality' => $old['municipality'], 'province' => $old['province'],
+                    'birth_date' => $old['birth_date'], 'sex' => $old['sex'],
+                    'address' => $purokName . ', ' . self::BARANGAY . ', ' . self::MUNICIPALITY . ', ' . self::PROVINCE,
+                    'purok_id' => (int)$old['purok_id'], 'barangay' => self::BARANGAY,
+                    'municipality' => self::MUNICIPALITY, 'province' => self::PROVINCE,
                     'contact_number' => $old['contact_number'], 'email' => $old['email'],
                     'household_number' => $old['household_number'] ?: null,
                     'household_members' => (int)$old['household_members'],
                     'residence_type' => $old['residence_type'], 'consumer_type' => $old['consumer_type'],
-                    'id_type' => $old['id_type'], 'id_file' => $idFile, 'id_status' => 'submitted',
+                    'id_type' => $old['id_type'], 'id_file' => $idFile, 'id_back_file' => $idBackFile, 'id_status' => 'submitted',
                     'face_file' => $faceFile, 'face_status' => $faceFile ? 'submitted' : 'not_submitted',
                     'liveness_status' => $livenessPassed ? 'passed' : 'not_performed',
                     'status' => 'pending_verification', 'ip_address' => $request->ip(),
@@ -194,6 +214,7 @@ class MembershipApplicationController extends Controller
             });
         } catch (\Throwable $e) {
             $files->delete($idFile);
+            $files->delete($idBackFile);
             $files->delete($faceFile);
             Log::error('Membership application error: ' . $e->getMessage());
             return back()->withErrors(['A system error occurred while submitting your application. Please try again.'])

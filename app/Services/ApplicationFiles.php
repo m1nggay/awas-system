@@ -134,8 +134,11 @@ class ApplicationFiles
      * Validates and stores one image from either a file upload or a camera
      * capture posted as a data URL. Returns the stored file name, or null
      * after pushing a message onto $errors.
+     *
+     * $orientation 'landscape' (valid ID) or 'portrait' (face photo) rejects
+     * a picture taken the other way round.
      */
-    public function store(?UploadedFile $upload, string $dataUrl, string $label, bool $required, array &$errors): ?string
+    public function store(?UploadedFile $upload, string $dataUrl, string $label, bool $required, array &$errors, string $orientation = ''): ?string
     {
         $bytes = null;
         $tmpPath = null;
@@ -170,9 +173,9 @@ class ApplicationFiles
             }
         } else {
             if ($required) {
-                $errors[] = $label === 'valid ID'
-                    ? 'Please upload or capture a photo of your valid ID.'
-                    : 'Please take a selfie for face verification.';
+                $errors[] = $label === 'face verification'
+                    ? 'Please take a selfie for face verification.'
+                    : "Please upload or capture a photo of the $label.";
             }
             return null;
         }
@@ -189,6 +192,17 @@ class ApplicationFiles
             $errors[] = "The $label file is not a readable image. Please choose a different photo.";
             return null;
         }
+        if ($orientation !== '') {
+            [$width, $height] = $this->displayedSize($imageInfo, $tmpPath ?? null, $mime);
+            if ($orientation === 'landscape' && $width <= $height) {
+                $errors[] = "The $label must be a landscape (horizontal) photo. Hold the ID sideways so the whole card fills the frame.";
+                return null;
+            }
+            if ($orientation === 'portrait' && $height <= $width) {
+                $errors[] = "The $label photo must be portrait (vertical). Please do the face verification again.";
+                return null;
+            }
+        }
 
         $name = bin2hex(random_bytes(16)) . '.' . self::ALLOWED_TYPES[$mime];
         try {
@@ -199,5 +213,21 @@ class ApplicationFiles
             return null;
         }
         return $name;
+    }
+
+    /**
+     * Width and height as the photo is shown: phone cameras often save a
+     * picture sideways with a rotation tag (EXIF orientation 5–8).
+     */
+    private function displayedSize(array $imageInfo, ?string $path, string $mime): array
+    {
+        [$width, $height] = $imageInfo;
+        if ($path !== null && $mime === 'image/jpeg' && function_exists('exif_read_data')) {
+            $exif = @exif_read_data($path);
+            if (!empty($exif['Orientation']) && in_array((int)$exif['Orientation'], [5, 6, 7, 8], true)) {
+                return [$height, $width];
+            }
+        }
+        return [$width, $height];
     }
 }

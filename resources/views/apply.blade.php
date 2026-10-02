@@ -8,19 +8,30 @@
   .apply-section:first-of-type{border-top:0;margin-top:6px;padding-top:0;}
   .apply-section h2{font-size:15px;color:var(--primary-dark);margin-bottom:10px;}
   .hint{font-size:12px;color:var(--text-muted);margin-top:4px;}
-  .cam-stage{margin-top:10px;text-align:center;}
-  .cam-stage video,.cam-stage img{max-width:100%;max-height:280px;border-radius:10px;background:#0b1a22;}
   .cam-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
-  .cam-status{font-size:12px;color:var(--text-muted);margin-top:6px;}
+  .cam-status{font-size:12.5px;color:var(--text-muted);margin-top:6px;}
+  .cam-status.good{color:#1a7a68;font-weight:600;} .cam-status.warn{color:#9a6a00;font-weight:600;} .cam-status.error{color:#b8382a;font-weight:600;}
   .apply-note{background:#f0fbff;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:10px;}
-  .liveness-stage{position:relative;max-width:360px;margin:10px auto 0;border-radius:12px;overflow:hidden;background:#0b1a22;}
-  .liveness-stage video{width:100%;display:block;transform:scaleX(-1);}
-  .liveness-guide{position:absolute;left:50%;top:50%;width:58%;height:78%;transform:translate(-50%,-50%);
+  .form-control[readonly]{background:#eef4f7;color:var(--text-muted);cursor:not-allowed;}
+
+  /* Valid ID — landscape card guide */
+  .id-widget{border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px;}
+  .id-widget > label{font-weight:600;font-size:14px;}
+  .id-stage{position:relative;margin:10px auto 0;border-radius:10px;overflow:hidden;background:#0b1a22;}
+  .id-stage video{display:block;width:100%;height:auto;}
+  .id-guide{position:absolute;border:3px dashed rgba(255,255,255,.9);border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.45);pointer-events:none;}
+  .id-preview{display:block;width:100%;max-width:420px;margin:10px auto 0;border-radius:10px;border:3px solid var(--border);}
+  .id-preview.good{border-color:#2ecc71;} .id-preview.warn{border-color:#e0a93b;} .id-preview.error{border-color:#e5533d;opacity:.6;}
+
+  /* Face verification — portrait only */
+  .liveness-stage{position:relative;width:min(300px,100%);aspect-ratio:3/4;margin:10px auto 0;border-radius:12px;overflow:hidden;background:#0b1a22;}
+  .liveness-stage video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1);}
+  .liveness-guide{position:absolute;left:50%;top:50%;width:68%;height:70%;transform:translate(-50%,-50%);
     border:3px dashed rgba(255,255,255,.85);border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.35);transition:border-color .2s;}
   .liveness-guide.ok{border-color:#2ecc71;border-style:solid;}
   .liveness-prompt{text-align:center;font-weight:600;margin-top:8px;min-height:22px;}
   .liveness-prompt.good{color:#1a7a68;} .liveness-prompt.bad{color:#b8382a;}
-  #livenessResult{display:block;max-width:200px;margin:8px auto 0;border-radius:10px;border:2px solid #2ecc71;}
+  #livenessResult{display:block;width:150px;aspect-ratio:3/4;object-fit:cover;margin:8px auto 0;border-radius:10px;border:2px solid #2ecc71;}
 </style>
 @endpush
 
@@ -31,7 +42,7 @@
   @if ($errors->any())
     <div class="alert alert-danger">
       @foreach ($errors->all() as $err){{ $err }}<br>@endforeach
-      @if (session('filesDiscarded'))<span style="font-size:12px;">Your valid ID photo and face check were not kept — please attach the ID and do the face check again.</span>@endif
+      @if (session('filesDiscarded'))<span style="font-size:12px;">Your ID photos and face check were not kept — please capture the front and back of your ID and do the face check again.</span>@endif
     </div>
   @endif
 
@@ -66,12 +77,11 @@
         <div class="col-md-6 mb-3">
           <label for="email" class="form-label">Email Address *</label>
           <input type="email" id="email" name="email" class="form-control" required maxlength="150" value="{{ old('email') }}">
+          <div class="hint">We'll send a verification code here.</div>
         </div>
       </div>
-      <div class="mb-3">
-        <label for="address" class="form-label">Complete Address (house no., street, subdivision) *</label>
-        <input type="text" id="address" name="address" class="form-control" required maxlength="255" value="{{ old('address') }}">
-      </div>
+
+      <label class="form-label" style="font-weight:600;">Complete Address *</label>
       <div class="row g-3">
         <div class="col-md-6 mb-3">
           <label for="purok_id" class="form-label">Purok *</label>
@@ -83,25 +93,32 @@
           </select>
         </div>
         <div class="col-md-6 mb-3">
-          <label for="barangay" class="form-label">Barangay *</label>
-          <input type="text" id="barangay" name="barangay" class="form-control" required maxlength="100" value="{{ old('barangay', $defaultBarangay) }}">
+          <label for="barangay" class="form-label">Barangay</label>
+          <input type="text" id="barangay" class="form-control" value="{{ $barangay }}" readonly tabindex="-1">
         </div>
       </div>
       <div class="row g-3">
         <div class="col-md-6 mb-3">
-          <label for="municipality" class="form-label">Municipality *</label>
-          <input type="text" id="municipality" name="municipality" class="form-control" required maxlength="100" value="{{ old('municipality') }}">
+          <label for="municipality" class="form-label">Municipality</label>
+          <input type="text" id="municipality" class="form-control" value="{{ $municipality }}" readonly tabindex="-1">
         </div>
         <div class="col-md-6 mb-3">
-          <label for="province" class="form-label">Province *</label>
-          <input type="text" id="province" name="province" class="form-control" required maxlength="100" value="{{ old('province') }}">
+          <label for="province" class="form-label">Province</label>
+          <input type="text" id="province" class="form-control" value="{{ $province }}" readonly tabindex="-1">
         </div>
       </div>
     </div>
 
     <div class="apply-section mb-4">
       <h2>2. Account Information</h2>
-      <div class="apply-note">Your email address is your login.</div>
+      <div class="apply-note">You will log in with your <strong>username</strong> and password.</div>
+      <div class="mb-3">
+        <label for="username" class="form-label">Username *</label>
+        <input type="text" id="username" name="username" class="form-control" required minlength="4" maxlength="30"
+               pattern="[A-Za-z0-9._\-]{4,30}" autocomplete="username" autocapitalize="none" spellcheck="false" value="{{ old('username') }}"
+               title="4–30 characters: letters, numbers, dots, dashes or underscores — no spaces">
+        <div class="hint">4–30 characters: letters, numbers, dots (.), dashes (-) or underscores (_). No spaces.</div>
+      </div>
       <div class="row g-3">
         <div class="col-md-6 mb-3">
           <label for="password" class="form-label">Password *</label>
@@ -124,7 +141,12 @@
         </div>
         <div class="col-md-6 mb-3">
           <label for="household_members" class="form-label">Number of Household Members *</label>
-          <input type="number" id="household_members" name="household_members" class="form-control" required min="1" max="50" value="{{ old('household_members') }}">
+          <select id="household_members" name="household_members" class="form-select" required>
+            <option value="">Select</option>
+            @for ($n = 1; $n <= 30; $n++)
+              <option value="{{ $n }}" @selected((string)old('household_members') === (string)$n)>{{ $n }} {{ $n === 1 ? 'person' : 'persons' }}</option>
+            @endfor
+          </select>
         </div>
       </div>
       <div class="row g-3">
@@ -156,8 +178,8 @@
     </div>
 
     <div class="apply-section mb-4">
-      <h2>4. Valid ID Photo</h2>
-      <div class="apply-note">Upload (or take) one clear photo of a valid government-issued ID. Make sure all important information is readable.</div>
+      <h2>4. Valid ID (Front and Back)</h2>
+      <div class="apply-note">Take a clear <strong>landscape (horizontal)</strong> photo of the <strong>front</strong> and the <strong>back</strong> of one valid government-issued ID. Place the whole card inside the frame in good light so all details are readable. Your ID is stored privately and only seen by barangay water office administrators.</div>
       <div class="mb-3">
         <label for="id_type" class="form-label">Type of ID *</label>
         <select id="id_type" name="id_type" class="form-select" required>
@@ -167,28 +189,32 @@
           @endforeach
         </select>
       </div>
-      <div class="cam-widget" data-facing="environment">
-        <label for="id_file">Valid ID Photo *</label>
-        <input type="file" id="id_file" name="id_file" class="form-control" accept="image/jpeg,image/png,image/webp" data-role="file">
-        <div class="hint">JPG, PNG or WEBP, up to 5 MB. Your ID is stored privately and only seen by barangay water office administrators.</div>
-        <input type="hidden" name="id_capture" data-role="data">
-        <div class="cam-actions">
-          <button type="button" class="btn btn-outline btn-sm" data-role="open">📷 Use camera instead</button>
-          <button type="button" class="btn btn-success btn-sm" data-role="snap" hidden>Capture photo</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-role="retake" hidden>Retake</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-role="close" hidden>Cancel</button>
+
+      @foreach (['front' => ['Front of ID', 'id_file', 'id_capture'], 'back' => ['Back of ID', 'id_back_file', 'id_back_capture']] as $side => [$title, $fileName, $captureName])
+        <div class="id-widget" data-id-widget data-side="{{ $side }}">
+          <label for="{{ $fileName }}">{{ $title }} *</label>
+          <div class="cam-actions">
+            <button type="button" class="btn btn-primary btn-sm" data-role="open">📷 Capture {{ strtolower($title) }}</button>
+            <button type="button" class="btn btn-success btn-sm" data-role="snap" hidden>Capture</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-role="retake" hidden>Retake</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-role="close" hidden>Cancel</button>
+          </div>
+          <div class="id-stage" data-role="stage" hidden>
+            <video data-role="video" playsinline muted></video>
+            <div class="id-guide" data-role="guide"></div>
+          </div>
+          <img class="id-preview" data-role="preview" alt="Preview of the {{ strtolower($title) }}" hidden>
+          <div class="cam-status" data-role="status" aria-live="polite"></div>
+          <div class="hint mt-2">Or upload a landscape photo (JPG, PNG or WEBP, up to 5 MB):</div>
+          <input type="file" id="{{ $fileName }}" name="{{ $fileName }}" class="form-control form-control-sm mt-1" accept="image/jpeg,image/png,image/webp" data-role="file">
+          <input type="hidden" name="{{ $captureName }}" data-role="data">
         </div>
-        <div class="cam-stage" data-role="stage" hidden>
-          <video data-role="video" playsinline muted hidden></video>
-          <img data-role="preview" alt="Preview of your ID photo" hidden>
-        </div>
-        <div class="cam-status" data-role="status" aria-live="polite"></div>
-      </div>
+      @endforeach
     </div>
 
     <div class="apply-section mb-4">
       <h2>5. Face Verification</h2>
-      <div class="apply-note">A quick live check that a real person is applying: position your face inside the guide, then blink when asked. Use good lighting and remove sunglasses or masks.</div>
+      <div class="apply-note">A quick live check that a real person is applying: position your face inside the oval, then blink when asked. The photo is taken in <strong>portrait</strong>. Use good lighting and remove sunglasses or masks.</div>
       <div id="liveness" class="liveness">
         <input type="hidden" name="selfie_capture" id="selfie_capture">
         <input type="hidden" name="liveness_passed" id="liveness_passed" value="0">
@@ -198,7 +224,7 @@
         </div>
         <div class="liveness-prompt" id="livenessPrompt" aria-live="polite"></div>
         <img id="livenessResult" alt="Face captured during the blink check" hidden>
-        <div class="cam-actions">
+        <div class="cam-actions" style="justify-content:center;">
           <button type="button" class="btn btn-outline btn-sm" id="livenessStart">📷 Start face verification</button>
           <button type="button" class="btn btn-secondary btn-sm" id="livenessRetry" hidden>Try again</button>
         </div>
@@ -224,36 +250,40 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/js/camera_capture.js') }}"></script>
+<script type="module" src="{{ asset('assets/js/id_capture.js') }}?v={{ @filemtime(public_path('assets/js/id_capture.js')) ?: '1' }}"></script>
 <script type="module" src="{{ asset('assets/js/liveness.js') }}?v={{ @filemtime(public_path('assets/js/liveness.js')) ?: '1' }}"></script>
 <script>
-// Friendly client-side checks so nobody uploads a large file only to be
-// told it was rejected. The server re-validates everything.
+// Friendly client-side checks so nobody waits for an upload only to be told
+// something is missing. The server re-validates everything.
 document.getElementById('applyForm').addEventListener('submit', function (ev) {
-  var msgs = [];
-  var idFile = document.getElementById('id_file');
-  var hasIdCapture = this.querySelector('[name="id_capture"]').value !== '';
-  var livenessPassed = document.getElementById('liveness_passed').value === '1';
-  var inPerson = document.getElementById('verify_in_person').checked;
-  var allowed = ['image/jpeg', 'image/png', 'image/webp'];
+  var form = this, msgs = [], warnings = [];
 
-  if (idFile.files.length) {
-    if (allowed.indexOf(idFile.files[0].type) === -1) msgs.push('The Valid ID must be a JPG, PNG or WEBP image.');
-    else if (idFile.files[0].size > 5 * 1024 * 1024) msgs.push('The Valid ID photo is larger than 5 MB.');
-  } else if (!hasIdCapture) {
-    msgs.push('Please upload or capture a photo of your Valid ID.');
-  }
-  if (!livenessPassed && !inPerson) {
+  form.querySelectorAll('[data-id-widget]').forEach(function (w) {
+    var side = w.getAttribute('data-side') === 'back' ? 'BACK' : 'FRONT';
+    var hasPhoto = w.querySelector('[data-role="data"]').value !== '' || w.querySelector('[data-role="file"]').files.length > 0;
+    if (!hasPhoto) msgs.push('Please capture or upload a valid photo of the ' + side + ' of your ID.');
+    else if (w.dataset.warn === '1') warnings.push('The ' + side + ' of your ID may not show a valid ID.');
+  });
+
+  var livenessPassed = document.getElementById('liveness_passed').value === '1';
+  if (!livenessPassed && !document.getElementById('verify_in_person').checked) {
     msgs.push('Please complete the face verification (blink when asked), or tick "I will verify my face in person".');
   }
-  var pw = this.querySelector('[name="password"]').value;
-  if (!(pw.length >= 8 && /[A-Za-z]/.test(pw) && /\d/.test(pw) && /[^A-Za-z0-9]/.test(pw))) {
-    msgs.push('Password must contain at least 8 characters, including letters, numbers, and symbols.');
-  } else if (pw !== this.querySelector('[name="confirm_password"]').value) msgs.push('Passwords do not match.');
+  if (!/^[A-Za-z0-9._-]{4,30}$/.test(form.querySelector('[name="username"]').value)) {
+    msgs.push('Username must be 4–30 characters: letters, numbers, dots, dashes or underscores, with no spaces.');
+  }
+  var pw = form.querySelector('[name="password"]').value;
+  if (!(pw.length >= 8 && /[A-Z]/.test(pw) && /\d/.test(pw) && /[^A-Za-z0-9]/.test(pw))) {
+    msgs.push('Password must contain at least 8 characters, including a capital letter, a number, and a symbol.');
+  } else if (pw !== form.querySelector('[name="confirm_password"]').value) msgs.push('Passwords do not match.');
 
   if (msgs.length) {
     ev.preventDefault();
     alert(msgs.join('\n'));
+    return;
+  }
+  if (warnings.length && !confirm(warnings.join('\n') + '\n\nPlease use a valid government-issued ID. Submit anyway?')) {
+    ev.preventDefault();
   }
 });
 </script>

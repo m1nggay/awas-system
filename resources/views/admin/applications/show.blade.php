@@ -4,7 +4,7 @@
 
 @php
   $canEditVerification = in_array($app->status, ['pending_review', 'approved'], true);
-  $hasFiles = !empty($app->id_file) || !empty($app->face_file);
+  $hasFiles = !empty($app->id_file) || !empty($app->id_back_file) || !empty($app->face_file);
   $detail = fn (string $label, ?string $value) => ['label' => $label, 'value' => ($value !== null && $value !== '') ? $value : '—'];
   $applicant = [
       $detail('Name', $app->full_name),
@@ -75,10 +75,13 @@
     <div class="row g-3">
       <div class="col-lg-6">
         <h4 style="margin-bottom:8px;font-size:14px;">Valid ID <span class="text-muted" style="font-weight:400;">— {{ $app->id_type ?: 'type not given' }}</span></h4>
-        @if ($app->id_file)
-          @php $idUrl = route('admin.applications.file', [$app->application_id, 'id']); @endphp
-          <a href="{{ $idUrl }}" target="_blank" rel="noopener"><img src="{{ $idUrl }}" alt="Applicant's valid ID" style="max-width:100%;border:1px solid var(--border);border-radius:8px;"></a>
-        @else<p class="text-muted">No ID uploaded.</p>@endif
+        @foreach (['id' => ['Front', $app->id_file], 'id_back' => ['Back', $app->id_back_file]] as $fileType => [$sideLabel, $fileName])
+          <div class="text-muted" style="font-size:12px;margin:6px 0 4px;">{{ $sideLabel }}</div>
+          @if ($fileName)
+            @php $idUrl = route('admin.applications.file', [$app->application_id, $fileType]); @endphp
+            <a href="{{ $idUrl }}" target="_blank" rel="noopener"><img src="{{ $idUrl }}" alt="{{ $sideLabel }} of the applicant's valid ID" style="max-width:100%;border:1px solid var(--border);border-radius:8px;"></a>
+          @else<p class="text-muted">{{ $sideLabel === 'Back' ? 'No back photo (submitted before the back of the ID was required).' : 'No ID uploaded.' }}</p>@endif
+        @endforeach
       </div>
       <div class="col-lg-6">
         <h4 style="margin-bottom:8px;font-size:14px;">Face Verification

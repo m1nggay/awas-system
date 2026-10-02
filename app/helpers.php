@@ -109,10 +109,10 @@ if (!function_exists('passwordPolicyError')) {
     function passwordPolicyError(string $password): ?string
     {
         if (strlen($password) < 8
-            || !preg_match('/[A-Za-z]/', $password)
+            || !preg_match('/[A-Z]/', $password)
             || !preg_match('/\d/', $password)
             || !preg_match('/[^A-Za-z0-9]/', $password)) {
-            return 'Password must contain at least 8 characters, including letters, numbers, and symbols.';
+            return 'Password must contain at least 8 characters, including a capital letter, a number, and a symbol.';
         }
         return null;
     }

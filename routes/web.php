@@ -106,7 +106,7 @@ Route::middleware(['auth', 'idle'])->group(function () {
             Route::post('/applications/{application}/reject', [Admin\MembershipReviewController::class, 'reject'])->name('applications.reject');
             Route::post('/applications/{application}/assign-meter', [Admin\MembershipReviewController::class, 'assignMeter'])->name('applications.assign-meter');
             Route::get('/applications/{application}/file/{type}', [Admin\MembershipReviewController::class, 'file'])
-                ->whereIn('type', ['id', 'face'])->name('applications.file');
+                ->whereIn('type', ['id', 'id_back', 'face'])->name('applications.file');
 
             Route::get('/billing-rates', [Admin\BillingRateController::class, 'index'])->name('rates.index');
             Route::post('/billing-rates', [Admin\BillingRateController::class, 'store'])->name('rates.store');

@@ -14,6 +14,9 @@
  * the rest of the app's front-end libraries); it runs entirely in the
  * browser — no video is uploaded. An administrator still compares the
  * captured face with the valid ID photo.
+ *
+ * The face photo is always portrait (3:4): the camera view shows only that
+ * part of the picture, and the checks and the capture use the same area.
  */
 import { FaceLandmarker, FilesetResolver } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3';
 
@@ -24,6 +27,7 @@ const BLINK_CLOSED = 0.5;   // eyeBlink score above this = eyes closed
 const BLINK_OPEN = 0.25;    // below this = eyes open
 const STEADY_FRAMES = 12;   // frames the face must stay positioned before we ask to blink
 const BLINK_TIMEOUT_MS = 10000;
+const PORTRAIT = 3 / 4;     // width : height of the face photo
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -74,13 +78,26 @@ async function loadModel() {
   return landmarker;
 }
 
+/** The centered portrait (3:4) part of the camera picture, as fractions of it. */
+function portraitArea() {
+  const vw = els.video.videoWidth || 3, vh = els.video.videoHeight || 4;
+  if (vw / vh > PORTRAIT) {
+    const w = (vh * PORTRAIT) / vw;
+    return { x: (1 - w) / 2, y: 0, w, h: 1 };
+  }
+  const h = (vw / PORTRAIT) / vh;
+  return { x: 0, y: (1 - h) / 2, w: 1, h };
+}
+
 /** Is the (single) face inside the oval guide and big enough? Returns a message or null when OK. */
 function positionProblem(faces) {
   if (!faces.length) return 'No face detected — look at the camera.';
   if (faces.length > 1) return 'Only one person should be in front of the camera.';
   const pts = faces[0];
+  const area = portraitArea();   // measure within the portrait view the person sees
   let minX = 1, maxX = 0, minY = 1, maxY = 0;
-  for (const p of pts) {
+  for (const q of pts) {
+    const p = { x: (q.x - area.x) / area.w, y: (q.y - area.y) / area.h };
     minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
     minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
   }
@@ -98,13 +115,15 @@ function blinkScore(result) {
   return (get('eyeBlinkLeft') + get('eyeBlinkRight')) / 2;
 }
 
+/** Portrait (3:4) photo of the face, from the same area the person sees. */
 function captureFrame() {
-  const v = els.video;
-  const scale = Math.min(1, 720 / v.videoWidth);
+  const v = els.video, a = portraitArea();
+  const sw = a.w * v.videoWidth, sh = a.h * v.videoHeight;
+  const scale = Math.min(1, 720 / sh);
   const canvas = document.createElement('canvas');
-  canvas.width = Math.round(v.videoWidth * scale);
-  canvas.height = Math.round(v.videoHeight * scale);
-  canvas.getContext('2d').drawImage(v, 0, 0, canvas.width, canvas.height);
+  canvas.width = Math.round(sw * scale);
+  canvas.height = Math.round(sh * scale);
+  canvas.getContext('2d').drawImage(v, a.x * v.videoWidth, a.y * v.videoHeight, sw, sh, 0, 0, canvas.width, canvas.height);
   return canvas.toDataURL('image/jpeg', 0.85);
 }
 

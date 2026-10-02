@@ -11,7 +11,7 @@
 
   var RULES = {
     length: function (v) { return v.length >= 8; },
-    letter: function (v) { return /[A-Za-z]/.test(v); },
+    capital: function (v) { return /[A-Z]/.test(v); },
     number: function (v) { return /\d/.test(v); },
     symbol: function (v) { return /[^A-Za-z0-9]/.test(v); },
   };
@@ -32,7 +32,7 @@
           li.style.color = ok ? '#1a7a68' : '';
         });
         input.setCustomValidity(input.value === '' || passwordOk(input.value)
-          ? '' : 'Password must contain at least 8 characters, including letters, numbers, and symbols.');
+          ? '' : 'Password must contain at least 8 characters, including a capital letter, a number, and a symbol.');
       }
       input.addEventListener('input', render);
       render();
