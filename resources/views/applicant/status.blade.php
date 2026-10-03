@@ -49,7 +49,8 @@
       </div>
     @elseif ($app->status === 'approved')
       <div class="alert alert-success" style="margin-top:14px;">
-        Your application was approved! The water office is now assigning your water meter — your account will be activated right after.
+        <strong>Your application was approved!</strong> The water office is now assigning your water meter — your account will be activated right after.<br>
+        <span style="font-size:12.5px;">You do <strong>not</strong> need to create a new account. Keep logging in with the username and password you chose when you applied.</span>
       </div>
     @endif
 

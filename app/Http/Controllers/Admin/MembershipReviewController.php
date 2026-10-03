@@ -78,7 +78,7 @@ class MembershipReviewController extends Controller
         return redirect()->route('admin.applications.show', $application);
     }
 
-    public function approve(Request $request, MembershipApplication $application)
+    public function approve(Request $request, MembershipApplication $application, BillingService $billing, Mailer $mailer)
     {
         if ($application->status !== 'pending_review') {
             return $this->unavailable($application);
@@ -88,7 +88,18 @@ class MembershipReviewController extends Controller
             'status' => 'approved', 'reviewed_by' => $request->user()->user_id, 'reviewed_at' => now(), 'review_notes' => null,
         ]);
         log_activity($request->user()->user_id, 'application_approve', "Approved application {$application->reference_code} — awaiting meter assignment");
-        flash('success', 'Application approved. Now assign a water meter to activate the account.');
+
+        // Tell the applicant: approved, and no new account is needed — they log in with the one they applied with.
+        if (!empty($application->user_id)) {
+            $billing->createNotification((int)$application->user_id, null, 'Membership application approved',
+                'Your application has been approved. The water office is assigning your water meter. '
+                . 'You do not need to create a new account — log in with the username and password you chose when you applied.');
+        }
+        $emailed = !empty($application->email) && $mailer->send($application->email, $application->full_name,
+            'AWAS Membership Application Approved', 'emails.application-approved-review', [
+                'name' => $application->full_name, 'reference' => $application->reference_code, 'loginUrl' => route('login'),
+            ]);
+        flash('success', 'Application approved' . ($emailed ? ' and the applicant was notified by email' : '') . '. Now assign a water meter to activate the account.');
         return redirect()->route('admin.applications.show', $application);
     }
 
@@ -198,7 +209,8 @@ class MembershipReviewController extends Controller
 
         log_activity($request->user()->user_id, 'application_activate', "Activated {$application->reference_code} — meter {$meter['meter_number']}");
         if (!empty($application->user_id)) {
-            $billing->createNotification((int)$application->user_id, null, 'Membership approved', "Your AWAS account is active. Meter Number: {$meter['meter_number']}.");
+            $billing->createNotification((int)$application->user_id, null, 'Membership approved',
+                "Your AWAS account is active. Meter Number: {$meter['meter_number']}. No need to create a new account — keep logging in with your username and password.");
         }
         if (!empty($application->email)) {
             $mailer->send($application->email, $application->full_name, 'AWAS Membership Application Approved', 'emails.application-approved', [
