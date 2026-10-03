@@ -48,7 +48,10 @@
         <div class="gcash-summary mb-3">
           <div class="row-item"><span class="text-muted">Meter Number</span><strong>{{ $consumer->meter_number }}</strong></div>
           <div class="row-item"><span class="text-muted">Name</span><strong>{{ $consumer->full_name }}</strong></div>
-          <div class="row-item"><span class="text-muted">Billing Period</span><strong>{{ billingPeriodLabel($bill->billing_period) }}</strong></div>
+          <div class="row-item"><span class="text-muted">Due Date</span><strong>{{ formatDate($bill->due_date) }}</strong></div>
+          @if (!empty($bill->disconnection_date))
+          <div class="row-item"><span class="text-muted">Disconnection Date</span><strong class="text-danger">{{ formatDate($bill->disconnection_date) }}</strong></div>
+          @endif
           <div class="row-item"><span class="text-muted">Previous Reading</span><strong>{{ $bill->previous_reading !== null ? number_format($bill->previous_reading, 2) : '—' }}</strong></div>
           <div class="row-item"><span class="text-muted">Present Reading</span><strong>{{ $bill->current_reading !== null ? number_format($bill->current_reading, 2) : '—' }}</strong></div>
           <div class="row-item"><span class="text-muted">Consumption</span><strong>{{ number_format($bill->consumption, 2) }} m³</strong></div>
@@ -67,7 +70,7 @@
           <li><span>Scan the barangay GCash QR code shown here.</span></li>
           <li><span>Enter or confirm the amount: <strong>{{ formatCurrency($amount) }}</strong>.</span></li>
           <li><span>Complete the payment in GCash.</span></li>
-          <li><span>Keep the payment confirmation/receipt, then fill in the reference number below and tap <strong>I Have Paid</strong>.</span></li>
+          <li><span>Take a <strong>screenshot</strong> of the GCash receipt, attach it below, then tap <strong>I Have Paid</strong>.</span></li>
         </ol>
         @endif
       </div>
@@ -77,19 +80,10 @@
       <hr>
       <form method="POST" action="{{ route('resident.bill.pay.submit', $bill->bill_id) }}" enctype="multipart/form-data" id="payForm">
         @csrf
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label for="gcash_reference" class="form-label">GCash Reference No. *</label>
-            <input type="text" id="gcash_reference" name="gcash_reference" class="form-control form-control-lg" required
-                   inputmode="numeric" pattern="\d{13}" data-digits-only data-max-digits="13" title="13-digit GCash Ref. No. (numbers only)" autocomplete="off" placeholder="e.g. 1234567890123" value="{{ old('gcash_reference') }}">
-            <div class="text-muted" style="font-size:12px;">The 13-digit “Ref. No.” on your GCash receipt — numbers only.</div>
-          </div>
-          <div class="col-md-6">
-            <label for="receipt" class="form-label">Receipt screenshot (optional)</label>
-            <input type="file" id="receipt" name="receipt" class="form-control" accept="image/jpeg,image/png,image/webp">
-            <div class="text-muted" style="font-size:12px;">Helps the water office verify faster. JPG/PNG, up to 5 MB.</div>
-          </div>
-        </div>
+        <label for="receipt" class="form-label">GCash Receipt Screenshot *</label>
+        <input type="file" id="receipt" name="receipt" class="form-control form-control-lg" accept="image/jpeg,image/png,image/webp" required>
+        <div class="text-muted" style="font-size:12px;">The screenshot of your completed GCash payment (it shows the amount, date and Ref. No.). JPG, PNG or WEBP, up to 5 MB.</div>
+        <img id="receiptPreview" alt="Preview of your GCash receipt" hidden style="display:block;max-width:240px;max-height:360px;margin-top:10px;border:1px solid var(--border);border-radius:10px;">
         <div class="alert alert-info mt-3 mb-3 small">
           After you tap <strong>I Have Paid</strong>, your payment will show as <strong>Pending Verification</strong>.
           Your bill changes to <strong>Paid</strong> only after the barangay water office confirms the money was received.
@@ -108,6 +102,13 @@
 
 @push('scripts')
 <script>
+document.getElementById('receipt')?.addEventListener('change', function () {
+  const preview = document.getElementById('receiptPreview');
+  const f = this.files && this.files[0];
+  if (f && f.size > 5 * 1024 * 1024) { alert('The screenshot is larger than 5 MB. Please choose a smaller image.'); this.value = ''; preview.hidden = true; return; }
+  preview.hidden = !f;
+  if (f) preview.src = URL.createObjectURL(f);
+});
 // One submission only — stops double taps from sending the payment twice.
 document.getElementById('payForm')?.addEventListener('submit', function (e) {
   if (!confirm('Submit this GCash payment for verification?\n\nOnly continue if you have already completed the payment in GCash.')) {

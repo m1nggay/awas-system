@@ -390,3 +390,17 @@ table.data-table td.actions{white-space:nowrap;display:flex;gap:6px;}
   body{background:#fff;}
   .card{box-shadow:none;border:1px solid #ccc;}
 }
+
+/* Password fields: show/hide (eye) button and strength indicator (forms.js) */
+.pw-wrap{position:relative;}
+.pw-wrap > input{padding-right:46px;}
+.pw-toggle{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  border:0;background:transparent;color:var(--text-muted,#6b7c85);border-radius:8px;cursor:pointer;padding:0;}
+.pw-toggle:hover,.pw-toggle:focus-visible{color:var(--primary-dark,#0b4f8a);background:rgba(0,0,0,.05);outline:none;}
+.pw-strength{margin:2px 0 6px;}
+.pw-strength-bar{height:6px;border-radius:4px;background:#e5ebee;overflow:hidden;}
+.pw-strength-bar span{display:block;height:100%;width:0;border-radius:4px;transition:width .2s,background-color .2s;}
+.pw-strength-label{font-size:12px;font-weight:600;margin-top:3px;}
+.pw-strength.weak .pw-strength-bar span{background:#e5533d;} .pw-strength.weak .pw-strength-label{color:#b8382a;}
+.pw-strength.medium .pw-strength-bar span{background:#e0a93b;} .pw-strength.medium .pw-strength-label{color:#9a6a00;}
+.pw-strength.strong .pw-strength-bar span{background:#2ecc71;} .pw-strength.strong .pw-strength-label{color:#1a7a68;}

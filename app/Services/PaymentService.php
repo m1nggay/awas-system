@@ -42,6 +42,18 @@ class PaymentService
             ->whereIn('status', ['pending', 'verified'])->exists();
     }
 
+    /** The same screenshot (identical image) attached to another pending or paid payment. */
+    public function screenshotAlreadyUsed(string $receiptFile): bool
+    {
+        $new = DB::table('stored_files')->where('name', $receiptFile)->first(['size', 'data']);
+        if (!$new) {
+            return false;
+        }
+        $used = DB::table('payments')->whereIn('status', ['pending', 'verified'])->whereNotNull('receipt_file')->pluck('receipt_file');
+        return DB::table('stored_files')->where('folder', 'payment-receipts')->where('name', '!=', $receiptFile)
+            ->whereIn('name', $used)->where('size', $new->size)->where('data', $new->data)->exists();
+    }
+
     public function pendingPayment(int $billId): ?object
     {
         return DB::table('payments')->where('bill_id', $billId)->where('status', 'pending')->first();
@@ -56,17 +68,17 @@ class PaymentService
      * Consumer clicked "I Have Paid" after paying through the GCash QR.
      * @return array{0: ?object, 1: ?string} [payment, error]
      */
-    public function submitOnline(object $consumer, int $billId, string $reference, ?string $receiptFile, int $userId): array
+    public function submitOnline(object $consumer, int $billId, ?string $receiptFile, int $userId): array
     {
-        return DB::transaction(function () use ($consumer, $billId, $reference, $receiptFile, $userId) {
+        return DB::transaction(function () use ($consumer, $billId, $receiptFile, $userId) {
             $bill = DB::table('water_bills')->where('bill_id', $billId)->where('consumer_id', $consumer->consumer_id)->lockForUpdate()->first();
 
             $error = match (true) {
                 !$bill => 'Bill not found.',
                 $bill->status === 'paid' || $this->balance($bill) <= 0 => 'This bill is already paid.',
                 $this->pendingPayment($billId) !== null => 'A payment for this bill is already waiting for verification. Please wait for the water office to verify it.',
-                !$this->isValidGcashReference($reference) => 'Please enter a valid GCash reference number: the 13-digit Ref. No. on your GCash receipt (numbers only, e.g. 1234 567 890123).',
-                $this->referenceInUse($reference) => 'That GCash reference number was already submitted. Please check the number on your receipt.',
+                !$receiptFile => 'Please attach the screenshot of your GCash receipt.',
+                $this->screenshotAlreadyUsed($receiptFile) => 'This screenshot was already submitted for another payment. Please attach the screenshot of THIS payment\'s GCash receipt.',
                 default => null,
             };
             if ($error) {
@@ -82,7 +94,7 @@ class PaymentService
                 'amount_paid'            => $amount,
                 'payment_method'         => 'gcash',
                 'channel'                => 'online',
-                'payment_gateway_txn_id' => $reference,
+                'payment_gateway_txn_id' => null,
                 'receipt_file'           => $receiptFile,
                 'payment_date'           => now(),
                 'status'                 => 'pending',
@@ -93,9 +105,9 @@ class PaymentService
             foreach (DB::table('users')->where('role', 'admin')->where('status', 'active')->pluck('user_id') as $adminId) {
                 $this->billing->createNotification((int)$adminId, $billId, 'GCash Payment Submitted',
                     "Meter {$consumer->meter_number} — {$consumer->full_name} submitted a GCash payment of " . formatCurrency($amount)
-                        . " for the $period bill (GCash Ref. $reference). Please verify.");
+                        . " for the $period bill with a receipt screenshot. Please verify.");
             }
-            log_activity($userId, 'payment_submit', "Submitted GCash QR payment $ref (" . formatCurrency($amount) . ") for the $period bill, GCash Ref. $reference");
+            log_activity($userId, 'payment_submit', "Submitted GCash QR payment $ref (" . formatCurrency($amount) . ") for the $period bill with a receipt screenshot");
 
             return [DB::table('payments')->where('payment_id', $paymentId)->first(), null];
         });
@@ -118,8 +130,8 @@ class PaymentService
                 $this->pendingPayment($billId) !== null => 'This bill has an online GCash payment waiting for verification. Verify or reject it first.',
                 $amount <= 0 => 'Payment amount must be greater than zero.',
                 $amount > $balance + 0.009 => 'Amount is more than the balance of ' . formatCurrency($balance) . '.',
-                $method === 'gcash' && !$this->isValidGcashReference($reference) => 'Enter a valid GCash reference number: the 13-digit Ref. No. on the consumer\'s GCash receipt (numbers only).',
-                $method === 'gcash' && $this->referenceInUse($reference) => 'That GCash reference number was already recorded.',
+                $method === 'gcash' && $reference !== '' && !$this->isValidGcashReference($reference) => 'The GCash reference number must be the 13-digit Ref. No. on the consumer\'s GCash receipt (numbers only) — or leave it blank.',
+                $method === 'gcash' && $reference !== '' && $this->referenceInUse($reference) => 'That GCash reference number was already recorded.',
                 default => null,
             };
             if ($error) {

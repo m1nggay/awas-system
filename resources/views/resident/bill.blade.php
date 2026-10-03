@@ -54,7 +54,7 @@
           @if ($last && $last->status === 'pending')
             <div class="p-3" style="background:#fff8e6;border:1px solid #f1d58a;border-radius:10px;">
               <div class="mb-1"><span class="badge badge-warning">Pending Verification</span></div>
-              <div>Your GCash payment of <strong>{{ formatCurrency($last->amount_paid) }}</strong> (Ref. {{ $last->payment_gateway_txn_id }})
+              <div>Your GCash payment of <strong>{{ formatCurrency($last->amount_paid) }}</strong>
                 was submitted on {{ formatDateTime($last->payment_date) }}.</div>
               <div class="text-muted small mt-1">The water office will verify it. Your bill changes to <strong>Paid</strong> once verified — no need to pay again.</div>
               <div class="d-flex flex-wrap gap-2 mt-2">
@@ -65,7 +65,7 @@
           @else
             @if ($last && in_array($last->status, ['rejected', 'failed'], true))
               <div class="alert alert-danger small">
-                <strong>Your GCash payment (Ref. {{ $last->payment_gateway_txn_id }}) was rejected.</strong>
+                <strong>Your GCash payment of {{ formatCurrency($last->amount_paid) }} was rejected.</strong>
                 @if ($last->rejection_reason)<br>Reason: {{ $last->rejection_reason }}@endif
                 <br>Please check your GCash receipt and pay again, or visit the barangay water office.
               </div>

@@ -80,28 +80,23 @@ class BillController extends ResidentController
             return redirect()->route('resident.dashboard');
         }
 
-        // Optional receipt screenshot, stored privately (only administrators can open it).
-        $receipt = null;
-        if ($request->hasFile('receipt')) {
-            $errors = [];
-            $receipt = $files->in('payment-receipts')->store($request->file('receipt'), '', 'receipt screenshot', false, $errors);
-            if ($errors) {
-                flash('danger', $errors[0]);
-                return back()->withInput();
-            }
+        // The GCash receipt screenshot is the proof of payment; stored privately (only administrators can open it).
+        $errors = [];
+        $receipt = $files->in('payment-receipts')->store($request->file('receipt'), '', 'GCash receipt screenshot', true, $errors);
+        if ($errors) {
+            flash('danger', $errors[0]);
+            return back()->withInput();
         }
 
-        [$payment, $error] = $payments->submitOnline(
-            $consumer, $bill, $payments->normalizeReference($request->input('gcash_reference')), $receipt, $request->user()->user_id
-        );
+        [$payment, $error] = $payments->submitOnline($consumer, $bill, $receipt, $request->user()->user_id);
         if ($error) {
             $files->in('payment-receipts')->delete($receipt);
             flash('danger', $error);
             return back()->withInput();
         }
 
-        flash('success', 'Payment submitted! Your ' . formatCurrency($payment->amount_paid) . ' GCash payment (Ref. '
-            . $payment->payment_gateway_txn_id . ') is now Pending Verification. Your bill will change to Paid once the water office verifies it.');
+        flash('success', 'Payment submitted! Your ' . formatCurrency($payment->amount_paid)
+            . ' GCash payment is now Pending Verification. Your bill will change to Paid once the water office verifies it.');
         session()->flash('receipt_payment_id', $payment->payment_id);
         return redirect()->route('resident.bill');
     }

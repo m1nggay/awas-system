@@ -28,7 +28,7 @@
           </tbody>
           <tfoot>
             <tr style="font-weight:600;">
-              <td colspan="6" class="text-end">Purok total</td>
+              <td colspan="6" class="text-end">Total for {{ $group['purok'] }} ({{ count($group['rows']) }} {{ Str::plural('consumer', count($group['rows'])) }})<div class="text-muted" style="font-weight:400;font-size:11px;">Total = all bills · Balance = still unpaid</div></td>
               <td>{{ formatCurrency($sumTotal) }}</td>
               <td>{{ formatCurrency($sumBalance) }}</td>
               <td colspan="2"></td>

@@ -58,7 +58,7 @@
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0 data-table">
         <thead>
-          <tr><th>Reference</th><th>Meter Number</th><th>Name</th><th>Bill</th><th>Amount Paid</th><th>Method</th><th>Payment Date</th><th>GCash Ref. No.</th><th>Status</th><th>Actions</th></tr>
+          <tr><th>Reference</th><th>Meter Number</th><th>Name</th><th>Bill</th><th>Amount Paid</th><th>Method</th><th>Payment Date</th><th>Proof</th><th>Status</th><th>Actions</th></tr>
         </thead>
         <tbody>
         @forelse ($payments as $p)
@@ -71,8 +71,9 @@
             <td>{{ paymentMethodLabel($p->payment_method) }}<div class="text-muted" style="font-size:11px;">{{ paymentChannelLabel($p->channel) }}</div></td>
             <td>{{ formatDateTime($p->payment_date) }}</td>
             <td>
-              {{ $p->payment_gateway_txn_id ?: '—' }}
-              @if ($p->receipt_file)<div><a href="{{ route('admin.payments.receipt', $p->payment_id) }}" target="_blank" rel="noopener" style="font-size:12px;">📎 View screenshot</a></div>@endif
+              @if ($p->receipt_file)<a href="{{ route('admin.payments.receipt', $p->payment_id) }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">📎 View screenshot</a>@endif
+              @if ($p->payment_gateway_txn_id)<div class="text-muted" style="font-size:11.5px;">Ref. {{ $p->payment_gateway_txn_id }}</div>@endif
+              @if (!$p->receipt_file && !$p->payment_gateway_txn_id)—@endif
             </td>
             <td>
               <span class="badge {{ paymentStatusBadgeClass($p->status) }}">{{ paymentStatusLabel($p->status) }}</span>
@@ -83,12 +84,12 @@
               <a href="{{ route('payments.receipt', $p->payment_id) }}" target="_blank" class="btn btn-outline btn-sm" title="View / download receipt">🧾 Receipt</a>
               @if ($p->status === 'pending')
                 <form method="POST" action="{{ route('admin.payments.verify', $p->payment_id) }}" class="d-inline"
-                      data-confirm="Verify this GCash payment?&#10;&#10;Only verify after confirming that {{ formatCurrency($p->amount_paid) }} with Ref. No. {{ $p->payment_gateway_txn_id }} was received in the barangay GCash account.">
+                      data-confirm="Verify this GCash payment?&#10;&#10;Only verify after checking the consumer's receipt screenshot and confirming that {{ formatCurrency($p->amount_paid) }} was received in the barangay GCash account.">
                   @csrf
                   <button class="btn btn-success btn-sm" type="submit">Verify</button>
                 </form>
                 <button class="btn btn-danger btn-sm" type="button"
-                        onclick="openReject('{{ route('admin.payments.reject', $p->payment_id) }}', {{ json_encode($p->full_name . ' — ' . formatCurrency($p->amount_paid) . ' (Ref. ' . $p->payment_gateway_txn_id . ')') }})">Reject</button>
+                        onclick="openReject('{{ route('admin.payments.reject', $p->payment_id) }}', {{ json_encode($p->full_name . ' — ' . formatCurrency($p->amount_paid)) }})">Reject</button>
               @else
                 <span class="text-muted" style="font-size:12px;">—</span>
               @endif
@@ -159,7 +160,7 @@
               </div>
             </div>
             <div class="mb-3">
-              <label for="gcash_reference" class="form-label">GCash Reference No. *</label>
+              <label for="gcash_reference" class="form-label">GCash Reference No. <span class="text-muted" style="font-weight:400;">(optional)</span></label>
               <input type="text" id="gcash_reference" name="gcash_reference" class="form-control" inputmode="numeric" pattern="\d{13}" data-digits-only data-max-digits="13" title="13-digit GCash Ref. No. (numbers only)" autocomplete="off" value="{{ old('gcash_reference') }}" placeholder="13-digit Ref. No., e.g. 1234567890123">
             </div>
           </div>
@@ -230,7 +231,7 @@ function openReject(action, who) {
   function syncMethod() {
     const isGcash = document.querySelector('input[name="payment_method"]:checked')?.value === 'gcash';
     gcashBox.hidden = !isGcash;
-    ref.required = isGcash;
+
     submit.textContent = isGcash ? 'Confirm GCash Payment Received' : 'Confirm Cash Received';
   }
   bill.addEventListener('change', fillAmount);

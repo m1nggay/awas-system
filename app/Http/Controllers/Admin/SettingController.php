@@ -16,7 +16,7 @@ class SettingController extends Controller
         'excess_rate_per_cubic_meter' => 'Excess Rate (PHP per cu. m. beyond the minimum)',
         'senior_discount_percent'     => 'Senior Citizen Discount (%)',
         'due_day_of_month'            => 'Due Day (day of the month after the billing month)',
-        'disconnection_days'          => 'Disconnection Date (days after due date)',
+        'disconnection_months'        => 'Disconnection Date (months of non-payment after the due date)',
         'overdue_grace_days'          => 'Overdue Grace Period (days after due date)',
         'currency_symbol'             => 'Currency Label',
         'contact_email'               => 'Support Email',

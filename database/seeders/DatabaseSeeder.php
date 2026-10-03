@@ -36,7 +36,7 @@ class DatabaseSeeder extends Seeder
             ['setting_key' => 'excess_rate_per_cubic_meter', 'setting_value' => '15', 'description' => 'PHP per cubic meter beyond the minimum'],
             ['setting_key' => 'senior_discount_percent', 'setting_value' => '20', 'description' => 'Discount percentage on the sub-total for senior citizens'],
             ['setting_key' => 'due_day_of_month', 'setting_value' => '19', 'description' => 'Day of the month after the billing month on which the bill is due'],
-            ['setting_key' => 'disconnection_days', 'setting_value' => '5', 'description' => 'Days after the due date on which service is subject to disconnection'],
+            ['setting_key' => 'disconnection_months', 'setting_value' => '3', 'description' => 'Months of non-payment after the due date before service is subject to disconnection'],
             ['setting_key' => 'overdue_grace_days', 'setting_value' => '5', 'description' => 'Days after due_date before a bill is marked overdue and penalty applies'],
             ['setting_key' => 'currency_symbol', 'setting_value' => 'PHP', 'description' => 'Currency label used in reports'],
             ['setting_key' => 'contact_email', 'setting_value' => 'agas.adlay@example.com', 'description' => 'Support email shown to residents'],
@@ -125,14 +125,15 @@ class DatabaseSeeder extends Seeder
         }
 
         // Same amounts computeBillAmount() produces: PHP 150 for the first
-        // 10 cu.m. + PHP 15 per cu.m. beyond, due the 19th of the next month.
+        // 10 cu.m. + PHP 15 per cu.m. beyond, due the 19th of the next month;
+        // disconnection 3 months after the due date.
         $bills = [
-            [1, 1, '2026-07', 12.00, 180.00, 180.00, '2026-07-29', '2026-08-19', '2026-08-24', 'paid'],
-            [1, 2, '2026-08', 13.00, 195.00, 0.00, '2026-08-29', '2026-09-19', '2026-09-24', 'unpaid'],
-            [2, 3, '2026-07', 8.00, 150.00, 150.00, '2026-07-29', '2026-08-19', '2026-08-24', 'paid'],
-            [2, 4, '2026-08', 12.00, 180.00, 0.00, '2026-08-29', '2026-09-19', '2026-09-24', 'unpaid'],
-            [3, 5, '2026-08', 35.00, 525.00, 0.00, '2026-08-29', '2026-09-19', '2026-09-24', 'unpaid'],
-            [4, 6, '2026-08', 3.00, 150.00, 0.00, '2026-08-29', '2026-09-19', '2026-09-24', 'unpaid'],
+            [1, 1, '2026-07', 12.00, 180.00, 180.00, '2026-07-29', '2026-08-19', '2026-11-19', 'paid'],
+            [1, 2, '2026-08', 13.00, 195.00, 0.00, '2026-08-29', '2026-09-19', '2026-12-19', 'unpaid'],
+            [2, 3, '2026-07', 8.00, 150.00, 150.00, '2026-07-29', '2026-08-19', '2026-11-19', 'paid'],
+            [2, 4, '2026-08', 12.00, 180.00, 0.00, '2026-08-29', '2026-09-19', '2026-12-19', 'unpaid'],
+            [3, 5, '2026-08', 35.00, 525.00, 0.00, '2026-08-29', '2026-09-19', '2026-12-19', 'unpaid'],
+            [4, 6, '2026-08', 3.00, 150.00, 0.00, '2026-08-29', '2026-09-19', '2026-12-19', 'unpaid'],
         ];
         $b = [];
         foreach ($bills as $i => [$ci, $ri, $period, $cons, $total, $paid, $billDate, $due, $disc, $status]) {

@@ -63,13 +63,13 @@ class BillingService
      *   6. Senior discount  = sub-total * discount % (seniors only)
      *   7. Total payable    = sub-total - discount, rounded to the centavo
      *   8. Due date         = due day of the month after the billing month
-     *   9. Disconnection    = N days after the due date
+     *   9. Disconnection    = N months of non-payment after the due date (default 3)
      */
     public function computeBillAmount(float $consumption, bool $isSenior, string $billingPeriod): array
     {
         $t = $this->tariff();
         $dueDay   = (int)$this->settings->get('due_day_of_month', 19);
-        $discDays = (int)$this->settings->get('disconnection_days', 5);
+        $discMonths = max(1, (int)$this->settings->get('disconnection_months', 3));
 
         $excessCum    = max(0, $consumption - $t['includedCum']);
         $excessCharge = round($excessCum * $t['excessRate'], 2);
@@ -80,7 +80,7 @@ class BillingService
         $nextMonth = (new DateTimeImmutable($billingPeriod . '-01'))->modify('+1 month');
         $dueDay    = max(1, min($dueDay, (int)$nextMonth->format('t')));
         $dueDate   = $nextMonth->setDate((int)$nextMonth->format('Y'), (int)$nextMonth->format('n'), $dueDay);
-        $discDate  = $dueDate->modify("+$discDays days");
+        $discDate  = $this->addMonths($dueDate, $discMonths);
 
         return [
             'minimum_charge'     => $t['minimumCharge'],
@@ -92,6 +92,13 @@ class BillingService
             'due_date'           => $dueDate->format('Y-m-d'),
             'disconnection_date' => $discDate->format('Y-m-d'),
         ];
+    }
+
+    /** Same day N months later, kept inside the month (Jan 31 + 1 month = Feb 28/29). */
+    public function addMonths(DateTimeImmutable $date, int $months): DateTimeImmutable
+    {
+        $first = $date->modify('first day of this month')->modify("+$months months");
+        return $first->setDate((int)$first->format('Y'), (int)$first->format('n'), min((int)$date->format('j'), (int)$first->format('t')));
     }
 
     /** Outstanding amount on a consumer's unpaid bills (optionally leaving one bill out). */
