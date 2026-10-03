@@ -52,7 +52,7 @@ Payment** — upload the barangay's official GCash QR code and enter the GCash
 account name and number. Until a QR code is uploaded, consumers are told to pay
 at the barangay.
 
-- **At the barangay** (Admin → Payments → *Record Payment at Barangay*): choose
+- **At the barangay** (Admin → Payments → *Record Payment*): choose
   **Cash** or **GCash QR**. For GCash QR, show the QR to the consumer, check the
   payment in the barangay GCash account and enter its reference number. The bill
   is marked **Paid** right away.
