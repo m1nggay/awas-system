@@ -49,7 +49,6 @@
         <div>
           <div class="row"><span class="text-muted">Billing Period</span><strong>{{ billingPeriodLabel($bill->billing_period) }}</strong></div>
           <div class="row"><span class="text-muted">Date</span><strong>{{ formatDate($bill->bill_date) }}</strong></div>
-          <div class="row"><span class="text-muted">Due Date</span><strong>{{ formatDate($bill->due_date) }}</strong></div>
           <div class="row"><span class="text-muted">Status</span><span class="badge {{ billStatusBadgeClass($bill->status) }}">{{ str_replace('_', ' ', $bill->status) }}</span></div>
         </div>
       </div>
@@ -93,15 +92,17 @@
       </table>
 
       <div class="totals">
-        <div class="row"><span>Current Charges ({{ billingPeriodLabel($bill->billing_period) }})</span><span>{{ formatCurrency($bill->total_amount) }}</span></div>
+        <div class="row"><span>Total Amount</span><span>{{ formatCurrency($bill->total_amount) }}</span></div>
         <div class="row">
-          <span>Previous Balance<br><small class="text-muted">Unpaid from earlier bills (not paid in full)</small></span>
+          <span>Balance<br><small class="text-muted">Unpaid from the previous bill (not paid in full)</small></span>
           <span class="{{ $previousBalance > 0 ? 'text-danger' : '' }}">{{ formatCurrency($previousBalance) }}</span>
         </div>
-        <div class="row" style="font-weight:600;"><span>Total Amount</span><span>{{ formatCurrency((float)$bill->total_amount + $previousBalance) }}</span></div>
-        <div class="row"><span>Amount Paid (this bill)</span><span>{{ formatCurrency($bill->amount_paid) }}</span></div>
-        <div class="row"><span>Date Paid</span><span>{{ $datePaid ? formatDate($datePaid) : '—' }}</span></div>
-        <div class="row grand"><span>Balance<br><small class="text-muted" style="font-size:11px;font-weight:400;">{{ ($balance + $previousBalance) > 0 ? 'Still to pay' : 'Fully paid' }}</small></span><span>{{ formatCurrency($balance + $previousBalance) }}</span></div>
+        <div class="row"><span>Due Date</span><strong>{{ formatDate($bill->due_date) }}</strong></div>
+        <div class="row"><span>Disconnection Date</span><strong class="text-danger">{{ $bill->disconnection_date ? formatDate($bill->disconnection_date) : '—' }}</strong></div>
+        @if ((float)$bill->amount_paid > 0)
+          <div class="row"><span>Amount Paid{{ $datePaid ? ' (' . formatDate($datePaid) . ')' : '' }}</span><span>− {{ formatCurrency($bill->amount_paid) }}</span></div>
+        @endif
+        <div class="row grand"><span>Total Amount Due</span><span>{{ formatCurrency($balance + $previousBalance) }}</span></div>
       </div>
 
       <p class="text-muted" style="margin-top:24px;font-size:11.5px;">
