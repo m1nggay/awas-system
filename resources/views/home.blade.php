@@ -134,7 +134,7 @@
         <p class="lede">AWAS gives Barangay Adlay one place to record meter readings, generate bills, and take payments — so nothing is written on paper twice, and no one is billed by guesswork.</p>
         <div class="cta-row">
           <a class="btn btn-solid" href="{{ route('login') }}">Login</a>
-          <a class="btn btn-outline" href="{{ route('register') }}">Create a resident account</a>
+          <a class="btn btn-outline" href="{{ route('register') }}">Create Account</a>
         </div>
         <div class="trust-line">For barangay staff, water association personnel, and registered residents.</div>
       </div>
