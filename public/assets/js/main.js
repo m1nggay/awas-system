@@ -49,22 +49,3 @@ function updateConsumptionPreview() {
     out.style.color = diff < 0 ? '#e5533d' : '#0077b6';
   }
 }
-
-/**
- * Phones: tables (.data-table) are shown as one card per row (see style.css).
- * Each cell gets its column name so the card can show "Label  value".
- */
-document.addEventListener('DOMContentLoaded', function () {
-  document.querySelectorAll('table.data-table').forEach(function (table) {
-    var labels = Array.prototype.map.call(table.querySelectorAll('thead th'), function (th) {
-      return th.textContent.trim();
-    });
-    table.querySelectorAll('tbody tr').forEach(function (tr) {
-      var col = 0;
-      Array.prototype.forEach.call(tr.children, function (td) {
-        if (labels[col] && !td.hasAttribute('data-label')) td.setAttribute('data-label', labels[col]);
-        col += td.colSpan || 1;
-      });
-    });
-  });
-});
