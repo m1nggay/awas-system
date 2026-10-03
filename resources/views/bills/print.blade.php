@@ -101,7 +101,7 @@
         <div class="row" style="font-weight:600;"><span>Total Amount</span><span>{{ formatCurrency((float)$bill->total_amount + $previousBalance) }}</span></div>
         <div class="row"><span>Amount Paid (this bill)</span><span>{{ formatCurrency($bill->amount_paid) }}</span></div>
         <div class="row"><span>Date Paid</span><span>{{ $datePaid ? formatDate($datePaid) : '—' }}</span></div>
-        <div class="row grand"><span>Total Amount Due</span><span>{{ formatCurrency($balance + $previousBalance) }}</span></div>
+        <div class="row grand"><span>Balance<br><small class="text-muted" style="font-size:11px;font-weight:400;">{{ ($balance + $previousBalance) > 0 ? 'Still to pay' : 'Fully paid' }}</small></span><span>{{ formatCurrency($balance + $previousBalance) }}</span></div>
       </div>
 
       <p class="text-muted" style="margin-top:24px;font-size:11.5px;">
