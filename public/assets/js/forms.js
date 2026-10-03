@@ -52,7 +52,7 @@
           li.style.color = ok ? '#1a7a68' : '';
         });
         input.setCustomValidity(input.value === '' || passwordOk(input.value)
-          ? '' : 'Password must contain at least 8 characters, including a capital letter, a number, and a symbol.');
+          ? '' : 'Password must contain at least 8 characters, including an uppercase letter, a number, and a symbol.');
       }
       input.addEventListener('input', render);
       render();

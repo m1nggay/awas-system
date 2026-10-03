@@ -274,7 +274,7 @@ document.getElementById('applyForm').addEventListener('submit', function (ev) {
   }
   var pw = form.querySelector('[name="password"]').value;
   if (!(pw.length >= 8 && /[A-Z]/.test(pw) && /\d/.test(pw) && /[^A-Za-z0-9]/.test(pw))) {
-    msgs.push('Password must contain at least 8 characters, including a capital letter, a number, and a symbol.');
+    msgs.push('Password must contain at least 8 characters, including an uppercase letter, a number, and a symbol.');
   } else if (pw !== form.querySelector('[name="confirm_password"]').value) msgs.push('Passwords do not match.');
 
   if (msgs.length) {

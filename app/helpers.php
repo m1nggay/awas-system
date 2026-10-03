@@ -112,7 +112,7 @@ if (!function_exists('passwordPolicyError')) {
             || !preg_match('/[A-Z]/', $password)
             || !preg_match('/\d/', $password)
             || !preg_match('/[^A-Za-z0-9]/', $password)) {
-            return 'Password must contain at least 8 characters, including a capital letter, a number, and a symbol.';
+            return 'Password must contain at least 8 characters, including an uppercase letter, a number, and a symbol.';
         }
         return null;
     }
