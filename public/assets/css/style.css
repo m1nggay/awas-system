@@ -404,3 +404,9 @@ table.data-table td.actions{white-space:nowrap;display:flex;gap:6px;}
 .pw-strength.weak .pw-strength-bar span{background:#e5533d;} .pw-strength.weak .pw-strength-label{color:#b8382a;}
 .pw-strength.medium .pw-strength-bar span{background:#e0a93b;} .pw-strength.medium .pw-strength-label{color:#9a6a00;}
 .pw-strength.strong .pw-strength-bar span{background:#2ecc71;} .pw-strength.strong .pw-strength-label{color:#1a7a68;}
+
+/* Sign-in / apply pages on phones: less side padding so fields get the room */
+@media (max-width:480px){
+  .auth-body{padding:14px 10px;}
+  .auth-card{padding:26px 18px;}
+}

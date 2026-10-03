@@ -20,7 +20,7 @@
       <label class="form-label" for="full_name">Name (as registered with the barangay) *</label>
       <input type="text" id="full_name" name="full_name" class="form-control" required value="{{ old('full_name') }}">
     </div>
-    <div class="row g-3">
+    <div class="row gx-3">
       <div class="col-md-6 mb-3">
         <label class="form-label" for="purok_id">Purok *</label>
         <select id="purok_id" name="purok_id" class="form-select" required>
@@ -34,7 +34,7 @@
         @include('partials.consumer-type-select', ['selected' => old('consumer_type', 'residential')])
       </div>
     </div>
-    <div class="row g-3">
+    <div class="row gx-3">
       <div class="col-md-6 mb-3">
         <label class="form-label" for="email">Email Address *</label>
         <input type="email" id="email" name="email" class="form-control" required value="{{ old('email') }}">
@@ -48,7 +48,7 @@
       <label class="form-label" for="username">Choose a Username *</label>
       <input type="text" id="username" name="username" class="form-control" required value="{{ old('username') }}">
     </div>
-    <div class="row g-3">
+    <div class="row gx-3">
       <div class="col-md-6 mb-3">
         <label class="form-label" for="password">Password *</label>
         <input type="password" id="password" name="password" class="form-control" required minlength="8" autocomplete="new-password">

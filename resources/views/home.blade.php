@@ -86,6 +86,24 @@
     .feature{border-left:none;padding-left:0;border-top:1px solid var(--line);padding-top:22px;}
     .feature:first-child{border-top:none;padding-top:0;}
   }
+  /* Phones: compact header, full-width buttons */
+  @media (max-width: 560px){
+    .wrap{padding:0 18px;}
+    .site-nav .wrap{height:64px;gap:10px;}
+    .brand{gap:8px;min-width:0;}
+    .brand img{width:40px;height:40px;}
+    .brand .word{font-size:16px;}
+    .brand .tagline{font-size:9.5px;line-height:1.25;}
+    .btn.nav-cta{padding:8px 12px;font-size:12.5px;white-space:nowrap;flex:none;}
+    .hero .wrap{padding:36px 18px 44px;}
+    .eyebrow-line{font-size:12.5px;margin-bottom:12px;}
+    .hero h1{font-size:30px;margin-bottom:14px;}
+    .hero p.lede{font-size:15px;margin-bottom:24px;}
+    .cta-row{flex-direction:column;gap:10px;}
+    .cta-row .btn{width:100%;}
+    .features .wrap{padding:32px 18px;}
+    footer.site-foot{padding:18px 18px 26px;}
+  }
 </style>
 </head>
 <body>

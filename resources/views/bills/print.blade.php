@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Water Bill — Meter {{ $bill->meter_number }} — {{ billingPeriodLabel($bill->billing_period) }}</title>
 <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}?v={{ @filemtime(public_path('assets/css/style.css')) ?: '1' }}">
 <style>
@@ -19,7 +20,15 @@
   table.bill-table th{background:#f4fafc;}
   .num{text-align:right !important;}
   .actions-bar{max-width:760px;margin:0 auto 16px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;}
-  @media (max-width:640px){ .info{grid-template-columns:1fr;} }
+  @media (max-width:640px){
+    body{padding:14px 10px;}
+    .info{grid-template-columns:1fr;}
+    .invoice-head{padding:16px 16px;flex-wrap:wrap;gap:8px;}
+    .invoice-body{padding:16px;}
+    table.bill-table{display:block;overflow-x:auto;}
+    table.bill-table th, table.bill-table td{padding:7px 8px;font-size:12px;white-space:nowrap;}
+    .totals .row.grand{font-size:16px;}
+  }
 </style>
 </head>
 <body>

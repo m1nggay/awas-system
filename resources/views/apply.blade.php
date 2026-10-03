@@ -55,7 +55,7 @@
         <label for="full_name" class="form-label">Full Name *</label>
         <input type="text" id="full_name" name="full_name" class="form-control" required maxlength="150" value="{{ old('full_name') }}">
       </div>
-      <div class="row g-3">
+      <div class="row gx-3">
         <div class="col-md-6 mb-3">
           <label for="birth_date" class="form-label">Date of Birth *</label>
           <input type="date" id="birth_date" name="birth_date" class="form-control" required max="{{ date('Y-m-d') }}" value="{{ old('birth_date') }}">
@@ -69,7 +69,7 @@
           </select>
         </div>
       </div>
-      <div class="row g-3">
+      <div class="row gx-3">
         <div class="col-md-6 mb-3">
           <label for="contact_number" class="form-label">Contact Number *</label>
           <input type="text" id="contact_number" name="contact_number" class="form-control" required maxlength="20" inputmode="tel" value="{{ old('contact_number') }}">
@@ -82,7 +82,7 @@
       </div>
 
       <label class="form-label" style="font-weight:600;">Complete Address *</label>
-      <div class="row g-3">
+      <div class="row gx-3">
         <div class="col-md-6 mb-3">
           <label for="purok_id" class="form-label">Purok *</label>
           <select id="purok_id" name="purok_id" class="form-select" required>
@@ -97,7 +97,7 @@
           <input type="text" id="barangay" class="form-control" value="{{ $barangay }}" readonly tabindex="-1">
         </div>
       </div>
-      <div class="row g-3">
+      <div class="row gx-3">
         <div class="col-md-6 mb-3">
           <label for="municipality" class="form-label">Municipality</label>
           <input type="text" id="municipality" class="form-control" value="{{ $municipality }}" readonly tabindex="-1">
@@ -119,7 +119,7 @@
                title="4–30 characters: letters, numbers, dots, dashes or underscores — no spaces">
         <div class="hint">4–30 characters: letters, numbers, dots (.), dashes (-) or underscores (_). No spaces.</div>
       </div>
-      <div class="row g-3">
+      <div class="row gx-3">
         <div class="col-md-6 mb-3">
           <label for="password" class="form-label">Password *</label>
           <input type="password" id="password" name="password" class="form-control" required minlength="8" autocomplete="new-password">
@@ -134,7 +134,7 @@
 
     <div class="apply-section mb-4">
       <h2>3. Household Information</h2>
-      <div class="row g-3">
+      <div class="row gx-3">
         <div class="col-md-6 mb-3">
           <label for="household_number" class="form-label">Household Number (if applicable)</label>
           <input type="text" id="household_number" name="household_number" class="form-control" maxlength="30" value="{{ old('household_number') }}">
@@ -149,7 +149,7 @@
           </select>
         </div>
       </div>
-      <div class="row g-3">
+      <div class="row gx-3">
         <div class="col-md-6 mb-3">
           <label for="residence_type" class="form-label d-flex align-items-center gap-1">
             Type of Residence *
