@@ -30,13 +30,13 @@
     <div class="invoice-head">
       <div>
         <div style="display:flex;align-items:center;gap:8px;font-size:20px;font-weight:700;">
-          <img src="{{ asset('assets/img/logo.png') }}" alt="AGAS logo" style="width:34px;height:34px;object-fit:contain;">AGAS
+          <img src="{{ asset('assets/img/logo.png') }}" alt="AWAS logo" style="width:34px;height:34px;object-fit:contain;">AWAS
         </div>
-        <div style="font-size:12px;opacity:.85;">{{ $barangayName }} — Water Billing Statement</div>
+        <div style="font-size:12px;opacity:.85;">Adlay Water Augmentation System</div>
       </div>
       <div style="text-align:right;">
-        <div style="font-size:12px;opacity:.85;">Meter Number</div>
-        <div style="font-size:18px;font-weight:700;">{{ $bill->meter_number ?: '—' }}</div>
+        <div style="font-size:16px;font-weight:700;">Water Billing Statement</div>
+        <div style="font-size:12px;opacity:.85;">{{ $barangayName }}</div>
       </div>
     </div>
     <div class="invoice-body">
@@ -105,7 +105,7 @@
       </div>
 
       <p class="text-muted" style="margin-top:24px;font-size:11.5px;">
-        This is a system-generated water billing statement from the AGAS Smart Water Management and Billing System of {{ $barangayName }}.
+        This is a system-generated water billing statement from AWAS — Adlay Water Augmentation System of {{ $barangayName }}.
         Please settle your bill on or before the due date to avoid penalties or service disconnection.
       </p>
     </div>
