@@ -31,6 +31,9 @@ class Consumer extends BaseModel
         return $this->belongsTo(Purok::class, 'purok_id', 'purok_id');
     }
 
+    /** Words that belong to the surname that follows them (Del Valle, Delos Arcos, Dela Cruz, De Leon, San Jose). */
+    public const SURNAME_PARTICLES = '/^(del|dela|de|delos|los|la|san|santa|sta\.?)$/i';
+
     /** Name suffixes kept after the given names: "Caliwatan, Angel Jr." */
     public const NAME_SUFFIX_PATTERN = '/^(jr\.?|sr\.?|i{1,3}|iv|#\d+)$/i';
 
@@ -57,6 +60,10 @@ class Consumer extends BaseModel
         $parts = preg_split('/\s+/', trim($fullName));
         $suffix = count($parts) > 2 && preg_match(self::NAME_SUFFIX_PATTERN, end($parts)) ? array_pop($parts) : null;
         $surname = array_pop($parts);
+        // Two-word surnames: "Joseph Del Valle" → "Del Valle, Joseph", "Virgo Delos Arcos" → "Delos Arcos, Virgo".
+        while (count($parts) > 1 && preg_match(self::SURNAME_PARTICLES, end($parts))) {
+            $surname = array_pop($parts) . ' ' . $surname;
+        }
         $name = $parts ? $surname . ', ' . implode(' ', $parts) : $surname;
         return $suffix ? "$name $suffix" : $name;
     }
