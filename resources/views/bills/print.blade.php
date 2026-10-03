@@ -13,6 +13,7 @@
   .row{display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;font-size:13.5px;}
   .totals{margin-top:18px;border-top:2px solid var(--border);padding-top:12px;}
   .totals .row.grand{font-size:18px;font-weight:700;color:var(--primary-dark);}
+  .totals .total-highlight{background:#e8f6fb;border:1px solid #bfe3f0;border-radius:8px;padding:10px 12px;margin-bottom:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   table.bill-table{width:100%;border-collapse:collapse;margin-top:16px;}
   table.bill-table th, table.bill-table td{border:1px solid var(--border);padding:9px 12px;font-size:13px;text-align:left;}
   table.bill-table th{background:#f4fafc;}
@@ -92,7 +93,7 @@
       </table>
 
       <div class="totals">
-        <div class="row"><span>Total Amount</span><span>{{ formatCurrency($bill->total_amount) }}</span></div>
+        <div class="row grand total-highlight"><span>Total Amount</span><span>{{ formatCurrency($bill->total_amount) }}</span></div>
         <div class="row">
           <span>Balance<br><small class="text-muted">Unpaid from the previous bill (not paid in full)</small></span>
           <span class="{{ $previousBalance > 0 ? 'text-danger' : '' }}">{{ formatCurrency($previousBalance) }}</span>
@@ -102,7 +103,6 @@
         @if ((float)$bill->amount_paid > 0)
           <div class="row"><span>Amount Paid{{ $datePaid ? ' (' . formatDate($datePaid) . ')' : '' }}</span><span>− {{ formatCurrency($bill->amount_paid) }}</span></div>
         @endif
-        <div class="row grand"><span>Total Amount Due</span><span>{{ formatCurrency($balance + $previousBalance) }}</span></div>
       </div>
 
       <p class="text-muted" style="margin-top:24px;font-size:11.5px;">
