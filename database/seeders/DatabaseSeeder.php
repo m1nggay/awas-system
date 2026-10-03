@@ -44,7 +44,7 @@ class DatabaseSeeder extends Seeder
             ['setting_key' => 'gcash_qr_file', 'setting_value' => '', 'description' => 'Barangay official GCash QR code image (uploaded in System Settings)'],
             ['setting_key' => 'gcash_account_name', 'setting_value' => '', 'description' => 'Name shown on the barangay GCash account'],
             ['setting_key' => 'gcash_number', 'setting_value' => '', 'description' => 'Barangay GCash mobile number'],
-            ['setting_key' => 'chatbot_ai_enabled', 'setting_value' => '0', 'description' => 'Whether the AGAS Assistant chatbot may fall back to the AI API for questions the FAQ knowledge base cannot answer (requires CHATBOT_AI_API_KEY in .env)'],
+            ['setting_key' => 'chatbot_ai_enabled', 'setting_value' => '0', 'description' => 'Whether the AWAS Assistant chatbot may fall back to the AI API for questions the FAQ knowledge base cannot answer (requires CHATBOT_AI_API_KEY in .env)'],
         ]);
     }
 
@@ -56,7 +56,7 @@ class DatabaseSeeder extends Seeder
 
         $hash = Hash::make('Password123!');
         $users = [
-            ['admin', 'Barangay AGAS Administrator', 'admin@agas-adlay.local', '09171000001', 'admin'],
+            ['admin', 'Jenela Costan', 'admin@agas-adlay.local', '09171000001', 'admin'],
             ['meterreader', 'Juana Dela Cruz', 'meterreader@agas-adlay.local', '09171000002', 'staff'],
             ['resident1', 'Pedro Santos', 'pedro.santos@example.com', '09171000003', 'resident'],
             ['resident2', 'Maria Reyes', 'maria.reyes@example.com', '09171000004', 'resident'],
@@ -188,13 +188,13 @@ class DatabaseSeeder extends Seeder
             ['Why is my payment still pending?', 'Online GCash payments stay "Pending Verification" until the barangay water office matches your GCash reference number with the money received. Once verified, your bill changes to "Paid". If it is rejected, you will see the reason and can pay again.', 'payments', 'payment pending, still pending, not verified, pending verification'],
             ['What should I do if my payment was not reflected?', 'If it has been more than a few business days and your payment is still not verified or applied to your bill, please contact the Barangay Adlay water office with your payment reference number.', 'payments', 'payment not reflected, missing payment, payment not applied'],
             ['How do I register?', 'Go to the "Create Account" page and enter your meter number (numbers only), full name, and purok exactly as registered with the barangay. If they match an existing consumer record without a linked login, your account will be created.', 'account', 'register, sign up, create account'],
-            ['How do I log in?', 'Use the username and password you created during registration on the AGAS Login page.', 'account', 'log in, login, sign in'],
+            ['How do I log in?', 'Use the username and password you created during registration on the AWAS Login page.', 'account', 'log in, login, sign in'],
             ['How can I update my account information?', 'Go to "My Profile" in your resident menu to update your email and contact number, or to change your password.', 'account', 'update profile, update information, edit account'],
             ['I forgot my password. What should I do?', 'For security reasons, this chatbot cannot reset passwords. Please contact the Barangay Adlay water office or system administrator, and they can issue you a new temporary password.', 'account', 'forgot password, reset password, lost password'],
             ['How can I view my consumer information?', 'Your meter number, address, purok, type of consumer, and connection status are all shown on the "My Profile" page.', 'account', 'consumer information, my account, account details'],
-            ['What is AGAS?', "AGAS (Smart Water Management and Billing System with Online Payment) is Barangay Adlay's digital platform for meter reading, water billing, and payment monitoring.", 'system', 'what is agas, about agas'],
-            ['What services does AGAS provide?', 'AGAS lets you view your water bills and consumption, review your billing and payment history, and submit online payments — all without visiting the barangay office in person.', 'system', 'services, features, what can agas do'],
-            ['How can I use the AGAS dashboard?', 'Your dashboard shows your latest consumption, current bill balance, due date, payment status, a consumption trend chart, and your recent payments — everything at a glance.', 'system', 'use dashboard, dashboard help'],
+            ['What is AWAS?', "AWAS (Adlay Water Augmentation System) is Barangay Adlay's digital platform for meter reading, water billing, and payment monitoring.", 'system', 'what is awas, about awas, what is agas'],
+            ['What services does AWAS provide?', 'AWAS lets you view your water bills and consumption, review your billing and payment history, and submit online payments — all without visiting the barangay office in person.', 'system', 'services, features, what can agas do'],
+            ['How can I use the AWAS dashboard?', 'Your dashboard shows your latest consumption, current bill balance, due date, payment status, a consumption trend chart, and your recent payments — everything at a glance.', 'system', 'use dashboard, dashboard help'],
             ['Where can I see my current bill?', 'Click "Current Bills" in your resident menu to see your unpaid bill(s) and to submit a payment.', 'system', 'current bill page, see my bill'],
             ['Where can I see my previous bills?', 'Click "Billing History" in your resident menu to see all bills from previous billing periods.', 'system', 'previous bills, past bills, billing history page'],
         ];

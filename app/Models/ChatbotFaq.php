@@ -9,7 +9,7 @@ class ChatbotFaq extends BaseModel
         'meter_reading' => 'Meter Reading',
         'payments'      => 'Payments',
         'account'       => 'Account',
-        'system'        => 'AGAS System',
+        'system'        => 'AWAS System',
         'general'       => 'General',
     ];
 }

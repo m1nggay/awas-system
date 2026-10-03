@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="alert alert-info">
-  🤖 The AGAS Assistant chatbot answers residents from this FAQ knowledge base first. Add, edit, or disable entries here to control exactly what it can say — it never edits bills, payments, or meter readings.
+  🤖 The AWAS Assistant chatbot answers residents from this FAQ knowledge base first. Add, edit, or disable entries here to control exactly what it can say — it never edits bills, payments, or meter readings.
 </div>
 
 <div class="card">

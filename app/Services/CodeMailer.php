@@ -18,7 +18,7 @@ class CodeMailer
     {
         $otp = OtpService::emailVerification();
         return $otp->issueAndSend($userId, fn (string $code) => $this->mailer->send(
-            $email, $name, 'Verify your AGAS account', 'emails.verification-code',
+            $email, $name, 'Verify your AWAS account', 'emails.verification-code',
             ['name' => $name, 'code' => $code, 'intro' => $intro, 'ttl' => $otp->ttlMinutes, 'next' => $next]
         ));
     }

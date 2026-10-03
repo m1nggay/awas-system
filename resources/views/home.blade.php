@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AGAS: Smart Water Management and Billing System</title>
+<title>AWAS: Adlay Water Augmentation System</title>
 <link rel="icon" type="image/png" href="{{ asset('assets/img/logo.png') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -113,9 +113,9 @@
   <header class="hero">
     <div class="wrap">
       <div>
-        <div class="eyebrow-line">AGAS: Smart Water Management and Billing System</div>
+        <div class="eyebrow-line">AWAS: Adlay Water Augmentation System</div>
         <h1>Every drop, accounted for.</h1>
-        <p class="lede">AGAS gives Barangay Adlay one place to record meter readings, generate bills, and take payments — so nothing is written on paper twice, and no one is billed by guesswork.</p>
+        <p class="lede">AWAS gives Barangay Adlay one place to record meter readings, generate bills, and take payments — so nothing is written on paper twice, and no one is billed by guesswork.</p>
         <div class="cta-row">
           <a class="btn btn-solid" href="{{ route('login') }}">Login</a>
           <a class="btn btn-outline" href="{{ route('register') }}">Create a resident account</a>
@@ -147,7 +147,7 @@
 
   <footer class="site-foot">
     <div class="wrap">
-      &copy; {{ date('Y') }} AGAS Smart Water Management and Billing System
+      &copy; {{ date('Y') }} AWAS — Adlay Water Augmentation System
     </div>
   </footer>
 

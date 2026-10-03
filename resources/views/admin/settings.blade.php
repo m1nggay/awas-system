@@ -59,9 +59,9 @@
 </div>
 
 <div class="card">
-  <div class="card-header"><h3>About AGAS</h3></div>
+  <div class="card-header"><h3>About AWAS</h3></div>
   <div class="card-body">
-    <p class="text-muted">AGAS: Smart Water Management and Billing System with Online Payment — developed for Barangay Adlay to improve the efficiency, accuracy, and transparency of water billing and payment monitoring.</p>
+    <p class="text-muted">AWAS: Adlay Water Augmentation System — developed for Barangay Adlay to improve the efficiency, accuracy, and transparency of water billing and payment monitoring.</p>
   </div>
 </div>
 @endsection

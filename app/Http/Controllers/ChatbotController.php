@@ -6,7 +6,7 @@ use App\Services\Chatbot;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-/** JSON endpoint for the AGAS Assistant widget (residents only; CSRF-checked by Laravel). */
+/** JSON endpoint for the AWAS Assistant widget (residents only; CSRF-checked by Laravel). */
 class ChatbotController extends Controller
 {
     public function __invoke(Request $request, Chatbot $chatbot)

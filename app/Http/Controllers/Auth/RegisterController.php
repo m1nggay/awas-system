@@ -108,7 +108,7 @@ class RegisterController extends Controller
         log_activity($newUserId, 'register', "Consumer self-registered (pending email verification) for meter {$old['meter_number']}");
 
         $result = $codes->sendEmailVerification($newUserId, $old['email'], $old['full_name'],
-            'Thanks for creating an AGAS account. Enter this code to verify your email and activate your account:');
+            'Thanks for creating an AWAS account. Enter this code to verify your email and activate your account:');
 
         $request->session()->put('email_verify_user_id', $newUserId);
         $request->session()->put('email_verify_started_at', time());

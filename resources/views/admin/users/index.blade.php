@@ -15,7 +15,7 @@
     <form method="GET" class="d-flex flex-wrap gap-2 align-items-center mb-3">
       <select name="role" class="form-select w-auto" onchange="this.form.submit()">
         <option value="">All Roles</option>
-        <option value="admin" @selected($roleFil === 'admin')>Administrator</option>
+        <option value="admin" @selected($roleFil === 'admin')>AWAS Administrator</option>
         <option value="staff" @selected($roleFil === 'staff')>Meter Reader</option>
         <option value="resident" @selected($roleFil === 'resident')>Consumer</option>
       </select>
@@ -75,7 +75,7 @@
             <div class="col-md-6"><label class="form-label">Role *</label>
               <select name="role" class="form-select" required id="newUserRole">
                 <option value="staff">Meter Reader</option>
-                <option value="admin">Administrator</option>
+                <option value="admin">AWAS Administrator</option>
                 <option value="resident">Consumer</option>
               </select>
             </div>

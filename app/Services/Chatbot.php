@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * "AGAS Assistant" resident chatbot: intent detection, FAQ search,
+ * "AWAS Assistant" resident chatbot: intent detection, FAQ search,
  * personalized account lookups and an optional AI fallback.
  *
  * - READ-ONLY against bills, readings, payments and consumers.
@@ -224,14 +224,14 @@ class Chatbot
             $context .= "- Q: {$f->question}\n  A: {$f->answer}\n";
         }
 
-        $system = "You are \"AGAS Assistant\", a virtual help desk for residents of Barangay Adlay's AGAS water billing system. "
-            . 'Answer ONLY questions about: AGAS, Barangay Adlay water services, water billing, meter readings, payments, '
-            . 'resident accounts, and how to navigate the AGAS system. '
+        $system = "You are \"AWAS Assistant\", a virtual help desk for residents of Barangay Adlay's AWAS water billing system. "
+            . 'Answer ONLY questions about: AWAS, Barangay Adlay water services, water billing, meter readings, payments, '
+            . 'resident accounts, and how to navigate the AWAS system. '
             . 'Use the reference FAQ excerpts below as your primary source of truth and do not contradict them. '
             . "You have no access to any specific resident's bill, payment, or account figures — never invent such numbers; "
             . 'tell the resident to check the relevant dashboard page instead. '
             . 'Never claim to verify payments, edit bills, or change meter readings — those require barangay staff. '
-            . "Never reveal or guess a password. If the question is unrelated to AGAS/water billing, or you are unsure, "
+            . "Never reveal or guess a password. If the question is unrelated to AWAS/water billing, or you are unsure, "
             . "say you don't have enough information and to contact the Barangay Adlay water staff. "
             . "Keep answers under 80 words, friendly, and simple.\n\nReference FAQs:\n" . $context;
 

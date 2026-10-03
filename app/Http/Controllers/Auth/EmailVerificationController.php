@@ -150,8 +150,8 @@ class EmailVerificationController extends Controller
         return $codes->sendEmailVerification(
             $user->user_id, (string)$user->email, $user->full_name,
             $isApplicant
-                ? 'Enter this code to verify your email address for your AGAS / AWAS membership:'
-                : 'Enter this code to verify your email address and activate your AGAS account:',
+                ? 'Enter this code to verify your email address for your AWAS membership:'
+                : 'Enter this code to verify your email address and activate your AWAS account:',
             $isApplicant
                 ? 'Go back to the verification page you were on and type the 6-digit code. '
                     . 'Your application only goes to the barangay water office for review after your email is verified.'

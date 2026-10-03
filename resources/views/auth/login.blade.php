@@ -3,7 +3,7 @@
 @section('title', 'Login')
 
 @section('content')
-  <h1>AGAS Login</h1>
+  <h1>AWAS Login</h1>
   <p class="subtitle">Smart Water Management &amp; Billing System<br>Barangay Adlay</p>
 
   @if (session('error'))<div class="alert alert-danger">{{ session('error') }}</div>@endif

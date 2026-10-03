@@ -77,7 +77,7 @@
       <div class="sidebar-brand">
         <img src="{{ asset('assets/img/logo.png') }}" alt="AWAS logo">
         <div>
-          <div class="name">AGAS</div>
+          <div class="name">AWAS</div>
           <div class="sub">BARANGAY ADLAY</div>
         </div>
       </div>
@@ -140,7 +140,7 @@
     </main>
 
     <footer style="padding:16px 26px;text-align:center;font-size:12px;color:var(--text-muted);">
-      &copy; {{ date('Y') }} Barangay Adlay — AGAS Smart Water Management and Billing System
+      &copy; {{ date('Y') }} Barangay Adlay — AWAS: Adlay Water Augmentation System
     </footer>
   </div>
 </div>

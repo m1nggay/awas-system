@@ -39,7 +39,7 @@ class AccountController extends Controller
         }
 
         $result = $codes->sendPasswordCode($user->user_id, $user->email, $user->full_name,
-            'Your AGAS change-password code', 'Use this code to confirm that you want to change your AGAS password:');
+            'Your AWAS change-password code', 'Use this code to confirm that you want to change your AWAS password:');
         [$type, $message] = OtpService::resultMessage($result, OtpService::passwordReset()->secondsUntilResend($user->user_id));
 
         if (in_array($result, ['sent', 'cooldown'], true)) {

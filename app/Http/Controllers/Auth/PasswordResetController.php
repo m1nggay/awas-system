@@ -33,7 +33,7 @@ class PasswordResetController extends Controller
 
         if ($user && !empty($user->email)) {
             $result = $codes->sendPasswordCode($user->user_id, $user->email, $user->full_name,
-                'Your AGAS password reset code', 'Your AGAS password reset code is:');
+                'Your AWAS password reset code', 'Your AWAS password reset code is:');
 
             // Never claim a code was sent when the email actually failed.
             if (in_array($result, ['failed', 'limit'], true)) {

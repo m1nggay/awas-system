@@ -37,7 +37,7 @@
     <div class="receipt-head">
       <div>
         <div style="display:flex;align-items:center;gap:8px;font-size:20px;font-weight:700;">
-          <img src="{{ asset('assets/img/logo.png') }}" alt="AGAS logo" style="width:32px;height:32px;object-fit:contain;">AGAS
+          <img src="{{ asset('assets/img/logo.png') }}" alt="AWAS logo" style="width:32px;height:32px;object-fit:contain;">AWAS
         </div>
         <div style="font-size:12px;opacity:.85;">{{ $barangayName }} — Water Payment Receipt</div>
       </div>
@@ -86,7 +86,7 @@
       <div class="amount-box"><span>Amount Paid</span><span>{{ formatCurrency($p->amount_paid) }}</span></div>
 
       <p class="text-muted" style="margin-top:20px;font-size:11px;">
-        System-generated receipt from the AGAS Smart Water Management and Billing System of {{ $barangayName }}.
+        System-generated receipt from AWAS — Adlay Water Augmentation System of {{ $barangayName }}.
         Printed {{ formatDateTime(now()) }}.
       </p>
     </div>
@@ -97,7 +97,7 @@
 <script>
 (function () {
   const btn = document.getElementById('downloadBtn');
-  const fileName = {{ Js::from('AGAS-Receipt-' . $p->payment_reference . '.pdf') }};
+  const fileName = {{ Js::from('AWAS-Receipt-' . $p->payment_reference . '.pdf') }};
 
   function download() {
     // Without the PDF libraries (e.g. offline), fall back to the browser's "Save as PDF".

@@ -130,7 +130,7 @@ if (!function_exists('roleLabel')) {
     function roleLabel(?string $role): string
     {
         return match ($role) {
-            'admin'     => 'Administrator',
+            'admin'     => 'AWAS Administrator',
             'staff'     => 'Meter Reader',
             'resident'  => 'Consumer',
             'applicant' => 'Applicant',

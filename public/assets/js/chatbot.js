@@ -1,5 +1,5 @@
 /**
- * chatbot.js — "AGAS Assistant" floating chat widget behavior:
+ * chatbot.js — "AWAS Assistant" floating chat widget behavior:
  * open/close, sending messages to the /chatbot route, rendering the
  * conversation, and quick-reply chips. No API keys or secrets live here.
  */

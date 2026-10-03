@@ -9,7 +9,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-/** The AGAS Assistant knowledge base, unanswered-question log and AI fallback switch. */
+/** The AWAS Assistant knowledge base, unanswered-question log and AI fallback switch. */
 class ChatbotFaqController extends Controller
 {
     public function index(Settings $settings)

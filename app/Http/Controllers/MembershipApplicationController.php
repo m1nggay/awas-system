@@ -224,7 +224,7 @@ class MembershipApplicationController extends Controller
         log_activity($newUserId, 'membership_application', "New membership application $referenceCode started (pending email verification)");
 
         $result = $codes->sendEmailVerification($newUserId, $old['email'], $old['full_name'],
-            'Enter this code to verify your email address for your AGAS / AWAS membership:',
+            'Enter this code to verify your email address for your AWAS membership:',
             'Go back to the verification page you were on and type the 6-digit code. '
                 . 'Your application only goes to the barangay water office for review after your email is verified.');
 
