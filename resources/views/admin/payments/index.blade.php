@@ -4,6 +4,16 @@
 
 @push('styles')
 <style>
+  .bill-pick{max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;}
+  .bill-option{display:flex;align-items:center;gap:12px;padding:10px 12px;margin:0;border-bottom:1px solid var(--border);cursor:pointer;}
+  .bill-option:last-of-type{border-bottom:0;}
+  .bill-option:hover{background:#f4fafc;}
+  .bill-option:has(input:checked){background:#e8f6fb;box-shadow:inset 3px 0 0 var(--primary);}
+  .bill-option input{flex:none;margin:0;}
+  .bill-who{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .bill-who strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bill-who small,.bill-bal small{color:var(--text-muted);font-size:12px;}
+  .bill-bal{flex:none;text-align:right;font-weight:700;display:flex;flex-direction:column;}
   .pay-tabs .nav-link{font-weight:500;}
   .pay-tabs .count{font-size:11px;margin-left:4px;}
   .method-choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -115,18 +125,29 @@
         @csrf
         <div class="modal-body">
           <div class="mb-3">
-            <label for="bill_id" class="form-label">Water Bill *</label>
-            <select id="bill_id" name="bill_id" class="form-select" required>
-              <option value="">Select the consumer's bill (Meter Number — Name — Period)</option>
-              @foreach ($payableBills as $pb)
+            <label for="billSearch" class="form-label">Water Bill *</label>
+            <div class="input-group mb-2">
+              <span class="input-group-text">🔍</span>
+              <input type="search" id="billSearch" class="form-control" placeholder="Search by name or meter number" autocomplete="off">
+            </div>
+            <div class="bill-pick" id="billPick" role="radiogroup" aria-label="Water bill">
+              @forelse ($payableBills as $pb)
                 @php $bal = max(0, (float)$pb->total_amount - (float)$pb->amount_paid); @endphp
-                <option value="{{ $pb->bill_id }}" data-balance="{{ number_format($bal, 2, '.', '') }}"
-                        @selected((int)old('bill_id', $preselectBillId) === (int)$pb->bill_id)>
-                  Meter {{ $pb->meter_number }} — {{ $pb->full_name }} — {{ billingPeriodLabel($pb->billing_period) }} — Balance {{ formatCurrency($bal) }}
-                </option>
-              @endforeach
-            </select>
-            <div class="text-muted" style="font-size:11.5px;">Bills with an online GCash payment waiting for verification are not listed — verify or reject that payment first.</div>
+                <label class="bill-option" data-search="{{ mb_strtolower($pb->full_name . ' ' . $pb->meter_number) }}">
+                  <input type="radio" name="bill_id" value="{{ $pb->bill_id }}" data-balance="{{ number_format($bal, 2, '.', '') }}" required
+                         @checked((int)old('bill_id', $preselectBillId) === (int)$pb->bill_id)>
+                  <span class="bill-who">
+                    <strong>{{ $pb->full_name }}</strong>
+                    <small>Meter {{ $pb->meter_number }} · {{ billingPeriodLabel($pb->billing_period) }}</small>
+                  </span>
+                  <span class="bill-bal"><small>Balance</small>{{ formatCurrency($bal) }}</span>
+                </label>
+              @empty
+                <div class="text-muted text-center p-3">No unpaid bills.</div>
+              @endforelse
+              <div class="text-muted text-center p-3" id="billNoMatch" hidden>No bill matches your search.</div>
+            </div>
+            <div class="text-muted mt-1" style="font-size:11.5px;">Bills with an online GCash payment waiting for verification are not listed — verify or reject that payment first.</div>
           </div>
 
           <label class="form-label">Payment Method *</label>
@@ -215,26 +236,41 @@ function openReject(action, who) {
   bootstrap.Modal.getOrCreateInstance(document.getElementById('rejectModal')).show();
 }
 (function () {
-  const bill = document.getElementById('bill_id');
+  const picker = document.getElementById('billPick');
+  const search = document.getElementById('billSearch');
   const amount = document.getElementById('amount_paid');
   const gcashBox = document.getElementById('gcashCounter');
   const ref = document.getElementById('gcash_reference');
   const submit = document.getElementById('counterSubmit');
 
   function fillAmount() {
-    const opt = bill.selectedOptions[0];
+    const opt = picker.querySelector('input[name="bill_id"]:checked');
     if (opt && opt.dataset.balance) {
       amount.value = opt.dataset.balance;
       amount.max = opt.dataset.balance;
     }
   }
+  search.addEventListener('input', () => {
+    const q = search.value.trim().toLowerCase();
+    let shown = 0;
+    picker.querySelectorAll('.bill-option').forEach(o => {
+      const match = !q || o.dataset.search.includes(q);
+      o.hidden = !match;
+      if (match) shown++;
+    });
+    document.getElementById('billNoMatch').hidden = shown > 0 || !picker.querySelector('.bill-option');
+  });
+  // Keep the chosen bill in view when the modal opens.
+  document.getElementById('payModal').addEventListener('shown.bs.modal', () => {
+    picker.querySelector('input[name="bill_id"]:checked')?.closest('.bill-option').scrollIntoView({ block: 'nearest' });
+  });
   function syncMethod() {
     const isGcash = document.querySelector('input[name="payment_method"]:checked')?.value === 'gcash';
     gcashBox.hidden = !isGcash;
 
     submit.textContent = isGcash ? 'Confirm GCash Payment Received' : 'Confirm Cash Received';
   }
-  bill.addEventListener('change', fillAmount);
+  picker.addEventListener('change', fillAmount);
   document.querySelectorAll('input[name="payment_method"]').forEach(r => r.addEventListener('change', syncMethod));
   document.getElementById('counterForm').addEventListener('submit', () => { submit.disabled = true; });
   if (!amount.value) fillAmount();
