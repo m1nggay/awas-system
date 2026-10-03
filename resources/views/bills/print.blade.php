@@ -49,7 +49,6 @@
         </div>
         <div>
           <div class="row"><span class="text-muted">Month of</span><strong>{{ billingPeriodLabel($bill->billing_period) }}</strong></div>
-          <div class="row"><span class="text-muted">Date</span><strong>{{ formatDate($bill->bill_date) }}</strong></div>
           <div class="row"><span class="text-muted">Status</span><span class="badge {{ billStatusBadgeClass($bill->status) }}">{{ str_replace('_', ' ', $bill->status) }}</span></div>
         </div>
       </div>
