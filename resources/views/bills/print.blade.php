@@ -66,32 +66,6 @@
         </tbody>
       </table>
 
-      <table class="bill-table">
-        <thead><tr><th>Charges</th><th>Consumption</th><th>Rate</th><th class="num">Amount</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>Minimum Charge (first {{ rtrim(rtrim(number_format($includedCum, 2), '0'), '.') }} m³)</td>
-            <td>{{ number_format(min((float)$bill->consumption, $includedCum), 2) }} m³</td>
-            <td>—</td>
-            <td class="num">{{ formatCurrency($minCharge) }}</td>
-          </tr>
-          @if ($excessCum > 0)
-          <tr>
-            <td>Excess Consumption</td>
-            <td>{{ number_format($excessCum, 2) }} m³</td>
-            <td>{{ formatCurrency($excessRate) }}/m³</td>
-            <td class="num">{{ formatCurrency($excessCharge) }}</td>
-          </tr>
-          @endif
-          @if ($bill->discount_amount > 0)
-          <tr><td colspan="3">Senior Citizen Discount</td><td class="num">− {{ formatCurrency($bill->discount_amount) }}</td></tr>
-          @endif
-          @if ($bill->penalty_amount > 0)
-          <tr><td colspan="3">Overdue Penalty</td><td class="num">{{ formatCurrency($bill->penalty_amount) }}</td></tr>
-          @endif
-        </tbody>
-      </table>
-
       <div class="totals">
         <div class="row grand total-highlight"><span>Total Amount</span><span>{{ formatCurrency($bill->total_amount) }}</span></div>
         <div class="row">
