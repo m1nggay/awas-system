@@ -18,12 +18,13 @@
   table.bill-table th, table.bill-table td{border:1px solid var(--border);padding:9px 12px;font-size:13px;text-align:left;}
   table.bill-table th{background:#f4fafc;}
   .num{text-align:right !important;}
-  .actions-bar{max-width:760px;margin:0 auto 16px;text-align:right;}
+  .actions-bar{max-width:760px;margin:0 auto 16px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;}
   @media (max-width:640px){ .info{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
   <div class="actions-bar no-print">
+    <a href="{{ $backUrl }}" class="btn btn-secondary" id="backBtn">&larr; Back</a>
     <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
   </div>
   <div class="invoice">
@@ -110,5 +111,11 @@
       </p>
     </div>
   </div>
+<script>
+// Opened from a page in this tab: go back to it. Opened in a new tab: go to the bills page.
+document.getElementById('backBtn').addEventListener('click', function (e) {
+  if (history.length > 1 && document.referrer.indexOf(location.origin) === 0) { e.preventDefault(); history.back(); }
+});
+</script>
 </body>
 </html>

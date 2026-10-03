@@ -33,6 +33,7 @@ class BillPrintController extends Controller
         $previousBalance = $billing->previousBalance((int)$row->consumer_id, $row->billing_period);
 
         return view('bills.print', [
+            'backUrl'         => $user->isAdmin() ? route('admin.bills.index') : route('resident.bill'),
             'bill'            => $row,
             'barangayName'    => setting('barangay_name', 'Barangay Adlay'),
             'minCharge'       => $minCharge,
