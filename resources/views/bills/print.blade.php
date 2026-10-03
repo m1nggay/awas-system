@@ -48,7 +48,7 @@
           <div class="row"><span class="text-muted">Type of Consumer</span><strong>{{ consumerTypeLabel($bill->consumer_type) }}</strong></div>
         </div>
         <div>
-          <div class="row"><span class="text-muted">Billing Period</span><strong>{{ billingPeriodLabel($bill->billing_period) }}</strong></div>
+          <div class="row"><span class="text-muted">Month of</span><strong>{{ billingPeriodLabel($bill->billing_period) }}</strong></div>
           <div class="row"><span class="text-muted">Date</span><strong>{{ formatDate($bill->bill_date) }}</strong></div>
           <div class="row"><span class="text-muted">Status</span><span class="badge {{ billStatusBadgeClass($bill->status) }}">{{ str_replace('_', ' ', $bill->status) }}</span></div>
         </div>
