@@ -121,8 +121,9 @@ return new class extends Migration
         $added = 0;
         DB::transaction(function () use ($rows, $purokId, $adminId, &$added) {
             foreach ($rows as [$name, $meter]) {
-                if (DB::table('consumers')->where('full_name', $name)
-                        ->where(fn ($q) => $meter === null ? $q->whereNull('meter_number') : $q->where('meter_number', $meter))->exists()) {
+                // Already imported: same person in this purok, with this meter or saved without one.
+                if (DB::table('consumers')->where('full_name', $name)->where('purok_id', $purokId)
+                        ->where(fn ($q) => $q->whereNull('meter_number')->when($meter !== null, fn ($w) => $w->orWhere('meter_number', $meter)))->exists()) {
                     continue;   // already imported
                 }
                 if ($meter !== null && DB::table('consumers')->where('meter_number', $meter)->exists()) {
