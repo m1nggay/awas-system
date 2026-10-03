@@ -7,6 +7,6 @@
   @if ($myPuroks->isEmpty())
     <div class="alert alert-warning">No puroks are assigned to your account yet, so there are no consumers to read. Please ask the administrator to assign your puroks.</div>
   @else
-    <div class="alert alert-info py-2" style="font-size:13.5px;">📍 Your puroks: <strong>{{ $myPuroks->implode(', ') }}</strong></div>
+    <div class="alert alert-info py-2" style="font-size:13.5px;">📍 Assigned puroks: <strong>{{ $myPuroks->implode(', ') }}</strong></div>
   @endif
 @endif
