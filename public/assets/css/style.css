@@ -410,3 +410,13 @@ table.data-table td.actions{white-space:nowrap;display:flex;gap:6px;}
   .auth-body{padding:14px 10px;}
   .auth-card{padding:26px 18px;}
 }
+
+/* Phones: compact Consumer List (smaller text, one-line names, address hidden) */
+@media (max-width:576px){
+  .table.consumer-table > :not(caption) > * > *{padding:7px 8px;font-size:12.5px;}
+  .consumer-table th{font-size:10.5px;white-space:nowrap;}
+  .consumer-table td{white-space:nowrap;}
+  .consumer-table .consumer-addr{display:none;}
+  .consumer-table .badge{font-size:10.5px;}
+  .consumer-table td.actions .btn{padding:6px 10px;font-size:12px;}
+}

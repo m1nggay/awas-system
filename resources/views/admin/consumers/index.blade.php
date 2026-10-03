@@ -43,7 +43,7 @@
     </form>
 
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0 data-table">
+      <table class="table table-hover align-middle mb-0 data-table consumer-table">
         <thead>
           <tr><th>No.</th><th>Meter Number</th><th>Name</th><th>Purok</th><th>Type of Consumer</th><th>Status</th>@if ($isReader)<th>Last Reading</th><th>This Month</th>@endif<th>Actions</th></tr>
         </thead>
@@ -52,7 +52,7 @@
           <tr>
             <td>{{ $consumers->firstItem() + $i }}</td>
             <td><strong>{{ $c->meter_number ?: '—' }}</strong></td>
-            <td>{{ $c->display_name }}<div class="text-muted small">{{ $c->address }}</div></td>
+            <td class="consumer-name">{{ $c->display_name }}<div class="text-muted small consumer-addr">{{ $c->address }}</div></td>
             <td>{{ $c->purok_name }}</td>
             <td>{{ consumerTypeLabel($c->consumer_type) }}</td>
             <td><span class="badge {{ $c->status === 'active' ? 'badge-success' : ($c->status === 'disconnected' ? 'badge-danger' : 'badge-secondary') }}">{{ $c->status }}</span></td>
