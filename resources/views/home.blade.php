@@ -99,8 +99,6 @@
     .eyebrow-line{font-size:12.5px;margin-bottom:12px;}
     .hero h1{font-size:30px;margin-bottom:14px;}
     .hero p.lede{font-size:15px;margin-bottom:24px;}
-    .cta-row{flex-direction:column;gap:10px;}
-    .cta-row .btn{width:100%;}
     .features .wrap{padding:32px 18px;}
     footer.site-foot{padding:18px 18px 26px;}
   }
