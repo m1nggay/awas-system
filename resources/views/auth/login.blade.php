@@ -2,6 +2,10 @@
 
 @section('title', 'Login')
 
+@push('styles')
+<style>.auth-logo img{width:86px;height:86px;}</style>
+@endpush
+
 @section('content')
   <h1>AWAS Login</h1>
   <p class="subtitle">Smart Water Management &amp; Billing System<br>Barangay Adlay</p>
