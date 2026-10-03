@@ -29,7 +29,8 @@ class BillPrintController extends Controller
         $minCharge   = (float)setting('minimum_charge', 150);
         $includedCum = (float)setting('minimum_cubic_meters', 10);
         $balance = max(0, round((float)$row->total_amount - (float)$row->amount_paid, 2));
-        $previousBalance = $billing->unpaidBalance((int)$row->consumer_id, (int)$row->bill_id);
+        // Left unpaid from earlier months (not paid in full) — carried onto this bill.
+        $previousBalance = $billing->previousBalance((int)$row->consumer_id, $row->billing_period);
 
         return view('bills.print', [
             'bill'            => $row,

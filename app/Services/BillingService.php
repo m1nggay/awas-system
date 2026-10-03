@@ -111,6 +111,16 @@ class BillingService
             ->sum(DB::raw('total_amount - amount_paid')), 2);
     }
 
+    /** Amount still unpaid from the consumer's bills BEFORE the given billing month (carried onto that month's bill). */
+    public function previousBalance(int $consumerId, string $billingPeriod): float
+    {
+        return round((float)DB::table('water_bills')
+            ->where('consumer_id', $consumerId)
+            ->where('status', '!=', 'paid')
+            ->where('billing_period', '<', $billingPeriod)
+            ->sum(DB::raw('total_amount - amount_paid')), 2);
+    }
+
     /**
      * Creates the bill for a meter reading using the configured tariff, then
      * notifies the resident (their new bill) and every active administrator.
