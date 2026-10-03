@@ -20,7 +20,7 @@
 <div class="card">
   <div class="card-header">
     <h3>Payments</h3>
-    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#payModal">+ Record Payment at Barangay</button>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#payModal">+ Record Payment</button>
   </div>
   <div class="card-body">
     <ul class="nav nav-tabs pay-tabs mb-3">
@@ -111,7 +111,7 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <form method="POST" action="{{ route('admin.payments.store') }}" id="counterForm">
-        <div class="modal-header"><h3 class="h6 mb-0">Record Payment at the Barangay</h3><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-header"><h3 class="h6 mb-0">Record Payment</h3><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         @csrf
         <div class="modal-body">
           <div class="mb-3">
