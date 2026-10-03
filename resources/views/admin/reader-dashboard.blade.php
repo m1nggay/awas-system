@@ -3,6 +3,7 @@
 @section('title', 'Dashboard')
 
 @section('content')
+@include('partials.reader-puroks')
 <div class="row g-3 mb-4">
   <div class="col-6 col-md-4">
     <div class="stat-card">

@@ -3,6 +3,7 @@
 @section('title', 'Consumers')
 
 @section('content')
+@include('partials.reader-puroks')
 @php $isReader = auth()->user()->isMeterReader(); @endphp
 <div class="card">
   <div class="card-header">

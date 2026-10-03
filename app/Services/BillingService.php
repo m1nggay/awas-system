@@ -279,13 +279,14 @@ class BillingService
      * [ ['purok' => 'Purok 1', 'rows' => [ {meter_number, full_name, present, previous,
      *    consumption, total, balance, status, date_paid}, ... ]], ... ]
      */
-    public function getPurokReport(string $period, int $purokId = 0): array
+    public function getPurokReport(string $period, int $purokId = 0, ?array $onlyPuroks = null): array
     {
         $rows = DB::table('water_bills as b')
             ->join('consumers as c', 'c.consumer_id', '=', 'b.consumer_id')
             ->join('puroks as p', 'p.purok_id', '=', 'c.purok_id')
             ->leftJoin('meter_readings as mr', 'mr.reading_id', '=', 'b.reading_id')
             ->where('b.billing_period', $period)
+            ->when($onlyPuroks !== null, fn ($q) => $q->whereIn('c.purok_id', $onlyPuroks ?: [0]))
             ->when($purokId > 0, fn ($q) => $q->where('c.purok_id', $purokId))
             ->orderBy('p.purok_name')->orderBy('c.full_name')
             ->select('b.bill_id', 'p.purok_name', 'c.meter_number', 'c.full_name', 'mr.current_reading', 'mr.previous_reading',
@@ -315,9 +316,15 @@ class BillingService
         return array_map(fn ($purok, $items) => ['purok' => $purok, 'rows' => $items], array_keys($groups), $groups);
     }
 
-    /** @return array{columns: string[], rows: array<int, array>} */
-    public function getReportData(string $type, string $period = ''): array
+    /**
+     * $onlyPuroks limits the consumption and meter-reading reports to those
+     * puroks (a Meter Reader's assignment); null = all puroks.
+     *
+     * @return array{columns: string[], rows: array<int, array>}
+     */
+    public function getReportData(string $type, string $period = '', ?array $onlyPuroks = null): array
     {
+        $limit = fn ($q) => $onlyPuroks === null ? $q : $q->whereIn('c.purok_id', $onlyPuroks ?: [0]);
         $columns = [];
         $rows = collect();
 
@@ -328,6 +335,7 @@ class BillingService
                     ->join('consumers as c', 'c.consumer_id', '=', 'mr.consumer_id')
                     ->join('puroks as p', 'p.purok_id', '=', 'c.purok_id')
                     ->where('mr.billing_period', $period)
+                    ->tap($limit)
                     ->orderBy('c.full_name')
                     ->get(['c.meter_number', 'c.full_name', 'p.purok_name', 'mr.previous_reading', 'mr.current_reading', 'mr.consumption', 'mr.reading_date']);
                 break;
@@ -386,6 +394,7 @@ class BillingService
                 $rows = DB::table('meter_readings as mr')
                     ->join('consumers as c', 'c.consumer_id', '=', 'mr.consumer_id')
                     ->join('users as u', 'u.user_id', '=', 'mr.recorded_by')
+                    ->tap($limit)
                     ->orderByDesc('mr.reading_date')
                     ->get(['c.meter_number', 'c.full_name', 'mr.billing_period', 'mr.previous_reading', 'mr.current_reading', 'mr.consumption', 'mr.reading_date', 'u.full_name as staff_name']);
                 break;

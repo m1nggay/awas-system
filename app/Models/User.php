@@ -46,6 +46,28 @@ class User extends BaseModel implements AuthenticatableContract
         return $this->role === 'staff';
     }
 
+    private ?array $assignedPuroks = null;
+
+    /**
+     * Puroks this Meter Reader may read (set in Manage Users). Null means no
+     * restriction (administrators); an empty array means none assigned yet.
+     */
+    public function assignedPurokIds(): ?array
+    {
+        if (!$this->isMeterReader()) {
+            return null;
+        }
+        return $this->assignedPuroks ??= \Illuminate\Support\Facades\DB::table('meter_reader_puroks')
+            ->where('user_id', $this->user_id)->pluck('purok_id')->map(fn ($id) => (int)$id)->all();
+    }
+
+    /** Whether this user may read meters / see consumers of the given purok. */
+    public function canAccessPurok(int $purokId): bool
+    {
+        $ids = $this->assignedPurokIds();
+        return $ids === null || in_array($purokId, $ids, true);
+    }
+
     /** Name used in "Welcome, …": the username, or the first name for auto-generated applicant usernames. */
     public function welcomeName(): string
     {

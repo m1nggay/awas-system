@@ -20,10 +20,12 @@ class ConsumerController extends Controller
         $purokFil = (int)$request->query('purok', 0);
         $statusFil = clean($request->query('status'));
         $typeFil = clean($request->query('type'));
+        $allowed = $request->user()->assignedPurokIds();   // Meter Reader: only their puroks
 
         $consumers = Consumer::query()
             ->join('puroks as p', 'p.purok_id', '=', 'consumers.purok_id')
             ->select('consumers.*', 'p.purok_name')
+            ->when($allowed !== null, fn ($q) => $q->whereIn('consumers.purok_id', $allowed ?: [0]))
             ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w
                 ->where('consumers.full_name', like_operator(), "%$search%")
                 ->orWhere('consumers.meter_number', like_operator(), "%$search%")
@@ -51,7 +53,8 @@ class ConsumerController extends Controller
             'consumers' => $consumers,
             'lastReadings' => $lastReadings,
             'currentPeriod' => date('Y-m'),
-            'puroks'    => Purok::orderBy('purok_name')->get(),
+            'puroks'    => Purok::when($allowed !== null, fn ($q) => $q->whereIn('purok_id', $allowed ?: [0]))->orderBy('purok_name')->get(),
+            'noPuroks'  => $allowed === [],
             'search'    => $search,
             'purokFil'  => $purokFil,
             'statusFil' => $statusFil,

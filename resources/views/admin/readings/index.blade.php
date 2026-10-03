@@ -3,6 +3,7 @@
 @section('title', 'Meter Readings')
 
 @section('content')
+@include('partials.reader-puroks')
 @php $isReader = auth()->user()->isMeterReader(); $isAdmin = auth()->user()->isAdmin(); @endphp
 <div class="card">
   <div class="card-header">

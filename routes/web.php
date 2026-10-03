@@ -122,6 +122,7 @@ Route::middleware(['auth', 'idle'])->group(function () {
             Route::post('/users', [Admin\UserController::class, 'store'])->name('users.store');
             Route::post('/users/{user}/toggle-status', [Admin\UserController::class, 'toggleStatus'])->name('users.toggle');
             Route::post('/users/{user}/reset-password', [Admin\UserController::class, 'resetPassword'])->name('users.reset-password');
+            Route::post('/users/{user}/puroks', [Admin\UserController::class, 'updatePuroks'])->name('users.puroks');
 
             Route::get('/chatbot-faqs', [Admin\ChatbotFaqController::class, 'index'])->name('faqs.index');
             Route::post('/chatbot-faqs', [Admin\ChatbotFaqController::class, 'store'])->name('faqs.store');

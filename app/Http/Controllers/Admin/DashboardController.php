@@ -49,16 +49,20 @@ class DashboardController extends Controller
     /** The Meter Reader's simple home page: this period's progress and their latest readings. */
     private function meterReaderDashboard(Request $request, string $period)
     {
-        $readIds = DB::table('meter_readings')->where('billing_period', $period)->pluck('consumer_id');
+        $allowed = $request->user()->assignedPurokIds() ?: [0];   // only this reader's puroks
+        $mine = DB::table('consumers')->where('status', 'active')->whereIn('purok_id', $allowed);
+        $readIds = DB::table('meter_readings')->where('billing_period', $period)
+            ->whereIn('consumer_id', (clone $mine)->select('consumer_id'))->pluck('consumer_id');
 
         return view('admin.reader-dashboard', [
             'period'         => $period,
-            'activeCount'    => DB::table('consumers')->where('status', 'active')->count(),
+            'assignedPuroks' => DB::table('puroks')->whereIn('purok_id', $allowed)->orderBy('purok_name')->pluck('purok_name'),
+            'activeCount'    => (clone $mine)->count(),
             'readThisPeriod' => $readIds->count(),
             'myToday'        => DB::table('meter_readings')->where('recorded_by', $request->user()->user_id)
                 ->where('created_at', '>=', now()->startOfDay())->count(),
             'toRead'         => DB::table('consumers as c')->join('puroks as p', 'p.purok_id', '=', 'c.purok_id')
-                ->where('c.status', 'active')->whereNotIn('c.consumer_id', $readIds)
+                ->where('c.status', 'active')->whereIn('c.purok_id', $allowed)->whereNotIn('c.consumer_id', $readIds)
                 ->orderBy('p.purok_name')->orderBy('c.full_name')->limit(15)
                 ->get(['c.meter_number', 'c.full_name', 'p.purok_name']),
             'myReadings'     => DB::table('meter_readings as mr')

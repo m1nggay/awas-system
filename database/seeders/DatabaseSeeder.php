@@ -50,7 +50,7 @@ class DatabaseSeeder extends Seeder
 
     private function seedSampleData(): void
     {
-        foreach (['Purok 1', 'Purok 2', 'Purok 3(Phase 2)', 'Purok 4(Phase 2)', 'Purok 4(Extension)', 'Purok 6', 'Purok 7'] as $name) {
+        foreach (['Purok 1', 'Purok 2', 'Purok 3(Phase 2)', 'Purok 4(Phase 2)', 'Purok 4(Extension)', 'Purok 6', 'Purok 7', 'Purok 8'] as $name) {
             DB::table('puroks')->insertOrIgnore(['purok_name' => $name]);
         }
 
@@ -70,6 +70,10 @@ class DatabaseSeeder extends Seeder
         }
         $admin = $ids['admin'];
         $staff = $ids['meterreader'];
+        // Meter Reader 1 reads Purok 1 and Purok 6.
+        foreach (DB::table('puroks')->whereIn('purok_name', ['Purok 1', 'Purok 6'])->pluck('purok_id') as $purokId) {
+            DB::table('meter_reader_puroks')->insertOrIgnore(['user_id' => $staff, 'purok_id' => $purokId]);
+        }
 
         $rates = [
             ['Minimum Charge (0-10 cu.m.)', 0.00, 10.00, 0.00],

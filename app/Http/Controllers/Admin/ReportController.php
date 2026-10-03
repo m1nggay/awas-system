@@ -18,13 +18,14 @@ class ReportController extends Controller
     public function index(Request $request, BillingService $billing)
     {
         [$types, $type, $period, $purokId] = $this->params($request);
+        $allowed = $request->user()->assignedPurokIds();
 
         $data = ['columns' => [], 'rows' => []];
         $groups = [];
         if ($type === 'purok') {
-            $groups = $billing->getPurokReport($period, $purokId);
+            $groups = $billing->getPurokReport($period, $purokId, $allowed);
         } else {
-            $data = $billing->getReportData($type, $period);
+            $data = $billing->getReportData($type, $period, $allowed);
         }
 
         log_activity($request->user()->user_id, 'report_view', 'Viewed report: ' . $types[$type]
@@ -35,7 +36,7 @@ class ReportController extends Controller
             'reportType'  => $type,
             'period'      => $period,
             'periods'     => $this->periods(),
-            'puroks'      => Purok::orderBy('purok_name')->get(),
+            'puroks'      => Purok::when($allowed !== null, fn ($q) => $q->whereIn('purok_id', $allowed ?: [0]))->orderBy('purok_name')->get(),
             'purokId'     => $purokId,
             'groups'      => $groups,
             'columns'     => $data['columns'],
@@ -47,19 +48,20 @@ class ReportController extends Controller
     public function export(Request $request, BillingService $billing)
     {
         [$types, $type, $period, $purokId] = $this->params($request);
+        $allowed = $request->user()->assignedPurokIds();
 
         log_activity($request->user()->user_id, 'report_export', 'Downloaded report (CSV): ' . $types[$type]
             . (in_array($type, ['purok', 'consumption'], true) ? ' — ' . billingPeriodLabel($period) : ''));
 
         $filename = 'agas_report_' . $type . ($type === 'purok' || $type === 'consumption' ? '_' . $period : '') . '_' . date('Ymd_His') . '.csv';
 
-        return response()->streamDownload(function () use ($billing, $type, $period, $purokId, $types) {
+        return response()->streamDownload(function () use ($billing, $type, $period, $purokId, $types, $allowed) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF"); // UTF-8 marker so Excel shows ₱ and ñ correctly
 
             if ($type === 'purok') {
                 fputcsv($out, [$types['purok'] . ' — ' . billingPeriodLabel($period)]);
-                foreach ($billing->getPurokReport($period, $purokId) as $group) {
+                foreach ($billing->getPurokReport($period, $purokId, $allowed) as $group) {
                     fputcsv($out, []);
                     fputcsv($out, [mb_strtoupper($group['purok'])]);
                     fputcsv($out, ['No.', 'Meter Number', 'Name', 'Present Reading', 'Previous Reading', 'Consumption (m3)', 'Total', 'Balance', 'Status', 'Date Paid']);
@@ -73,7 +75,7 @@ class ReportController extends Controller
                     }
                 }
             } else {
-                $data = $billing->getReportData($type, $period);
+                $data = $billing->getReportData($type, $period, $allowed);
                 fputcsv($out, $data['columns']);
                 foreach ($data['rows'] as $row) {
                     fputcsv($out, $row);

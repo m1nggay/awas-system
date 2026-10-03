@@ -28,10 +28,12 @@ class MeterReadingController extends Controller
         $purokFil = (int)$request->query('purok', 0);
         $statusFil = clean($request->query('status'));
         $periodFil = clean($request->query('period'));
+        $allowed = $request->user()->assignedPurokIds();   // Meter Reader: only their puroks
 
         $readings = DB::table('meter_readings as mr')
             ->join('consumers as c', 'c.consumer_id', '=', 'mr.consumer_id')
             ->leftJoin('water_bills as b', 'b.reading_id', '=', 'mr.reading_id')
+            ->when($allowed !== null, fn ($q) => $q->whereIn('c.purok_id', $allowed ?: [0]))
             ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w
                 ->where('c.full_name', like_operator(), "%$search%")
                 ->orWhere('c.meter_number', like_operator(), "%$search%")))
@@ -45,7 +47,8 @@ class MeterReadingController extends Controller
 
         return view('admin.readings.index', [
             'readings'  => $readings,
-            'puroks'    => Purok::orderBy('purok_name')->get(),
+            'puroks'    => Purok::when($allowed !== null, fn ($q) => $q->whereIn('purok_id', $allowed ?: [0]))->orderBy('purok_name')->get(),
+            'noPuroks'  => $allowed === [],
             'periods'   => DB::table('meter_readings')->distinct()->orderByDesc('billing_period')->pluck('billing_period'),
             'tariff'    => $billing->tariff(),
             'search'    => $search,
@@ -68,9 +71,12 @@ class MeterReadingController extends Controller
 
         $c = DB::table('consumers as c')->join('puroks as p', 'p.purok_id', '=', 'c.purok_id')
             ->where('c.meter_number', $meter)
-            ->first(['c.consumer_id', 'c.full_name', 'c.status', 'c.is_senior', 'c.consumer_type', 'c.initial_meter_reading', 'p.purok_name']);
+            ->first(['c.consumer_id', 'c.full_name', 'c.status', 'c.is_senior', 'c.consumer_type', 'c.initial_meter_reading', 'c.purok_id', 'p.purok_name']);
         if (!$c) {
             return response()->json(['found' => false, 'message' => "No consumer has Meter Number $meter."]);
+        }
+        if (!$request->user()->canAccessPurok((int)$c->purok_id)) {
+            return response()->json(['found' => false, 'message' => "Meter Number $meter is in {$c->purok_name}, which is not assigned to you."]);
         }
 
         $last = DB::table('meter_readings')->where('consumer_id', $c->consumer_id)
@@ -103,12 +109,13 @@ class MeterReadingController extends Controller
         $remarks = clean($request->input('remarks'));
 
         $consumer = isValidMeterNumber($meter)
-            ? DB::table('consumers')->where('meter_number', $meter)->first(['consumer_id', 'full_name', 'status'])
+            ? DB::table('consumers')->where('meter_number', $meter)->first(['consumer_id', 'full_name', 'status', 'purok_id'])
             : null;
 
         $error = match (true) {
             !isValidMeterNumber($meter) => 'Meter Number must contain numbers only (e.g. 1001).',
             !$consumer => "No consumer has Meter Number $meter.",
+            !$request->user()->canAccessPurok((int)$consumer->purok_id) => "Meter Number $meter is not in a purok assigned to you.",
             $consumer->status !== 'active' => "Meter Number $meter belongs to an account that is not active.",
             !preg_match('/^\d{4}-\d{2}$/', $period) => 'Please choose a valid billing period.',
             !is_numeric($previousRaw) || !is_numeric($currentRaw) => 'Readings must be numbers.',
