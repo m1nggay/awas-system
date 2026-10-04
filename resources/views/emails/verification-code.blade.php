@@ -6,4 +6,3 @@
 <p><strong>What to do next:</strong> {{ $next }}</p>
 @endif
 <p>If you did not request this, you can safely ignore this email.</p>
-<p>— Barangay Adlay AWAS</p>

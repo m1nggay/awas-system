@@ -19,7 +19,7 @@ return [
     'brevo' => [
         'api_key'    => env('BREVO_API_KEY', ''),
         'from_email' => env('MAIL_FROM_EMAIL', 'no-reply@agas-adlay.local'),
-        'from_name'  => env('MAIL_FROM_NAME_AGAS', 'AWAS - Barangay Adlay'),
+        'from_name'  => env('MAIL_FROM_NAME_AWAS', 'AWAS - Adlay Water Augmentation System'),
     ],
 
     /* PayMongo hosted Checkout Sessions (GCash / card). */
