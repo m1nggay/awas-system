@@ -25,6 +25,8 @@ class ConsumerController extends Controller
         $consumers = Consumer::query()
             ->join('puroks as p', 'p.purok_id', '=', 'consumers.purok_id')
             ->select('consumers.*', 'p.purok_name')
+            // Unpaid balance — still shown after an account is disconnected.
+            ->selectRaw('(SELECT COALESCE(SUM(b.total_amount - b.amount_paid), 0) FROM water_bills b WHERE b.consumer_id = consumers.consumer_id AND b.status <> ? ) AS unpaid_balance', ['paid'])
             ->when($allowed !== null, fn ($q) => $q->whereIn('consumers.purok_id', $allowed ?: [0]))
             ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w
                 ->where('consumers.full_name', like_operator(), "%$search%")

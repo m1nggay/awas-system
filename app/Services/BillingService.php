@@ -330,6 +330,31 @@ class BillingService
             ];
         }
 
+        // Disconnected consumers get no new bills, but what they still owe must stay
+        // visible: list them with their remaining unpaid balance.
+        $billed = $rows->pluck('meter_number')->filter()->flip();
+        $disconnected = DB::table('consumers as c')
+            ->join('puroks as p', 'p.purok_id', '=', 'c.purok_id')
+            ->join('water_bills as b', 'b.consumer_id', '=', 'c.consumer_id')
+            ->where('c.status', 'disconnected')->where('b.status', '!=', 'paid')
+            ->when($purokId > 0, fn ($q) => $q->where('c.purok_id', $purokId))
+            ->when($onlyPuroks !== null, fn ($q) => $q->whereIn('c.purok_id', $onlyPuroks ?: [0]))
+            ->groupBy('c.consumer_id', 'c.meter_number', 'c.full_name', 'p.purok_name')
+            ->orderBy('p.purok_name')->orderBy('c.full_name')
+            ->selectRaw('c.meter_number, c.full_name, p.purok_name, SUM(b.total_amount - b.amount_paid) AS balance')
+            ->get();
+        foreach ($disconnected as $d) {
+            if ($d->meter_number && isset($billed[$d->meter_number])) {
+                continue;   // already listed with this month's bill
+            }
+            $groups[$d->purok_name][] = (object)[
+                'meter_number' => $d->meter_number, 'full_name' => $d->full_name,
+                'present' => null, 'previous' => null, 'consumption' => null, 'total' => null,
+                'balance' => max(0, round((float)$d->balance, 2)), 'status' => 'disconnected', 'date_paid' => null,
+            ];
+        }
+        ksort($groups, SORT_NATURAL);
+
         return array_map(fn ($purok, $items) => ['purok' => $purok, 'rows' => $items], array_keys($groups), $groups);
     }
 

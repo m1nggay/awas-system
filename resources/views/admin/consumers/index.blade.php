@@ -45,7 +45,7 @@
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0 data-table consumer-table">
         <thead>
-          <tr><th>No.</th><th>Meter Number</th><th>Name</th><th>Purok</th><th>Type of Consumer</th><th>Status</th>@if ($isReader)<th>Last Reading</th><th>This Month</th>@endif<th>Actions</th></tr>
+          <tr><th>No.</th><th>Meter Number</th><th>Name</th><th>Purok</th><th>Type of Consumer</th><th>Status</th>@unless ($isReader)<th>Balance</th>@endunless @if ($isReader)<th>Last Reading</th><th>This Month</th>@endif<th>Actions</th></tr>
         </thead>
         <tbody>
         @forelse ($consumers as $i => $c)
@@ -56,6 +56,9 @@
             <td>{{ $c->purok_name }}</td>
             <td>{{ consumerTypeLabel($c->consumer_type) }}</td>
             <td><span class="badge {{ $c->status === 'active' ? 'badge-success' : ($c->status === 'disconnected' ? 'badge-danger' : 'badge-secondary') }}">{{ $c->status }}</span></td>
+            @unless ($isReader)
+              <td>@if ((float)$c->unpaid_balance > 0)<span class="text-danger fw-semibold">{{ formatCurrency($c->unpaid_balance) }}</span>@if ($c->status === 'disconnected')<div class="text-muted" style="font-size:11px;">unpaid before disconnection</div>@endif @else<span class="text-muted">₱0.00</span>@endif</td>
+            @endunless
             @if ($isReader)
               @php $last = $lastReadings[$c->consumer_id] ?? null; @endphp
               <td>@if ($last){{ number_format($last->current_reading, 2) }}<div class="text-muted small">{{ billingPeriodLabel($last->billing_period) }}</div>@else<span class="text-muted">—</span>@endif</td>
@@ -79,7 +82,7 @@
             </td>
           </tr>
         @empty
-          <tr class="empty-row"><td colspan="{{ $isReader ? 9 : 7 }}">No consumers found.</td></tr>
+          <tr class="empty-row"><td colspan="{{ $isReader ? 9 : 8 }}">No consumers found.</td></tr>
         @endforelse
         </tbody>
       </table>

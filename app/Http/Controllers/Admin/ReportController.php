@@ -68,9 +68,13 @@ class ReportController extends Controller
                     foreach ($group['rows'] as $i => $r) {
                         fputcsv($out, [
                             $i + 1, $r->meter_number, $r->full_name,
-                            number_format($r->present, 2, '.', ''), number_format($r->previous, 2, '.', ''),
-                            number_format($r->consumption, 2, '.', ''), number_format($r->total, 2, '.', ''),
-                            number_format($r->balance, 2, '.', ''), ucwords(str_replace('_', ' ', $r->status)), $r->date_paid ?? 'N/A',
+                            $r->present !== null ? number_format($r->present, 2, '.', '') : '',
+                            $r->previous !== null ? number_format($r->previous, 2, '.', '') : '',
+                            $r->consumption !== null ? number_format($r->consumption, 2, '.', '') : '',
+                            $r->total !== null ? number_format($r->total, 2, '.', '') : '',
+                            number_format($r->balance, 2, '.', ''),
+                            $r->status === 'disconnected' ? 'Disconnected (unpaid before disconnection)' : ucwords(str_replace('_', ' ', $r->status)),
+                            $r->date_paid ?? 'N/A',
                         ]);
                     }
                 }
