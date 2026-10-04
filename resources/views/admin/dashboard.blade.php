@@ -15,9 +15,10 @@
   ];
 @endphp
 <div class="row g-3 mb-4">
-  @foreach ($statCards as [$label, $value, $icon, $variant])
-    <div class="col-6 col-md-4 col-xl-3">
-      <div class="stat-card {{ $variant }}">
+  @foreach ($statCards as $i => [$label, $value, $icon, $variant])
+    {{-- 7 cards: the last one spans the full row on phones and tablets so nothing is left alone --}}
+    <div class="{{ $loop->last ? 'col-12 col-xl-3' : 'col-6 col-md-4 col-xl-3' }}">
+      <div class="stat-card h-100 {{ $variant }}">
         <div class="stat-info"><div class="label">{{ $label }}</div><div class="value">{{ $value }}</div></div>
         <div class="stat-icon">{{ $icon }}</div>
       </div>
@@ -38,7 +39,11 @@
     <div class="card h-100">
       <div class="card-body">
         <h3 class="h6 mb-3">Bill Status — {{ billingPeriodLabel($currentPeriod) }}</h3>
-        <canvas id="statusChart" height="220"></canvas>
+        @if (array_sum($billsByStatus) > 0)
+          <canvas id="statusChart" height="220"></canvas>
+        @else
+          <div class="text-center text-muted py-5" style="font-size:13.5px;">🧾 No bills yet for {{ billingPeriodLabel($currentPeriod) }}.<br>They appear here once the meter readers record this month's readings.</div>
+        @endif
       </div>
     </div>
   </div>
@@ -86,7 +91,7 @@ new Chart(document.getElementById("trendChart"), {
   },
   options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
 });
-new Chart(document.getElementById("statusChart"), {
+if (document.getElementById("statusChart")) new Chart(document.getElementById("statusChart"), {
   type: "doughnut",
   data: {
     labels: ["Paid", "Unpaid", "Partially Paid", "Overdue"],

@@ -49,3 +49,27 @@ function updateConsumptionPreview() {
     out.style.color = diff < 0 ? '#e5533d' : '#0077b6';
   }
 }
+
+/**
+ * Notification bell: opening it marks the notifications as read, so the red
+ * count disappears right away (the items stay highlighted until the bell closes).
+ */
+document.addEventListener('DOMContentLoaded', function () {
+  var btn = document.getElementById('notifBtn');
+  if (!btn || !btn.getAttribute('data-read-url')) return;
+  var token = document.querySelector('meta[name="csrf-token"]');
+
+  btn.addEventListener('shown.bs.dropdown', function () {
+    var badge = btn.querySelector('.notif-badge');
+    if (!badge) return;
+    badge.remove();
+    fetch(btn.getAttribute('data-read-url'), {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'X-CSRF-TOKEN': token ? token.content : '', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    }).catch(function () { /* will be marked next time */ });
+  });
+  btn.addEventListener('hidden.bs.dropdown', function () {
+    document.querySelectorAll('#notifPanel .notif-panel-item.unread').forEach(function (el) { el.classList.remove('unread'); });
+  });
+});

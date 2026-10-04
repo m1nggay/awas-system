@@ -431,3 +431,14 @@ table.data-table td.actions{white-space:nowrap;display:flex;gap:6px;}
 @keyframes liveIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
 tr.live-new > td{animation:liveRow 4s ease;}
 @keyframes liveRow{0%,40%{background:#fff4d1;}100%{background:transparent;}}
+
+/* Stat cards: the peso sign (₱) shows on every phone font */
+.stat-card .stat-info .value{font-family:'Poppins',system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans',Arial,sans-serif;}
+.stat-card .stat-info{min-width:0;}
+/* Phones: equal, compact stat cards */
+@media (max-width:576px){
+  .stat-card{padding:14px 12px;gap:8px;}
+  .stat-card .stat-info .label{font-size:11.5px;line-height:1.35;margin-bottom:4px;}
+  .stat-card .stat-info .value{font-size:20px;line-height:1.2;word-break:break-word;}
+  .stat-card .stat-icon{width:34px;height:34px;font-size:16px;border-radius:8px;}
+}

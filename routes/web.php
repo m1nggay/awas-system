@@ -8,6 +8,7 @@ use App\Http\Controllers\BillPrintController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\GcashQrController;
 use App\Http\Controllers\PaymentReceiptController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MembershipApplicationController;
 use App\Http\Controllers\Resident;
@@ -50,6 +51,9 @@ Route::post('/logout', [Auth\LoginController::class, 'logout'])->name('logout');
 Route::middleware(['auth', 'idle'])->group(function () {
 
     Route::get('/applicant/status', ApplicantStatusController::class)->name('applicant.status');
+
+    // Opening the notification bell marks notifications as read — every signed-in role.
+    Route::post('/notifications/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
     // Change password with an emailed code — every signed-in role.
     Route::get('/account/password', [AccountController::class, 'show'])->name('account.password');
