@@ -118,6 +118,8 @@ Route::middleware(['auth', 'idle'])->group(function () {
             Route::put('/puroks/{purok}', [Admin\PurokController::class, 'update'])->name('puroks.update');
             Route::delete('/puroks/{purok}', [Admin\PurokController::class, 'destroy'])->name('puroks.destroy');
 
+            // Automatic checking for new readings / notifications (polled by live.js).
+            Route::get('/live-updates', Admin\LiveUpdateController::class)->name('live');
             Route::get('/users', [Admin\UserController::class, 'index'])->name('users.index');
             Route::post('/users', [Admin\UserController::class, 'store'])->name('users.store');
             Route::post('/users/{user}/toggle-status', [Admin\UserController::class, 'toggleStatus'])->name('users.toggle');

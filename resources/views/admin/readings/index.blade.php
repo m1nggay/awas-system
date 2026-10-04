@@ -43,7 +43,7 @@
     </form>
 
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0 data-table">
+      <table class="table table-hover align-middle mb-0 data-table" @if ($isAdmin && $readings->currentPage() === 1 && $search === '' && !$purokFil && $statusFil === '' && $periodFil === '') data-live-readings @endif>
         <thead>
           <tr>
             <th>No.</th><th>Meter Number</th><th>Name</th><th>Previous Reading</th><th>Present Reading</th>
@@ -53,27 +53,7 @@
         </thead>
         <tbody>
         @forelse ($readings as $i => $r)
-          <tr>
-            <td>{{ $readings->firstItem() + $i }}</td>
-            <td><strong>{{ $r->meter_number ?: '—' }}</strong></td>
-            <td>{{ $r->full_name }}</td>
-            <td>{{ number_format($r->previous_reading, 2) }}</td>
-            <td>{{ number_format($r->current_reading, 2) }}</td>
-            <td class="consumption-value">{{ number_format($r->consumption, 2) }} m³</td>
-            <td>{{ $r->bill_total !== null ? formatCurrency($r->bill_total) : '—' }}</td>
-            <td>{{ $r->bill_total !== null ? formatCurrency(max(0, $r->bill_total - $r->bill_paid)) : '—' }}</td>
-            <td>
-              @if ($r->bill_status)
-                <span class="badge {{ billStatusBadgeClass($r->bill_status) }}">{{ str_replace('_', ' ', $r->bill_status) }}</span>
-              @else — @endif
-            </td>
-            <td>{{ formatDate($r->reading_date) }}<div class="text-muted" style="font-size:11px;">{{ billingPeriodLabel($r->billing_period) }}</div></td>
-            @if ($isAdmin)
-              <td class="actions">
-                <button class="btn btn-secondary btn-sm" onclick="openEditReading({{ json_encode($r) }}, '{{ route('admin.readings.update', $r->reading_id) }}')">Correct</button>
-              </td>
-            @endif
-          </tr>
+          @include('admin.readings._row', ['r' => $r, 'no' => $readings->firstItem() + $i, 'isAdmin' => $isAdmin])
         @empty
           <tr class="empty-row"><td colspan="{{ $isAdmin ? 11 : 10 }}">No meter readings found{{ ($search !== '' || $purokFil || $statusFil !== '' || $periodFil !== '') ? ' for this filter' : '' }}.</td></tr>
         @endforelse

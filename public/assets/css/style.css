@@ -420,3 +420,14 @@ table.data-table td.actions{white-space:nowrap;display:flex;gap:6px;}
   .consumer-table .badge{font-size:10.5px;}
   .consumer-table td.actions .btn{padding:6px 10px;font-size:12px;}
 }
+
+/* Automatic checking (live.js): pop-ups and newly arrived rows */
+.live-toasts{position:fixed;right:16px;bottom:96px;z-index:1080;display:flex;flex-direction:column;gap:8px;max-width:min(360px,calc(100vw - 32px));}
+.live-toast{background:#fff;border:1px solid var(--border);border-left:4px solid var(--primary);border-radius:10px;padding:10px 14px;
+  box-shadow:0 8px 24px rgba(0,0,0,.15);cursor:pointer;animation:liveIn .25s ease;transition:opacity .4s,transform .4s;}
+.live-toast.hide{opacity:0;transform:translateX(20px);}
+.live-toast-title{font-weight:700;font-size:13.5px;color:var(--primary-dark);}
+.live-toast-text{font-size:13px;color:var(--text);margin-top:2px;}
+@keyframes liveIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+tr.live-new > td{animation:liveRow 4s ease;}
+@keyframes liveRow{0%,40%{background:#fff4d1;}100%{background:transparent;}}

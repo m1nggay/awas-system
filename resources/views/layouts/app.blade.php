@@ -64,7 +64,7 @@
 <link rel="icon" type="image/png" href="{{ asset('assets/img/logo.png') }}">
 @stack('styles')
 </head>
-<body>
+<body @if (!empty($liveStart)) data-live-url="{{ route('admin.live') }}" data-live-reading="{{ $liveStart['reading'] }}" data-live-notif="{{ $liveStart['notif'] }}" @endif>
 <div id="pageTransitionOverlay" aria-hidden="true"></div>
 <div class="app-shell">
 
@@ -118,7 +118,7 @@
             🔔
             @if (($unreadCount ?? 0) > 0)<span class="notif-badge">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>@endif
           </button>
-          <div class="dropdown-menu dropdown-menu-end notif-panel" aria-labelledby="notifBtn">
+          <div class="dropdown-menu dropdown-menu-end notif-panel" aria-labelledby="notifBtn" id="notifPanel">
             <div class="notif-panel-header">Notifications</div>
             @forelse ($notifications ?? [] as $n)
               <div class="notif-panel-item {{ $n->is_read ? '' : 'unread' }}">
@@ -154,6 +154,9 @@
 <script src="{{ asset('assets/js/main.js') }}"></script>
 <script src="{{ asset('assets/js/forms.js') }}?v={{ @filemtime(public_path('assets/js/forms.js')) ?: '1' }}"></script>
 <script src="{{ asset('assets/js/transitions.js') }}"></script>
+@if (!empty($liveStart))
+<script src="{{ asset('assets/js/live.js') }}?v={{ @filemtime(public_path('assets/js/live.js')) ?: '1' }}"></script>
+@endif
 @stack('scripts')
 </body>
 </html>
