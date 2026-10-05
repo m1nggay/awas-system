@@ -72,7 +72,7 @@
                   <span class="text-muted small">—</span>
                 @endif
               @else
-              <a class="btn btn-outline btn-sm" href="{{ route('admin.consumers.history', $c) }}" title="View History">History</a>
+              <a class="btn btn-outline btn-sm" href="{{ route('admin.consumers.history', $c) }}" title="View History" data-history="{{ route('admin.consumers.history', [$c, 'partial' => 1]) }}" data-history-name="{{ $c->display_name }}">History</a>
               <button class="btn btn-secondary btn-sm" onclick="openEditModal({{ json_encode($c) }}, '{{ route('admin.consumers.update', $c) }}')">Edit</button>
               <form method="POST" action="{{ route('admin.consumers.destroy', $c) }}" class="d-inline" data-confirm="Delete this consumer? This cannot be undone.">
                 @csrf @method('DELETE')
@@ -146,4 +146,30 @@ function openEditModal(c, action) {
 }
 </script>
 @endunless
+
+{{-- Consumer history pop-up (filled by the History buttons) --}}
+<div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <div class="modal-header"><h3 class="h6 mb-0">History — <span id="historyName"></span></h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body" id="historyBody" style="background:#f4fafc;"></div>
+    </div>
+  </div>
+</div>
+<script>
+// History opens here in a pop-up instead of a separate page.
+document.addEventListener('click', function (e) {
+  const link = e.target.closest('[data-history]');
+  if (!link || e.ctrlKey || e.metaKey || e.shiftKey) return;   // Ctrl-click still opens the full page
+  e.preventDefault();
+  const body = document.getElementById('historyBody');
+  document.getElementById('historyName').textContent = link.dataset.historyName;
+  body.innerHTML = '<div class="text-center text-muted p-5">Loading…</div>';
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('historyModal')).show();
+  fetch(link.dataset.history, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+    .then(r => r.ok ? r.text() : Promise.reject())
+    .then(html => { body.innerHTML = html; })
+    .catch(() => { body.innerHTML = '<div class="alert alert-danger m-0">Could not load the history. <a href="' + link.href + '">Open it as a page</a>.</div>'; });
+});
+</script>
 @endsection

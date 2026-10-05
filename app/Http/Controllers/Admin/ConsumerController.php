@@ -108,11 +108,12 @@ class ConsumerController extends Controller
         return back();
     }
 
-    public function history(Consumer $consumer, BillingService $billing)
+    public function history(Request $request, Consumer $consumer, BillingService $billing)
     {
         $consumer->purok_name = DB::table('puroks')->where('purok_id', $consumer->purok_id)->value('purok_name');
 
-        return view('admin.consumers.history', [
+        // ?partial=1: only the content, for the History pop-up on the Consumers page.
+        return view($request->boolean('partial') ? 'admin.consumers._history-body' : 'admin.consumers.history', [
             'consumer' => $consumer,
             'balance'  => $billing->unpaidBalance($consumer->consumer_id),
             'readings' => DB::table('meter_readings')->where('consumer_id', $consumer->consumer_id)->orderByDesc('billing_period')->get(),

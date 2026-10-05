@@ -53,14 +53,9 @@
         <input type="text" name="q" class="form-control" placeholder="Search by Meter Number, Name, or reference number..." value="{{ $search }}">
       </div>
       <select name="method" class="form-select w-auto" onchange="this.form.submit()">
-        <option value="">All Methods</option>
-        <option value="cash" @selected($methodFil === 'cash')>Cash</option>
+        <option value="">All</option>
         <option value="gcash" @selected($methodFil === 'gcash')>GCash QR</option>
-      </select>
-      <select name="channel" class="form-select w-auto" onchange="this.form.submit()">
-        <option value="">Online &amp; at the barangay</option>
-        <option value="online" @selected($channelFil === 'online')>Online</option>
-        <option value="counter" @selected($channelFil === 'counter')>At the barangay</option>
+        <option value="cash" @selected($methodFil === 'cash')>Cash</option>
       </select>
       <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
       @if ($search !== '' || $methodFil !== '' || $channelFil !== '')
@@ -128,10 +123,9 @@
         @csrf
         <div class="modal-body">
           <div class="mb-3">
-            <label for="billSearch" class="form-label">Water Bill *</label>
             <div class="input-group mb-2">
               <span class="input-group-text">🔍</span>
-              <input type="search" id="billSearch" class="form-control" placeholder="Type a name or meter number to find the bill" autocomplete="off">
+              <input type="search" id="billSearch" class="form-control" placeholder="Type a name or meter number to find the bill" autocomplete="off" aria-label="Find the water bill">
             </div>
             <div class="bill-pick" id="billPick" role="radiogroup" aria-label="Water bill">
               @forelse ($payableBills as $pb)
@@ -148,7 +142,6 @@
               @empty
                 <div class="text-muted text-center p-3">No unpaid bills.</div>
               @endforelse
-              <div class="text-muted text-center p-3" id="billHint">🔍 Type the consumer's name or meter number above to find the bill.</div>
               <div class="text-muted text-center p-3" id="billNoMatch" hidden>No bill matches your search.</div>
             </div>
             <div class="text-muted mt-1" style="font-size:11.5px;">Bills with an online GCash payment waiting for verification are not listed — verify or reject that payment first.</div>
@@ -265,7 +258,8 @@ function openReject(action, who) {
       o.hidden = !(match || chosen);
       if (match) shown++;
     });
-    document.getElementById('billHint').hidden = q !== '' || !!picker.querySelector('input[name="bill_id"]:checked') || !picker.querySelector('.bill-option');
+    // The list box only appears once there is something to show.
+    picker.hidden = q === '' && !picker.querySelector('input[name="bill_id"]:checked');
     document.getElementById('billNoMatch').hidden = q === '' || shown > 0;
   }
   search.addEventListener('input', filterBills);
