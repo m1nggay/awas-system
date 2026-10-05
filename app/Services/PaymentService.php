@@ -117,9 +117,9 @@ class PaymentService
      * Consumer paid in person; an administrator records it as Paid.
      * @return array{0: ?object, 1: ?string} [payment, error]
      */
-    public function recordAtCounter(int $billId, string $method, float $amount, string $reference, ?string $remarks, int $staffId): array
+    public function recordAtCounter(int $billId, string $method, float $amount, ?string $receiptFile, ?string $remarks, int $staffId): array
     {
-        return DB::transaction(function () use ($billId, $method, $amount, $reference, $remarks, $staffId) {
+        return DB::transaction(function () use ($billId, $method, $amount, $receiptFile, $remarks, $staffId) {
             $bill = DB::table('water_bills')->where('bill_id', $billId)->lockForUpdate()->first();
             $balance = $bill ? $this->balance($bill) : 0;
 
@@ -130,8 +130,8 @@ class PaymentService
                 $this->pendingPayment($billId) !== null => 'This bill has an online GCash payment waiting for verification. Verify or reject it first.',
                 $amount <= 0 => 'Payment amount must be greater than zero.',
                 $amount > $balance + 0.009 => 'Amount is more than the balance of ' . formatCurrency($balance) . '.',
-                $method === 'gcash' && $reference !== '' && !$this->isValidGcashReference($reference) => 'The GCash reference number must be the 13-digit Ref. No. on the consumer\'s GCash receipt (numbers only) — or leave it blank.',
-                $method === 'gcash' && $reference !== '' && $this->referenceInUse($reference) => 'That GCash reference number was already recorded.',
+                $method === 'gcash' && !$receiptFile => 'Please upload the screenshot of the consumer\'s GCash payment.',
+                $method === 'gcash' && $this->screenshotAlreadyUsed($receiptFile) => 'This screenshot was already used for another payment. Please upload the screenshot of THIS payment.',
                 default => null,
             };
             if ($error) {
@@ -146,7 +146,8 @@ class PaymentService
                 'amount_paid'            => round($amount, 2),
                 'payment_method'         => $method,
                 'channel'                => 'counter',
-                'payment_gateway_txn_id' => $method === 'gcash' ? $reference : null,
+                'payment_gateway_txn_id' => null,
+                'receipt_file'           => $method === 'gcash' ? $receiptFile : null,
                 'payment_date'           => now(),
                 'status'                 => 'verified',
                 'received_by'            => $staffId,

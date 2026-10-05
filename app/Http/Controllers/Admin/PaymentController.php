@@ -81,19 +81,32 @@ class PaymentController extends Controller
     }
 
     /** Consumer paid in person at the barangay: Cash or GCash QR — recorded as Paid. */
-    public function store(Request $request, PaymentService $payments)
+    public function store(Request $request, PaymentService $payments, ApplicationFiles $files)
     {
         $method = clean($request->input('payment_method'));
+
+        // GCash at the barangay: the screenshot of the consumer's GCash payment is the proof.
+        $receipt = null;
+        if ($method === 'gcash') {
+            $errors = [];
+            $receipt = $files->in('payment-receipts')->store($request->file('gcash_screenshot'), '', 'GCash payment screenshot', true, $errors);
+            if ($errors) {
+                flash('danger', $errors[0]);
+                return back()->withInput();
+            }
+        }
+
         [$payment, $error] = $payments->recordAtCounter(
             (int)$request->input('bill_id', 0),
             $method,
             (float)$request->input('amount_paid', 0),
-            $payments->normalizeReference($request->input('gcash_reference')),
+            $receipt,
             clean($request->input('remarks')) ?: null,
             $request->user()->user_id
         );
 
         if ($error) {
+            $files->in('payment-receipts')->delete($receipt);
             flash('danger', $error);
             return back()->withInput();
         }
