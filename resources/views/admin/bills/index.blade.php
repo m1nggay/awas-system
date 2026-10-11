@@ -4,10 +4,6 @@
 
 @section('content')
 <div class="card">
-  <div class="card-header">
-    <h3>Water Bills</h3>
-    <span class="text-muted small">Bills are generated automatically when the meter reader records a reading.</span>
-  </div>
   <div class="card-body">
     <form method="GET" action="{{ route('admin.bills.index') }}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
       <div class="input-group flex-grow-1" style="min-width:200px;">
@@ -50,7 +46,7 @@
               @if (isset($pendingBillIds[$b->bill_id]))<div><span class="badge badge-warning">Pending Verification</span></div>@endif
             </td>
             <td class="actions">
-              <a class="btn btn-outline btn-sm" href="{{ route('bills.print', $b->bill_id) }}" target="_blank">View Bill</a>
+              <a class="btn btn-outline btn-sm" href="{{ route('bills.print', $b->bill_id) }}" data-bill-view="{{ route('bills.print', [$b->bill_id, 'embed' => 1]) }}">View Bill</a>
               @if (isset($pendingBillIds[$b->bill_id]))
                 <a class="btn btn-warning btn-sm" href="{{ route('admin.payments.index', ['tab' => 'pending', 'q' => $b->meter_number]) }}">Verify Payment</a>
               @elseif ($b->status !== 'paid')
@@ -68,4 +64,34 @@
     @include('partials.pagination', ['paginator' => $bills])
   </div>
 </div>
+
+<div class="modal fade" id="billViewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <div class="modal-body p-0">
+        <iframe id="billViewFrame" title="Water bill" style="width:100%;height:70vh;border:0;display:block;"></iframe>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="billViewPrint">🖨️ Print / Save as PDF</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// View Bill opens here in a pop-up instead of a separate page.
+// Must run before transitions.js, which would otherwise navigate away on the click.
+(function () {
+  const modal = document.getElementById('billViewModal'), frame = document.getElementById('billViewFrame');
+  document.addEventListener('click', function (e) {
+    const link = e.target.closest('[data-bill-view]');
+    if (!link || e.ctrlKey || e.metaKey || e.shiftKey) return;   // Ctrl-click still opens the full page
+    e.preventDefault();
+    frame.src = link.dataset.billView;
+    bootstrap.Modal.getOrCreateInstance(modal).show();
+  });
+  document.getElementById('billViewPrint').addEventListener('click', () => frame.contentWindow.print());
+  modal.addEventListener('hidden.bs.modal', () => { frame.src = 'about:blank'; });
+})();
+</script>
 @endsection

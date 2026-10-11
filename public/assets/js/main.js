@@ -63,6 +63,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var badge = btn.querySelector('.notif-badge');
     if (!badge) return;
     badge.remove();
+    // The unread count beside "Notifications" in the sidebar, too.
+    document.querySelectorAll('[data-nav="notifications.index"] .badge').forEach(function (el) { el.remove(); });
     fetch(btn.getAttribute('data-read-url'), {
       method: 'POST',
       credentials: 'same-origin',

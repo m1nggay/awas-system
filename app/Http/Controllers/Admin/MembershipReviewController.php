@@ -27,12 +27,37 @@ class MembershipReviewController extends Controller
         'rejected'             => 'Rejected',
         'pending_verification' => 'Awaiting email verification',
         ''                     => 'All applications',
+        'self_registered'      => 'Self-registered accounts',
     ];
 
     public function index(Request $request)
     {
         $search = clean($request->query('q'));
         $statusFil = $request->has('status') ? clean($request->query('status')) : 'pending_review';
+
+        // Existing consumers who created their own login online (Register page) — not applications.
+        if ($statusFil === 'self_registered') {
+            $accounts = DB::table('users as u')
+                ->leftJoin('consumers as c', 'c.user_id', '=', 'u.user_id')
+                ->leftJoin('puroks as p', 'p.purok_id', '=', 'c.purok_id')
+                ->where('u.role', 'resident')
+                ->whereIn('u.user_id', DB::table('activity_logs')->where('action', 'register')->whereNotNull('user_id')->select('user_id'))
+                ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w
+                    ->where('u.full_name', like_operator(), "%$search%")
+                    ->orWhere('u.username', like_operator(), "%$search%")
+                    ->orWhere('u.email', like_operator(), "%$search%")
+                    ->orWhere('c.meter_number', like_operator(), "%$search%")))
+                ->orderByDesc('u.created_at')
+                ->select('u.user_id', 'u.username', 'u.full_name', 'u.email', 'u.status', 'u.created_at', 'u.last_login', 'c.meter_number', 'p.purok_name')
+                ->paginate(12)->appends($request->query());
+
+            return view('admin.applications.index', [
+                'accounts'      => $accounts,
+                'statusOptions' => self::STATUS_OPTIONS,
+                'search'        => $search,
+                'statusFil'     => $statusFil,
+            ]);
+        }
 
         $applications = DB::table('membership_applications as a')
             ->join('puroks as p', 'p.purok_id', '=', 'a.purok_id')
@@ -43,7 +68,7 @@ class MembershipReviewController extends Controller
             ->when($statusFil !== '' && isset(self::STATUS_OPTIONS[$statusFil]), fn ($q) => $q->where('a.status', $statusFil))
             ->orderByDesc('a.created_at')
             ->select('a.*', 'p.purok_name')
-            ->paginate(12)->withQueryString();
+            ->paginate(12)->appends($request->query());
 
         return view('admin.applications.index', [
             'applications'  => $applications,
@@ -51,6 +76,49 @@ class MembershipReviewController extends Controller
             'search'        => $search,
             'statusFil'     => $statusFil,
         ]);
+    }
+
+    /**
+     * Deletes a self-registered login. The consumer's water account, bills and
+     * payments stay; the consumer can register again with their Meter Number.
+     */
+    public function deleteAccount(Request $request, int $user)
+    {
+        $account = DB::table('users')->where('user_id', $user)->where('role', 'resident')->first(['user_id', 'username', 'full_name']);
+        if (!$account) {
+            flash('danger', 'Account not found.');
+            return back();
+        }
+        $meter = DB::table('consumers')->where('user_id', $account->user_id)->value('meter_number');
+
+        DB::table('users')->where('user_id', $account->user_id)->delete();
+        log_activity($request->user()->user_id, 'user_delete', "Deleted self-registered account {$account->username} ({$account->full_name}"
+            . ($meter ? ", meter $meter" : '') . ')');
+        flash('success', "Account {$account->username} was deleted. The consumer's water account and bills were kept.");
+        return back();
+    }
+
+    /**
+     * Deletes an application and its ID / face images. The applicant's login
+     * goes too unless the application is already active — an active consumer
+     * keeps their water account, login, bills and payments.
+     */
+    public function destroy(Request $request, MembershipApplication $application, ApplicationFiles $files)
+    {
+        $removeLogin = $application->status !== 'active' && $application->user_id;
+        DB::transaction(function () use ($application, $removeLogin) {
+            $application->delete();
+            if ($removeLogin) {
+                DB::table('users')->where('user_id', $application->user_id)->where('role', 'applicant')->delete();
+            }
+        });
+        foreach ([$application->id_file, $application->id_back_file, $application->face_file] as $name) {
+            $files->delete($name);
+        }
+
+        log_activity($request->user()->user_id, 'application_delete', "Deleted membership application {$application->reference_code} ({$application->full_name})");
+        flash('success', "Application {$application->reference_code} was deleted.");
+        return redirect()->route('admin.applications.index', $request->only('status', 'q'));
     }
 
     public function show(MembershipApplication $application)

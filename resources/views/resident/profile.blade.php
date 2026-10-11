@@ -5,9 +5,9 @@
 @section('content')
 @include('partials.errors')
 
-<div class="row g-3">
-  <div class="col-md-6">
-  <div class="card h-100">
+<div class="row g-3 align-items-start">
+  <div class="col-md-6 d-flex flex-column gap-3">
+  <div class="card mb-0">
     <div class="card-header"><h3>Account Information</h3></div>
     <div class="card-body">
       @if ($consumer)
@@ -22,10 +22,18 @@
       @endif
     </div>
   </div>
+
+  <div class="card mb-0">
+    <div class="card-header"><h3>Change Password</h3></div>
+    <div class="card-body">
+      <p class="text-muted mb-3">For your security, changing your password needs a 6-digit code sent to your registered email.</p>
+      <a href="{{ route('account.password') }}" class="btn btn-primary">Change Password</a>
+    </div>
+  </div>
   </div>
 
   <div class="col-md-6">
-  <div class="card h-100">
+  <div class="card mb-0">
     <div class="card-header"><h3>Update Contact Info</h3></div>
     <div class="card-body">
       <form method="POST" action="{{ route('resident.profile.contact') }}">
@@ -36,14 +44,6 @@
       </form>
     </div>
   </div>
-  </div>
-</div>
-
-<div class="card">
-  <div class="card-header"><h3>Change Password</h3></div>
-  <div class="card-body">
-    <p class="text-muted mb-3">For your security, changing your password needs a 6-digit code sent to your registered email.</p>
-    <a href="{{ route('account.password') }}" class="btn btn-primary">Change Password</a>
   </div>
 </div>
 @endsection

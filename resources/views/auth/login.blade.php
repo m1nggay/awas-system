@@ -10,6 +10,7 @@
   <h1>AWAS Login</h1>
   <p class="subtitle">Smart Water Management &amp; Billing System<br>Barangay Adlay</p>
 
+  @if (setting('maintenance_mode', '0') === '1')<div class="alert alert-warning">🔧 AWAS is under maintenance — only administrators can sign in right now.</div>@endif
   @if (session('error'))<div class="alert alert-danger">{{ session('error') }}</div>@endif
   @if ($timeoutMsg)<div class="alert alert-warning">{{ $timeoutMsg }}</div>@endif
   @if ($registeredMsg)<div class="alert alert-success">{{ $registeredMsg }}</div>@endif

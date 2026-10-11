@@ -48,12 +48,13 @@ Route::post('/logout', [Auth\LoginController::class, 'logout'])->name('logout');
 | Signed-in pages
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'idle'])->group(function () {
+Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
 
     Route::get('/applicant/status', ApplicantStatusController::class)->name('applicant.status');
 
     // Opening the notification bell marks notifications as read — every signed-in role.
     Route::post('/notifications/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
 
     // Change password with an emailed code — every signed-in role.
     Route::get('/account/password', [AccountController::class, 'show'])->name('account.password');
@@ -74,9 +75,11 @@ Route::middleware(['auth', 'idle'])->group(function () {
 
         Route::get('/meter-readings', [Admin\MeterReadingController::class, 'index'])->name('readings.index');
         Route::get('/meter-readings/lookup', [Admin\MeterReadingController::class, 'lookup'])->name('readings.lookup');
+        Route::get('/meter-readings/search', [Admin\MeterReadingController::class, 'search'])->name('readings.search');
         // Only the Meter Reader records readings; the bill is generated automatically.
         Route::post('/meter-readings', [Admin\MeterReadingController::class, 'store'])->middleware('role:staff')->name('readings.store');
-        Route::put('/meter-readings/{reading}', [Admin\MeterReadingController::class, 'update'])->middleware('role:admin')->name('readings.update');
+        Route::put('/meter-readings/{reading}', [Admin\MeterReadingController::class, 'update'])->middleware('role:staff')->name('readings.update');
+        Route::delete('/meter-readings/{reading}', [Admin\MeterReadingController::class, 'destroy'])->middleware('role:staff')->name('readings.destroy');
 
         Route::get('/reports', [Admin\ReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/export', [Admin\ReportController::class, 'export'])->name('reports.export');
@@ -101,10 +104,17 @@ Route::middleware(['auth', 'idle'])->group(function () {
             Route::post('/payments', [Admin\PaymentController::class, 'store'])->name('payments.store');
             Route::post('/payments/{payment}/verify', [Admin\PaymentController::class, 'verify'])->name('payments.verify');
             Route::post('/payments/{payment}/reject', [Admin\PaymentController::class, 'reject'])->name('payments.reject');
+            Route::post('/payments/{payment}/paymongo-check', [Admin\PaymentController::class, 'checkPayMongo'])->name('payments.paymongo-check');
+            // GCash / Maya QR at the barangay (QR Ph via PayMongo), confirmed automatically.
+            Route::post('/payments/qr', [Admin\PaymentController::class, 'startQr'])->name('payments.qr');
+            Route::get('/payments/{payment}/qr-status', [Admin\PaymentController::class, 'qrStatus'])->name('payments.qr-status');
+            Route::post('/payments/{payment}/qr-cancel', [Admin\PaymentController::class, 'cancelQr'])->name('payments.qr-cancel');
             Route::get('/payments/{payment}/receipt', [Admin\PaymentController::class, 'receipt'])->name('payments.receipt');
 
             Route::get('/applications', [Admin\MembershipReviewController::class, 'index'])->name('applications.index');
+            Route::delete('/applications/accounts/{user}', [Admin\MembershipReviewController::class, 'deleteAccount'])->whereNumber('user')->name('applications.accounts.destroy');
             Route::get('/applications/{application}', [Admin\MembershipReviewController::class, 'show'])->name('applications.show');
+            Route::delete('/applications/{application}', [Admin\MembershipReviewController::class, 'destroy'])->name('applications.destroy');
             Route::post('/applications/{application}/verification', [Admin\MembershipReviewController::class, 'verification'])->name('applications.verification');
             Route::post('/applications/{application}/approve', [Admin\MembershipReviewController::class, 'approve'])->name('applications.approve');
             Route::post('/applications/{application}/reject', [Admin\MembershipReviewController::class, 'reject'])->name('applications.reject');
@@ -112,10 +122,11 @@ Route::middleware(['auth', 'idle'])->group(function () {
             Route::get('/applications/{application}/file/{type}', [Admin\MembershipReviewController::class, 'file'])
                 ->whereIn('type', ['id', 'id_back', 'face'])->name('applications.file');
 
-            Route::get('/billing-rates', [Admin\BillingRateController::class, 'index'])->name('rates.index');
-            Route::post('/billing-rates', [Admin\BillingRateController::class, 'store'])->name('rates.store');
-            Route::put('/billing-rates/{rate}', [Admin\BillingRateController::class, 'update'])->name('rates.update');
-            Route::delete('/billing-rates/{rate}', [Admin\BillingRateController::class, 'destroy'])->name('rates.destroy');
+            // Billing Rates moved into System Settings (water rate tiers); old links land there.
+            Route::redirect('/billing-rates', '/admin/settings')->name('rates.index');
+
+            Route::get('/announcements', [Admin\AnnouncementController::class, 'index'])->name('announcements.index');
+            Route::post('/announcements', [Admin\AnnouncementController::class, 'store'])->name('announcements.store');
 
             Route::get('/puroks', [Admin\PurokController::class, 'index'])->name('puroks.index');
             Route::post('/puroks', [Admin\PurokController::class, 'store'])->name('puroks.store');
@@ -136,23 +147,22 @@ Route::middleware(['auth', 'idle'])->group(function () {
             Route::post('/chatbot-faqs/{faq}/toggle', [Admin\ChatbotFaqController::class, 'toggle'])->name('faqs.toggle');
             Route::delete('/chatbot-faqs/{faq}', [Admin\ChatbotFaqController::class, 'destroy'])->name('faqs.destroy');
             Route::delete('/chatbot-unanswered/{id}', [Admin\ChatbotFaqController::class, 'dismissUnanswered'])->name('faqs.dismiss');
-            Route::post('/chatbot-ai-settings', [Admin\ChatbotFaqController::class, 'updateAiSettings'])->name('faqs.ai-settings');
-
             Route::get('/settings', [Admin\SettingController::class, 'edit'])->name('settings.edit');
             Route::post('/settings', [Admin\SettingController::class, 'update'])->name('settings.update');
-            Route::post('/settings/gcash', [Admin\SettingController::class, 'updateGcash'])->name('settings.gcash');
-        });
+            Route::post('/settings/maintenance', [Admin\SettingController::class, 'updateMaintenance'])->name('settings.maintenance');        });
     });
 
     /* ---- Residents -------------------------------------------------- */
     Route::prefix('resident')->name('resident.')->middleware('role:resident')->group(function () {
         Route::get('/dashboard', Resident\DashboardController::class)->name('dashboard');
         Route::get('/bill', [Resident\BillController::class, 'index'])->name('bill');
-        // Online payment: GCash QR only — the payment waits for administrator verification.
+        // Online payment: GCash via PayMongo (confirmed automatically), or the
+        // barangay GCash QR (waits for administrator verification).
         Route::get('/bill/{bill}/pay', [Resident\BillController::class, 'pay'])->whereNumber('bill')->name('bill.pay');
         Route::post('/bill/{bill}/pay', [Resident\BillController::class, 'submitPayment'])->whereNumber('bill')->name('bill.pay.submit');
+        Route::post('/bill/{bill}/paymongo', [Resident\BillController::class, 'payWithPayMongo'])->whereNumber('bill')->name('bill.paymongo');
+        Route::get('/bill/{bill}/paymongo/return', [Resident\BillController::class, 'payMongoReturn'])->whereNumber('bill')->name('bill.paymongo.return');
         Route::get('/billing-history', [Resident\HistoryController::class, 'bills'])->name('billing-history');
-        Route::get('/consumption', [Resident\HistoryController::class, 'consumption'])->name('consumption');
         Route::get('/payment-history', [Resident\HistoryController::class, 'payments'])->name('payment-history');
 
         Route::get('/profile', [Resident\ProfileController::class, 'show'])->name('profile');

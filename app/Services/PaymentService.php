@@ -54,6 +54,22 @@ class PaymentService
             ->whereIn('name', $used)->where('size', $new->size)->where('data', $new->data)->exists();
     }
 
+    /**
+     * Checks shared by every GCash payment: a valid, never-used Ref. No., and the
+     * amount on the receipt equals the bill balance. Returns the error or null.
+     */
+    public function gcashError(string $ref, float $amount, float $balance): ?string
+    {
+        return match (true) {
+            $ref === '' => 'Screenshot not valid.',
+            !$this->isValidGcashReference($ref) => 'Screenshot not valid.',
+            $this->referenceInUse($ref) => "Ref. No. $ref already used.",
+            abs($amount - $balance) > 0.009 => 'Amount (' . formatCurrency($amount) . ') does not match the balance ('
+                . formatCurrency($balance) . ').',
+            default => null,
+        };
+    }
+
     public function pendingPayment(int $billId): ?object
     {
         return DB::table('payments')->where('bill_id', $billId)->where('status', 'pending')->first();
@@ -68,17 +84,22 @@ class PaymentService
      * Consumer clicked "I Have Paid" after paying through the GCash QR.
      * @return array{0: ?object, 1: ?string} [payment, error]
      */
-    public function submitOnline(object $consumer, int $billId, ?string $receiptFile, int $userId): array
+    /**
+     * $gcashRef / $amountPaid are what was read from the screenshot, or null when
+     * it could not be read automatically — the water office then reads them when verifying.
+     */
+    public function submitOnline(object $consumer, int $billId, ?string $gcashRef, ?float $amountPaid, ?string $receiptFile, int $userId): array
     {
-        return DB::transaction(function () use ($consumer, $billId, $receiptFile, $userId) {
+        return DB::transaction(function () use ($consumer, $billId, $gcashRef, $amountPaid, $receiptFile, $userId) {
             $bill = DB::table('water_bills')->where('bill_id', $billId)->where('consumer_id', $consumer->consumer_id)->lockForUpdate()->first();
 
             $error = match (true) {
                 !$bill => 'Bill not found.',
                 $bill->status === 'paid' || $this->balance($bill) <= 0 => 'This bill is already paid.',
                 $this->pendingPayment($billId) !== null => 'A payment for this bill is already waiting for verification. Please wait for the water office to verify it.',
-                !$receiptFile => 'Please attach the screenshot of your GCash receipt.',
-                $this->screenshotAlreadyUsed($receiptFile) => 'This screenshot was already submitted for another payment. Please attach the screenshot of THIS payment\'s GCash receipt.',
+                $gcashRef !== null && ($gcashError = $this->gcashError($gcashRef, (float)$amountPaid, $this->balance($bill))) !== null => $gcashError,
+                !$receiptFile => 'Please attach the GCash receipt screenshot.',
+                $this->screenshotAlreadyUsed($receiptFile) => 'Screenshot already used.',
                 default => null,
             };
             if ($error) {
@@ -94,20 +115,23 @@ class PaymentService
                 'amount_paid'            => $amount,
                 'payment_method'         => 'gcash',
                 'channel'                => 'online',
-                'payment_gateway_txn_id' => null,
+                'payment_gateway_txn_id' => $gcashRef,
                 'receipt_file'           => $receiptFile,
                 'payment_date'           => now(),
                 'status'                 => 'pending',
-                'remarks'                => 'Online GCash QR payment — pending verification',
+                'remarks'                => $gcashRef !== null
+                    ? 'Online GCash QR payment — pending verification'
+                    : 'Online GCash QR payment — Ref. No. and amount to be checked from the screenshot',
             ], 'payment_id');
 
             $period = billingPeriodLabel($bill->billing_period);
+            $refText = $gcashRef !== null ? "GCash Ref. $gcashRef" : 'Ref. No. to be read from the screenshot';
             foreach (DB::table('users')->where('role', 'admin')->where('status', 'active')->pluck('user_id') as $adminId) {
                 $this->billing->createNotification((int)$adminId, $billId, 'GCash Payment Submitted',
                     "Meter {$consumer->meter_number} — {$consumer->full_name} submitted a GCash payment of " . formatCurrency($amount)
-                        . " for the $period bill with a receipt screenshot. Please verify.");
+                        . " for the $period bill ($refText) with a receipt screenshot. Please verify.");
             }
-            log_activity($userId, 'payment_submit', "Submitted GCash QR payment $ref (" . formatCurrency($amount) . ") for the $period bill with a receipt screenshot");
+            log_activity($userId, 'payment_submit', "Submitted GCash QR payment $ref (" . formatCurrency($amount) . ", $refText) for the $period bill with a receipt screenshot");
 
             return [DB::table('payments')->where('payment_id', $paymentId)->first(), null];
         });
@@ -117,9 +141,9 @@ class PaymentService
      * Consumer paid in person; an administrator records it as Paid.
      * @return array{0: ?object, 1: ?string} [payment, error]
      */
-    public function recordAtCounter(int $billId, string $method, float $amount, ?string $receiptFile, ?string $remarks, int $staffId): array
+    public function recordAtCounter(int $billId, string $method, float $amount, string $gcashRef, ?string $receiptFile, ?string $remarks, int $staffId): array
     {
-        return DB::transaction(function () use ($billId, $method, $amount, $receiptFile, $remarks, $staffId) {
+        return DB::transaction(function () use ($billId, $method, $amount, $gcashRef, $receiptFile, $remarks, $staffId) {
             $bill = DB::table('water_bills')->where('bill_id', $billId)->lockForUpdate()->first();
             $balance = $bill ? $this->balance($bill) : 0;
 
@@ -130,8 +154,9 @@ class PaymentService
                 $this->pendingPayment($billId) !== null => 'This bill has an online GCash payment waiting for verification. Verify or reject it first.',
                 $amount <= 0 => 'Payment amount must be greater than zero.',
                 $amount > $balance + 0.009 => 'Amount is more than the balance of ' . formatCurrency($balance) . '.',
-                $method === 'gcash' && !$receiptFile => 'Please upload the screenshot of the consumer\'s GCash payment.',
-                $method === 'gcash' && $this->screenshotAlreadyUsed($receiptFile) => 'This screenshot was already used for another payment. Please upload the screenshot of THIS payment.',
+                $method === 'gcash' && ($gcashError = $this->gcashError($gcashRef, $amount, $balance)) !== null => $gcashError,
+                $method === 'gcash' && !$receiptFile => 'Please attach the GCash receipt screenshot.',
+                $method === 'gcash' && $this->screenshotAlreadyUsed($receiptFile) => 'Screenshot already used.',
                 default => null,
             };
             if ($error) {
@@ -146,7 +171,7 @@ class PaymentService
                 'amount_paid'            => round($amount, 2),
                 'payment_method'         => $method,
                 'channel'                => 'counter',
-                'payment_gateway_txn_id' => null,
+                'payment_gateway_txn_id' => $method === 'gcash' ? $gcashRef : null,
                 'receipt_file'           => $method === 'gcash' ? $receiptFile : null,
                 'payment_date'           => now(),
                 'status'                 => 'verified',
@@ -158,23 +183,53 @@ class PaymentService
 
             $meter = DB::table('consumers')->where('consumer_id', $bill->consumer_id)->value('meter_number');
             log_activity($staffId, 'payment_record', "Recorded " . paymentMethodLabel($method) . " payment $ref (" . formatCurrency($amount)
-                . ") at the barangay for meter $meter, " . billingPeriodLabel($bill->billing_period));
+                . ($method === 'gcash' ? ", GCash Ref. $gcashRef" : '') . ") at the barangay for meter $meter, " . billingPeriodLabel($bill->billing_period));
 
             return [DB::table('payments')->where('payment_id', $paymentId)->first(), null];
         });
     }
 
     /** Administrator confirms an online GCash payment → Paid, and the bill is updated. */
-    public function verify(int $paymentId, int $staffId): ?string
+    /**
+     * $gcashRef / $amountSeen: typed by the administrator from the screenshot, needed
+     * when the system could not read it. The same checks apply as when it is read
+     * automatically: a valid, never-used Ref. No. and the exact amount.
+     */
+    public function verify(int $paymentId, int $staffId, ?string $gcashRef = null, ?float $amountSeen = null): ?string
     {
-        return DB::transaction(function () use ($paymentId, $staffId) {
+        return DB::transaction(function () use ($paymentId, $staffId, $gcashRef, $amountSeen) {
             $payment = DB::table('payments')->where('payment_id', $paymentId)->lockForUpdate()->first();
             if (!$payment || $payment->status !== 'pending') {
                 return 'This payment is no longer waiting for verification.';
             }
+            if ($payment->payment_method === 'paymongo') {
+                return 'PayMongo payments are confirmed by PayMongo — use Check PayMongo.';
+            }
+            // The bill may have changed since the consumer paid (e.g. a corrected reading).
+            $bill = DB::table('water_bills')->where('bill_id', $payment->bill_id)->lockForUpdate()->first();
+            $balance = $bill ? $this->balance($bill) : 0;
+            if ((float)$payment->amount_paid > $balance + 0.009) {
+                return 'The amount paid (' . formatCurrency($payment->amount_paid) . ') is more than the bill\'s current balance of '
+                    . formatCurrency($balance) . '. Reject it and ask the consumer to visit the water office.';
+            }
+            $ref = $payment->payment_gateway_txn_id;
+            if ($payment->payment_method === 'gcash' && empty($ref)) {
+                $ref = (string)$gcashRef;
+                if (!$this->isValidGcashReference($ref)) {
+                    return 'Enter the 13-digit GCash Ref. No. shown on the receipt screenshot.';
+                }
+                if ($amountSeen === null) {
+                    return 'Enter the amount shown on the receipt screenshot.';
+                }
+                if ($error = $this->gcashError($ref, $amountSeen, (float)$payment->amount_paid)) {
+                    return $error;
+                }
+            }
             DB::table('payments')->where('payment_id', $paymentId)->update([
                 'status' => 'verified', 'received_by' => $staffId, 'verified_at' => now(), 'rejection_reason' => null,
+                'payment_gateway_txn_id' => $ref,
             ]);
+            $payment->payment_gateway_txn_id = $ref;
             $this->billing->applyPaymentToBill((int)$payment->bill_id, (float)$payment->amount_paid);
             log_activity($staffId, 'payment_verify', "Verified GCash payment {$payment->payment_reference} (" . formatCurrency($payment->amount_paid)
                 . ", GCash Ref. {$payment->payment_gateway_txn_id})");
@@ -190,6 +245,9 @@ class PaymentService
             if (!$payment || $payment->status !== 'pending') {
                 return 'This payment is no longer waiting for verification.';
             }
+            if ($payment->payment_method === 'paymongo') {
+                return 'PayMongo payments are confirmed by PayMongo — use Check PayMongo.';
+            }
             DB::table('payments')->where('payment_id', $paymentId)->update([
                 'status' => 'rejected', 'received_by' => $staffId, 'rejection_reason' => mb_substr($reason, 0, 255),
             ]);
@@ -199,7 +257,8 @@ class PaymentService
             if ($userId) {
                 $this->billing->createNotification((int)$userId, (int)$payment->bill_id, 'GCash Payment Rejected',
                     'Your GCash payment of ' . formatCurrency($payment->amount_paid) . ' for the ' . billingPeriodLabel($bill->billing_period)
-                        . " bill (Ref. {$payment->payment_gateway_txn_id}) was rejected: $reason. Please pay again or visit the barangay water office.");
+                        . " bill (Ref. {$payment->payment_gateway_txn_id}) was rejected: $reason. Please pay again or visit the barangay water office.",
+                    'general', true);
             }
             log_activity($staffId, 'payment_reject', "Rejected GCash payment {$payment->payment_reference} (Ref. {$payment->payment_gateway_txn_id}): $reason");
             return null;

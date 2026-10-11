@@ -10,12 +10,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Meter readings. The Meter Reader records them (Meter Number, previous and
- * present reading); consumption and the bill total are computed by the
- * system and the bill is sent to the administrator automatically. The
- * administrator sees the list and may correct a reading.
- */
+
 class MeterReadingController extends Controller
 {
     private const BILL_STATUSES = ['unpaid', 'partially_paid', 'paid', 'overdue'];
@@ -28,7 +23,7 @@ class MeterReadingController extends Controller
         $purokFil = (int)$request->query('purok', 0);
         $statusFil = clean($request->query('status'));
         $periodFil = clean($request->query('period'));
-        $allowed = $request->user()->assignedPurokIds();   // Meter Reader: only their puroks
+        $allowed = $request->user()->assignedPurokIds();
 
         $readings = DB::table('meter_readings as mr')
             ->join('consumers as c', 'c.consumer_id', '=', 'mr.consumer_id')
@@ -43,7 +38,7 @@ class MeterReadingController extends Controller
             ->orderByDesc('mr.reading_date')->orderByDesc('mr.reading_id')
             ->select('mr.*', 'c.full_name', 'c.meter_number', 'b.total_amount as bill_total',
                 'b.amount_paid as bill_paid', 'b.status as bill_status')
-            ->paginate(15)->withQueryString();
+            ->paginate(15)->appends($request->query());
 
         return view('admin.readings.index', [
             'readings'  => $readings,
@@ -58,10 +53,28 @@ class MeterReadingController extends Controller
         ]);
     }
 
-    /**
-     * Meter Number lookup for the Meter Reader's form: who it belongs to, the
-     * previous reading to start from, and any unpaid balance.
-     */
+
+    /** Suggestions while typing in Record Reading: by name or meter number, only in the reader's puroks. */
+    public function search(Request $request)
+    {
+        $q = clean($request->query('q'));
+        if (mb_strlen($q) < 2) {
+            return response()->json([]);
+        }
+        $allowed = $request->user()->assignedPurokIds();
+
+        $consumers = DB::table('consumers as c')->join('puroks as p', 'p.purok_id', '=', 'c.purok_id')
+            ->when($allowed !== null, fn ($w) => $w->whereIn('c.purok_id', $allowed ?: [0]))
+            ->whereNotNull('c.meter_number')
+            ->where(fn ($w) => $w->where('c.full_name', like_operator(), "%$q%")->orWhere('c.meter_number', like_operator(), "$q%"))
+            ->orderBy('c.full_name')->limit(8)
+            ->get(['c.meter_number', 'c.full_name', 'c.status', 'p.purok_name']);
+
+        return response()->json($consumers->map(fn ($c) => [
+            'meter' => $c->meter_number, 'name' => $c->full_name, 'purok' => $c->purok_name, 'active' => $c->status === 'active',
+        ]));
+    }
+
     public function lookup(Request $request, BillingService $billing)
     {
         $meter = clean($request->query('meter'));
@@ -98,7 +111,6 @@ class MeterReadingController extends Controller
         ]);
     }
 
-    /** Recorded by the Meter Reader — the bill is generated automatically. */
     public function store(Request $request, BillingService $billing)
     {
         $meter = clean($request->input('meter_number'));
@@ -132,15 +144,14 @@ class MeterReadingController extends Controller
         $current = (float)$currentRaw;
         $userId = $request->user()->user_id;
         try {
-            // The reading and its bill are saved together: the bill goes
-            // straight to the consumer and the administrators.
+
             $bill = DB::transaction(function () use ($consumer, $period, $previous, $current, $readingDate, $remarks, $userId, $billing) {
                 $reading = MeterReading::create([
                     'consumer_id' => $consumer->consumer_id, 'billing_period' => $period, 'previous_reading' => $previous,
                     'current_reading' => $current, 'reading_date' => $readingDate,
                     'recorded_by' => $userId, 'remarks' => $remarks ?: null,
                 ]);
-                // Re-read so the database-computed consumption is included.
+
                 $row = DB::table('meter_readings')->where('reading_id', $reading->reading_id)->first();
                 return $billing->generateBillForReading($row, $userId);
             });
@@ -157,9 +168,13 @@ class MeterReadingController extends Controller
         return back();
     }
 
-    /** Admin-only correction of a recorded reading (its bill is updated too while unpaid). */
     public function update(Request $request, MeterReading $reading, BillingService $billing)
     {
+        if (!$this->canManage($request, $reading)) {
+            flash('danger', 'This reading is not in a purok assigned to you.');
+            return back();
+        }
+
         $previousRaw = trim((string)$request->input('previous_reading', ''));
         $currentRaw = trim((string)$request->input('current_reading', ''));
 
@@ -175,7 +190,7 @@ class MeterReadingController extends Controller
         $reading->update([
             'previous_reading' => (float)$previousRaw,
             'current_reading'  => (float)$currentRaw,
-            'reading_date'     => clean($request->input('reading_date')),
+            'reading_date'     => clean($request->input('reading_date')) ?: $reading->reading_date,
             'remarks'          => clean($request->input('remarks')) ?: null,
         ]);
         $meter = DB::table('consumers')->where('consumer_id', $reading->consumer_id)->value('meter_number');
@@ -188,5 +203,37 @@ class MeterReadingController extends Controller
             default   => flash('success', 'Meter reading updated.'),
         };
         return back();
+    }
+
+    public function destroy(Request $request, MeterReading $reading)
+    {
+        if (!$this->canManage($request, $reading)) {
+            flash('danger', 'This reading is not in a purok assigned to you.');
+            return back();
+        }
+
+        $bill = DB::table('water_bills')->where('reading_id', $reading->reading_id)->first(['bill_id', 'amount_paid']);
+        if ($bill && ((float)$bill->amount_paid > 0
+            || DB::table('payments')->where('bill_id', $bill->bill_id)->whereIn('status', ['pending', 'verified'])->exists())) {
+            flash('danger', 'This reading cannot be deleted because its bill already has payments.');
+            return back();
+        }
+
+        $meter = DB::table('consumers')->where('consumer_id', $reading->consumer_id)->value('meter_number');
+        DB::transaction(function () use ($reading, $bill) {
+            if ($bill) {
+                DB::table('water_bills')->where('bill_id', $bill->bill_id)->delete();
+            }
+            $reading->delete();
+        });
+        log_activity($request->user()->user_id, 'meter_reading_delete', 'Deleted the ' . billingPeriodLabel($reading->billing_period) . " reading of meter $meter");
+        flash('success', 'Meter reading and its bill were deleted.');
+        return back();
+    }
+
+    private function canManage(Request $request, MeterReading $reading): bool
+    {
+        $purokId = DB::table('consumers')->where('consumer_id', $reading->consumer_id)->value('purok_id');
+        return $request->user()->canAccessPurok((int)$purokId);
     }
 }

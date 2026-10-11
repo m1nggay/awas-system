@@ -44,7 +44,7 @@ class LiveUpdateController extends Controller
                     . ($r->bill_total !== null ? ', bill ' . formatCurrency($r->bill_total) : '')
                     . ($r->reader_name ? " · by {$r->reader_name}" : ''),
                 'row'   => view('admin.readings._row', [
-                    'r' => $r, 'isAdmin' => true, 'no' => '<span class="badge badge-info">New</span>',
+                    'r' => $r, 'canManage' => false, 'no' => '<span class="badge badge-info">New</span>',
                 ])->render(),
             ])->values(),
             'notifications' => $notifications->map(fn ($n) => [

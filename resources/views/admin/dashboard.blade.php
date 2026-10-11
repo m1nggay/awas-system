@@ -66,7 +66,7 @@
             <td>{{ $p->full_name }}</td>
             <td>{{ billingPeriodLabel($p->billing_period) }}</td>
             <td>{{ formatCurrency($p->amount_paid) }}</td>
-            <td>{{ paymentMethodLabel($p->payment_method) }}</td>
+            <td>{{ paymentMethodLabel($p->payment_method, $p->wallet ?? null) }}</td>
             <td><span class="badge {{ paymentStatusBadgeClass($p->status) }}">{{ paymentStatusLabel($p->status) }}</span></td>
             <td>{{ formatDateTime($p->payment_date) }}</td>
           </tr>

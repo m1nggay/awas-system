@@ -3,14 +3,13 @@
 @section('title', 'Meter Readings')
 
 @section('content')
-@php $isReader = auth()->user()->isMeterReader(); $isAdmin = auth()->user()->isAdmin(); @endphp
+@php $isReader = auth()->user()->isMeterReader(); $isAdmin = auth()->user()->isAdmin(); $canManage = $isReader; @endphp
 <div class="card">
-  <div class="card-header">
-    <h3>Meter Readings</h3>
-    @if ($isReader)
+  @if ($isReader)
+    <div class="card-header justify-content-end">
       <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addReadingModal">+ Record Reading</button>
-    @endif
-  </div>
+    </div>
+  @endif
   <div class="card-body">
     <form method="GET" action="{{ route('admin.readings.index') }}" class="d-flex flex-wrap gap-2 align-items-center mb-3" id="readingFilter">
       <div class="input-group flex-grow-1" style="min-width:200px;">
@@ -47,14 +46,14 @@
           <tr>
             <th>No.</th><th>Meter Number</th><th>Name</th><th>Previous Reading</th><th>Present Reading</th>
             <th>Consumption</th><th>Total</th><th>Balance</th><th>Status</th><th>Date</th>
-            @if ($isAdmin)<th>Actions</th>@endif
+            @if ($canManage)<th>Actions</th>@endif
           </tr>
         </thead>
         <tbody>
         @forelse ($readings as $i => $r)
-          @include('admin.readings._row', ['r' => $r, 'no' => $readings->firstItem() + $i, 'isAdmin' => $isAdmin])
+          @include('admin.readings._row', ['r' => $r, 'no' => $readings->firstItem() + $i, 'canManage' => $canManage])
         @empty
-          <tr class="empty-row"><td colspan="{{ $isAdmin ? 11 : 10 }}">No meter readings found{{ ($search !== '' || $purokFil || $statusFil !== '' || $periodFil !== '') ? ' for this filter' : '' }}.</td></tr>
+          <tr class="empty-row"><td colspan="{{ $canManage ? 11 : 10 }}">No meter readings found{{ ($search !== '' || $purokFil || $statusFil !== '' || $periodFil !== '') ? ' for this filter' : '' }}.</td></tr>
         @endforelse
         </tbody>
       </table>
@@ -73,9 +72,14 @@
         @csrf
         <div class="modal-body">
           <div class="mb-3">
-            <label for="meter_number" class="form-label">Meter Number *</label>
-            <input type="text" id="meter_number" name="meter_number" class="form-control form-control-lg" required
-                   inputmode="numeric" pattern="\d+" maxlength="20" data-digits-only autocomplete="off" placeholder="e.g. 1001">
+            <label for="meter_number" class="form-label">Meter Number or Name *</label>
+            <div class="position-relative">
+              <input type="text" id="meter_number" name="meter_number" class="form-control form-control-lg" required
+                     maxlength="100" autocomplete="off" placeholder="Type a meter number or name"
+                     role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="meterSuggest">
+              <div id="meterSuggest" class="list-group position-absolute w-100 shadow-sm" role="listbox" hidden
+                   style="z-index:1060;top:100%;max-height:260px;overflow-y:auto;"></div>
+            </div>
             <div id="meterInfo" class="mt-2" style="font-size:13px;"></div>
           </div>
           <div class="row g-3 mb-3">
@@ -95,7 +99,9 @@
             <div class="d-flex justify-content-between"><span class="text-muted">Unpaid Balance</span><strong id="calcBalance">—</strong></div>
             <div class="text-muted mt-2" style="font-size:11.5px;">
               Calculated automatically with the official water rate: {{ formatCurrency($tariff['minimumCharge']) }} minimum for the first
-              {{ rtrim(rtrim(number_format($tariff['includedCum'], 2), '0'), '.') }} m³, then {{ formatCurrency($tariff['excessRate']) }} per m³
+              {{ rtrim(rtrim(number_format($tariff['includedCum'], 2), '0'), '.') }} m³, then
+              {{ collect($tariff['tiers'])->map(fn ($t) => formatCurrency($t['rate']) . '/m³ ' . ($t['to'] !== null
+                    ? 'up to ' . rtrim(rtrim(number_format($t['to'], 2), '0'), '.') . ' m³' : 'beyond'))->join(', ') }}
               (senior citizens get {{ rtrim(rtrim(number_format($tariff['seniorPct'], 2), '0'), '.') }}% off).
             </div>
           </div>
@@ -126,12 +132,12 @@
 </div>
 @endif
 
-@if ($isAdmin)
+@if ($canManage)
 <div class="modal fade" id="editReadingModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <form method="POST" action="" id="editReadingForm">
-        <div class="modal-header"><h3 class="h6 mb-0">Correct Meter Reading — <span id="er_meter"></span></h3><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-header"><h3 class="h6 mb-0">Edit Meter Reading —<span id="er_meter"></span></h3><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         @csrf @method('PUT')
         <div class="modal-body">
           <div class="row g-3">
@@ -176,8 +182,14 @@ function openEditReading(r, action) {
 
   // Same formula as the server (BillingService::computeBillAmount).
   function billTotal(consumption, isSenior) {
-    const excess = Math.max(0, consumption - tariff.includedCum);
-    const subtotal = Math.round((tariff.minimumCharge + Math.round(excess * tariff.excessRate * 100) / 100) * 100) / 100;
+    // Each tier charges only the cubic meters inside it.
+    let excess = 0;
+    tariff.tiers.forEach(t => {
+      const top = t.to === null ? consumption : Math.min(consumption, t.to);
+      const cum = Math.max(0, Math.round((top - t.lower) * 100) / 100);
+      excess += Math.round(cum * t.rate * 100) / 100;
+    });
+    const subtotal = Math.round((tariff.minimumCharge + Math.round(excess * 100) / 100) * 100) / 100;
     const discount = isSenior ? Math.round(subtotal * tariff.seniorPct) / 100 : 0;
     return Math.round((subtotal - discount) * 100) / 100;
   }
@@ -211,6 +223,7 @@ function openEditReading(r, action) {
         if (meter !== $('meter_number').value.trim()) return; // typed on meanwhile
         if (!d.found) { $('meterInfo').innerHTML = '<span class="text-danger">' + d.message + '</span>'; recalc(); return; }
         consumer = d;
+        hideSuggest();
         const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
         let html = '<strong>' + esc(d.name) + '</strong> · ' + esc(d.purok) + ' · ' + esc(d.consumer_type)
           + (d.is_senior ? ' · <span class="badge badge-info">Senior</span>' : '');
@@ -227,7 +240,63 @@ function openEditReading(r, action) {
       .catch(() => { $('meterInfo').innerHTML = '<span class="text-danger">Could not look up the meter. Please try again.</span>'; });
   }
 
-  $('meter_number').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(lookup, 350); });
+  // ---- Suggestions: type a name or part of a meter number, then pick the consumer ----
+  const searchUrl = {{ Js::from(route('admin.readings.search')) }};
+  const box = $('meterSuggest'), field = $('meter_number');
+  const escHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let active = -1;
+
+  function hideSuggest() { box.hidden = true; box.innerHTML = ''; active = -1; field.setAttribute('aria-expanded', 'false'); }
+  function pick(meter) {
+    field.value = meter;
+    hideSuggest();
+    lookup();
+  }
+  function suggest() {
+    const q = field.value.trim();
+    if (q.length < 2) { hideSuggest(); return; }
+    fetch(searchUrl + '?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } })
+      .then(r => r.json())
+      .then(list => {
+        if (q !== field.value.trim()) return;               // typed on meanwhile
+        if (consumer && consumer.found && /^\d+$/.test(q)) { hideSuggest(); return; }   // exact meter already found
+        if (!list.length) {
+          box.innerHTML = /^\d+$/.test(q) ? '' : '<div class="list-group-item text-muted small">No consumer in your puroks matches "' + escHtml(q) + '".</div>';
+          box.hidden = !box.innerHTML; field.setAttribute('aria-expanded', String(!box.hidden));
+          return;
+        }
+        box.innerHTML = list.map(c => '<button type="button" class="list-group-item list-group-item-action" role="option" data-meter="' + escHtml(c.meter) + '">'
+          + '<strong>' + escHtml(c.name) + '</strong> <span class="text-muted small">· Meter ' + escHtml(c.meter) + ' · ' + escHtml(c.purok)
+          + (c.active ? '' : ' · <span class="text-danger">not active</span>') + '</span></button>').join('');
+        box.hidden = false; active = -1; field.setAttribute('aria-expanded', 'true');
+      })
+      .catch(() => hideSuggest());
+  }
+
+  box.addEventListener('mousedown', e => e.preventDefault());   // keep focus in the field while clicking
+  box.addEventListener('click', e => { const b = e.target.closest('[data-meter]'); if (b) pick(b.dataset.meter); });
+  field.addEventListener('keydown', e => {
+    const items = [...box.querySelectorAll('[data-meter]')];
+    if (box.hidden || !items.length) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      active = (active + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+      items.forEach((b, i) => b.classList.toggle('active', i === active));
+      items[active].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();                                     // pick, don't submit the form
+      pick((items[active] || items[0]).dataset.meter);
+    } else if (e.key === 'Escape') {
+      e.stopPropagation(); hideSuggest();
+    }
+  });
+  field.addEventListener('blur', () => setTimeout(hideSuggest, 150));
+
+  // Digits: look the meter up directly (as before). Letters: only suggestions.
+  field.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { lookup(); suggest(); }, 300);
+  });
   $('billing_period').addEventListener('change', lookup);
   $('previous_reading').addEventListener('input', recalc);
   $('current_reading').addEventListener('input', recalc);

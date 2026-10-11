@@ -1,4 +1,4 @@
-{{-- One Meter Readings table row. Used by the page and by the admin's live updates. Needs $r, $no, $isAdmin. --}}
+{{-- One Meter Readings table row. Used by the page and by the admin's live updates. Needs $r, $no, $canManage. --}}
 <tr>
   <td>{!! $no !!}</td>
   <td><strong>{{ $r->meter_number ?: '—' }}</strong></td>
@@ -14,9 +14,13 @@
     @else — @endif
   </td>
   <td>{{ formatDate($r->reading_date) }}<div class="text-muted" style="font-size:11px;">{{ billingPeriodLabel($r->billing_period) }}</div></td>
-  @if ($isAdmin)
+  @if ($canManage)
     <td class="actions">
-      <button class="btn btn-secondary btn-sm" onclick="openEditReading({{ json_encode($r) }}, '{{ route('admin.readings.update', $r->reading_id) }}')">Correct</button>
+      <button class="btn btn-secondary btn-sm" onclick="openEditReading({{ json_encode($r) }}, '{{ route('admin.readings.update', $r->reading_id) }}')">Edit</button>
+      <form method="POST" action="{{ route('admin.readings.destroy', $r->reading_id) }}" class="d-inline" data-confirm="Delete this meter reading and its bill? This cannot be undone.">
+        @csrf @method('DELETE')
+        <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+      </form>
     </td>
   @endif
 </tr>

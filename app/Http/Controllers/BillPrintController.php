@@ -26,8 +26,15 @@ class BillPrintController extends Controller
             abort(403, 'You are not authorized to view this bill.');
         }
 
-        $minCharge   = (float)setting('minimum_charge', 150);
-        $includedCum = (float)setting('minimum_cubic_meters', 10);
+        $tariff      = $billing->tariff();
+        $minCharge   = $tariff['minimumCharge'];
+        $includedCum = $tariff['includedCum'];
+        // One row per tier — unless the rates changed after this bill was made; then
+        // a single "Excess Consumption" row with what was actually charged.
+        $excessLines = $billing->excessLines((float)$row->consumption, $tariff);
+        if (abs($minCharge + array_sum(array_column($excessLines, 'amount')) - (float)$row->amount_due) > 0.009) {
+            $excessLines = null;
+        }
         $balance = max(0, round((float)$row->total_amount - (float)$row->amount_paid, 2));
         // Left unpaid from earlier months (not paid in full) — carried onto this bill.
         $previousBalance = $billing->previousBalance((int)$row->consumer_id, $row->billing_period);
@@ -38,7 +45,7 @@ class BillPrintController extends Controller
             'barangayName'    => setting('barangay_name', 'Barangay Adlay'),
             'minCharge'       => $minCharge,
             'includedCum'     => $includedCum,
-            'excessRate'      => (float)setting('excess_rate_per_cubic_meter', 15),
+            'excessLines'     => $excessLines,
             'excessCum'       => max(0, (float)$row->consumption - $includedCum),
             'excessCharge'    => round((float)$row->amount_due - $minCharge, 2),
             'balance'         => $balance,

@@ -27,17 +27,6 @@ class HistoryController extends ResidentController
         ]);
     }
 
-    public function consumption(Request $request)
-    {
-        $consumer = $this->consumer($request);
-        if (!$consumer) {
-            return redirect()->route('resident.dashboard');
-        }
-        return view('resident.consumption', [
-            'readings' => DB::table('meter_readings')->where('consumer_id', $consumer->consumer_id)->orderByDesc('billing_period')->get(),
-        ]);
-    }
-
     public function payments(Request $request)
     {
         $consumer = $this->consumer($request);

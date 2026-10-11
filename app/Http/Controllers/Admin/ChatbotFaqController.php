@@ -9,19 +9,32 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-/** The AWAS Assistant knowledge base, unanswered-question log and AI fallback switch. */
+/**
+ * The AWAS Assistant knowledge base, unanswered-question log and AI fallback
+ * switch — shown as the "Chatbot FAQs" section of System Settings.
+ */
 class ChatbotFaqController extends Controller
 {
-    public function index(Settings $settings)
+    /** Chatbot FAQs are part of the System Settings page now. */
+    public function index()
     {
-        return view('admin.faqs.index', [
+        return $this->toSection();
+    }
+
+    /** What the Chatbot FAQs section of System Settings shows. */
+    public static function sectionData(Settings $settings): array
+    {
+        return [
             'faqs'            => ChatbotFaq::orderByDesc('hit_count')->orderBy('question')->get(),
             'unanswered'      => DB::table('chatbot_unanswered as u')->leftJoin('users as us', 'us.user_id', '=', 'u.asked_by')
                 ->orderByDesc('u.created_at')->limit(20)->get(['u.*', 'us.full_name as asked_by_name']),
             'categories'      => ChatbotFaq::CATEGORIES,
-            'aiEnabled'       => $settings->get('chatbot_ai_enabled', '0') === '1',
-            'aiKeyConfigured' => (string)config('agas.chatbot.api_key') !== '',
-        ]);
+        ];
+    }
+
+    private function toSection()
+    {
+        return redirect()->to(route('admin.settings.edit') . '#chatbot-faqs');
     }
 
     public function store(Request $request)
@@ -29,7 +42,7 @@ class ChatbotFaqController extends Controller
         $data = $this->fields($request);
         if (!$data) {
             flash('danger', 'Question and answer are both required.');
-            return back();
+            return $this->toSection();
         }
         try {
             ChatbotFaq::create($data + ['created_by' => $request->user()->user_id]);
@@ -43,7 +56,7 @@ class ChatbotFaqController extends Controller
         } catch (QueryException $e) {
             flash('danger', 'A FAQ with that exact question already exists.');
         }
-        return back();
+        return $this->toSection();
     }
 
     public function update(Request $request, ChatbotFaq $faq)
@@ -51,7 +64,7 @@ class ChatbotFaqController extends Controller
         $data = $this->fields($request);
         if (!$data) {
             flash('danger', 'Question and answer are both required.');
-            return back();
+            return $this->toSection();
         }
         try {
             $faq->update($data);
@@ -60,14 +73,14 @@ class ChatbotFaqController extends Controller
         } catch (QueryException $e) {
             flash('danger', 'A FAQ with that exact question already exists.');
         }
-        return back();
+        return $this->toSection();
     }
 
     public function toggle(ChatbotFaq $faq)
     {
         $faq->update(['status' => $faq->status === 'active' ? 'inactive' : 'active']);
         flash('success', 'FAQ status updated.');
-        return back();
+        return $this->toSection();
     }
 
     public function destroy(Request $request, ChatbotFaq $faq)
@@ -75,23 +88,14 @@ class ChatbotFaqController extends Controller
         $faq->delete();
         log_activity($request->user()->user_id, 'faq_delete', "Deleted chatbot FAQ #{$faq->id}");
         flash('success', 'FAQ deleted.');
-        return back();
+        return $this->toSection();
     }
 
     public function dismissUnanswered(int $id)
     {
         DB::table('chatbot_unanswered')->where('id', $id)->delete();
         flash('success', 'Dismissed.');
-        return back();
-    }
-
-    public function updateAiSettings(Request $request, Settings $settings)
-    {
-        $enabled = $request->boolean('chatbot_ai_enabled') ? '1' : '0';
-        $settings->set('chatbot_ai_enabled', $enabled);
-        log_activity($request->user()->user_id, 'chatbot_ai_settings', "Set chatbot_ai_enabled=$enabled");
-        flash('success', 'AI assistant settings updated.');
-        return back();
+        return $this->toSection();
     }
 
     private function fields(Request $request): ?array

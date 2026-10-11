@@ -29,9 +29,13 @@
     table.bill-table th, table.bill-table td{padding:7px 8px;font-size:12px;white-space:nowrap;}
     .totals .row.grand{font-size:16px;}
   }
+  /* Shown inside the Water Bills page's pop-up: the pop-up has its own buttons. */
+  body.embed{padding:0;}
+  body.embed .actions-bar{display:none;}
+  body.embed .invoice{max-width:none;border:0;border-radius:0;}
 </style>
 </head>
-<body>
+<body @class(['embed' => request()->boolean('embed')])>
   <div class="actions-bar no-print">
     <a href="{{ $backUrl }}" class="btn btn-secondary" id="backBtn">&larr; Back</a>
     <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
@@ -84,11 +88,20 @@
             <td>—</td>
             <td class="num">{{ formatCurrency($minCharge) }}</td>
           </tr>
-          @if ($excessCum > 0)
+          @if ($excessLines)
+            @foreach ($excessLines as $line)
+            <tr>
+              <td>{{ $line['name'] }} ({{ rtrim(rtrim(number_format($line['from'] + 1, 2), '0'), '.') }}{{ $line['to'] !== null ? '–' . rtrim(rtrim(number_format($line['to'], 2), '0'), '.') : '+' }} m³)</td>
+              <td>{{ number_format($line['cum'], 2) }} m³</td>
+              <td>{{ formatCurrency($line['rate']) }}/m³</td>
+              <td class="num">{{ formatCurrency($line['amount']) }}</td>
+            </tr>
+            @endforeach
+          @elseif ($excessCum > 0)
           <tr>
             <td>Excess Consumption</td>
             <td>{{ number_format($excessCum, 2) }} m³</td>
-            <td>{{ formatCurrency($excessRate) }}/m³</td>
+            <td>—</td>
             <td class="num">{{ formatCurrency($excessCharge) }}</td>
           </tr>
           @endif

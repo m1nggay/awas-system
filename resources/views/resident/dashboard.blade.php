@@ -72,10 +72,11 @@
   <div class="card-header"><h3>Recent Payments</h3><a href="{{ route('resident.payment-history') }}" class="btn btn-outline btn-sm">View All</a></div>
   <div class="card-body no-pad">
     <div class="table-responsive">
-      @include('resident._payments-table', ['payments' => $recentPayments, 'emptyText' => 'No payments yet.'])
+      @include('resident._payments-table', ['payments' => $recentPayments, 'emptyText' => 'No payments yet.', 'receiptPopup' => true])
     </div>
   </div>
 </div>
+@include('resident._receipt-modal')
 @endsection
 
 @push('scripts')

@@ -35,19 +35,24 @@ class PayMongoWebhookController extends Controller
             return response()->json(['error' => 'Invalid payload'], 400);
         }
 
-        // The checkout session may be nested as data.attributes.data or data.data.
+        // The resource may be nested as data.attributes.data or data.data. A checkout
+        // page reports its session; a direct-to-wallet payment reports the payment,
+        // which names its payment intent.
         $resource = $event['data']['attributes']['data'] ?? $event['data']['data'] ?? null;
-        $sessionId = $resource['id'] ?? null;
-        $resourceType = $resource['type'] ?? null;
+        $sessionId = match ($resource['type'] ?? null) {
+            null, 'checkout_session', 'payment_intent' => $resource['id'] ?? null,
+            'payment' => $resource['attributes']['payment_intent_id'] ?? null,
+            default => null,
+        };
 
-        if (!$sessionId || ($resourceType && $resourceType !== 'checkout_session')) {
+        if (!$sessionId) {
             // Acknowledge so PayMongo doesn't keep retrying something we'll never act on.
             return response()->json(['received' => true, 'skipped' => true]);
         }
 
         $payment = DB::table('payments')->where('payment_gateway_txn_id', $sessionId)->first();
         if (!$payment) {
-            Log::warning("PayMongo webhook: no local payment row found for checkout session $sessionId");
+            Log::warning("PayMongo webhook: no local payment row found for $sessionId");
             return response()->json(['received' => true, 'matched' => false]);
         }
 

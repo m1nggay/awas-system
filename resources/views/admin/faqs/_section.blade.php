@@ -1,32 +1,7 @@
-@extends('layouts.app')
-
-@section('title', 'Chatbot FAQs')
-
-@section('content')
-<div class="alert alert-info">
-  🤖 The AWAS Assistant chatbot answers residents from this FAQ knowledge base first. Add, edit, or disable entries here to control exactly what it can say — it never edits bills, payments, or meter readings.
-</div>
-
-<div class="card">
-  <div class="card-header"><h3>AI Assistant Fallback</h3></div>
-  <div class="card-body">
-    <p class="text-muted" style="margin-bottom:14px;">
-      API key status: {!! $aiKeyConfigured ? '<span class="badge badge-success">Configured</span>' : '<span class="badge badge-secondary">Not configured</span>' !!}
-      — set <code>CHATBOT_AI_API_KEY</code> in the server's <code>.env</code> file to enable this (never entered here, for security).
-    </p>
-    <form method="POST" action="{{ route('admin.faqs.ai-settings') }}">
-      @csrf
-      <div class="form-check mb-3">
-        <input type="checkbox" class="form-check-input" id="chatbot_ai_enabled" name="chatbot_ai_enabled" value="1" @checked($aiEnabled) @disabled(!$aiKeyConfigured)>
-        <label class="form-check-label" for="chatbot_ai_enabled">Allow the chatbot to use the AI fallback for questions not covered by the FAQs below</label>
-      </div>
-      @if (!$aiKeyConfigured)
-        <p class="text-muted" style="font-size:12px;margin-bottom:14px;">Enable this once an API key is configured on the server. Until then, unmatched questions get the standard "please contact staff" reply.</p>
-      @endif
-      <button type="submit" class="btn btn-primary btn-sm" @disabled(!$aiKeyConfigured)>Save</button>
-    </form>
-  </div>
-</div>
+{{-- Chatbot FAQs section of the System Settings page. Needs $faqs, $unanswered, $categories. --}}
+<div id="chatbot-faqs" style="scroll-margin-top:80px;">
+<h3 class="set-title mt-2">🤖 Chatbot FAQs</h3>
+<p class="set-sub">The AWAS Assistant chatbot answers residents from these FAQs first. Add, edit, or disable entries to control exactly what it can say — it never edits bills, payments, or meter readings.</p>
 
 <div class="card">
   <div class="card-header">
@@ -94,6 +69,7 @@
     </div>
   </div>
 </div>
+</div>{{-- #chatbot-faqs --}}
 
 <div class="modal fade" id="faqModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
@@ -169,4 +145,3 @@ function useUnanswered(u) {
 }
 document.getElementById('addFaqBtn').addEventListener('click', () => resetFaqForm('Add FAQ'));
 </script>
-@endsection

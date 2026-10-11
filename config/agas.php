@@ -34,4 +34,10 @@ return [
         'api_key' => env('CHATBOT_AI_API_KEY', ''),
         'model'   => env('CHATBOT_AI_MODEL', 'claude-haiku-4-5-20251001'),
     ],
+
+    /* Reads the Ref. No. and amount from GCash receipt screenshots (Claude API). */
+    'receipt_reader' => [
+        'api_key' => env('RECEIPT_AI_API_KEY', env('CHATBOT_AI_API_KEY', '')),
+        'model'   => env('RECEIPT_AI_MODEL', 'claude-opus-5-5'),
+    ],
 ];

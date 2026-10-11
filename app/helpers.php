@@ -180,12 +180,13 @@ if (!function_exists('paymentStatusLabel')) {
 }
 
 if (!function_exists('paymentMethodLabel')) {
-    function paymentMethodLabel(string $method): string
+    /** $wallet: for PayMongo payments, which e-wallet was used (payments.wallet). */
+    function paymentMethodLabel(string $method, ?string $wallet = null): string
     {
         return match ($method) {
             'cash'          => 'Cash',
             'gcash'         => 'GCash QR',
-            'paymongo'      => 'PayMongo (old)',
+            'paymongo'      => \App\Services\PayMongo::walletName($wallet) . ' (PayMongo)',
             'bank_transfer' => 'Bank Transfer',
             'online'        => 'Online',
             default         => ucfirst(str_replace('_', ' ', $method)),

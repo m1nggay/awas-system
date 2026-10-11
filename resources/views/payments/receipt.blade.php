@@ -6,37 +6,48 @@
 <title>Payment Receipt — {{ $p->payment_reference }}</title>
 <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}?v={{ @filemtime(public_path('assets/css/style.css')) ?: '1' }}">
 <style>
-  body{background:#fff;padding:24px 16px;}
-  .receipt{max-width:640px;margin:0 auto;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff;position:relative;}
-  .receipt-head{background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:#fff;padding:20px 26px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
-  .receipt-body{padding:22px 26px;}
-  .row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dashed var(--border);font-size:13.5px;}
+  /* Same look as the water billing statement (bills/print). */
+  body{background:#fff;padding:30px;}
+  .receipt{max-width:760px;margin:0 auto;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff;}
+  .receipt-head{background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:#fff;padding:24px 30px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+  .receipt-body{padding:26px 30px;}
+  .info{display:grid;grid-template-columns:1fr 1fr;gap:4px 30px;}
+  .row{display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;font-size:13.5px;}
   .row strong{text-align:right;}
-  .section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--primary-dark);margin:18px 0 4px;}
-  .amount-box{margin-top:18px;border-top:2px solid var(--border);padding-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:18px;font-weight:700;color:var(--primary-dark);}
-  .stamp{display:inline-block;padding:4px 14px;border:2px solid;border-radius:8px;font-weight:800;letter-spacing:.08em;font-size:14px;}
-  .stamp.paid{color:#1a9b5b;border-color:#1a9b5b;}
-  .stamp.pending{color:#b7791f;border-color:#e0a93b;}
-  .stamp.rejected{color:#e5533d;border-color:#e5533d;}
+  .status-note{font-size:12px;margin-top:10px;}
+  table.receipt-table{width:100%;border-collapse:collapse;margin-top:16px;}
+  table.receipt-table th, table.receipt-table td{border:1px solid var(--border);padding:9px 12px;font-size:13px;text-align:left;}
+  table.receipt-table th{background:#f4fafc;}
+  .num{text-align:right !important;}
+  .totals{margin-top:18px;border-top:2px solid var(--border);padding-top:12px;}
+  .totals .row.grand{font-size:18px;font-weight:700;color:var(--primary-dark);}
+  .totals .total-highlight{background:#e8f6fb;border:1px solid #bfe3f0;border-radius:8px;padding:10px 12px;margin-bottom:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   /* ₱ must show on every phone font */
   body, .receipt{font-family:'Poppins',system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans',Arial,sans-serif;}
-  .top-bar{max-width:640px;margin:0 auto 14px;}
-  .actions-bottom{max-width:640px;margin:16px auto 0;display:flex;flex-wrap:wrap;gap:10px;}
+  .top-bar{max-width:760px;margin:0 auto 14px;}
+  .actions-bottom{max-width:760px;margin:16px auto 0;display:flex;flex-wrap:wrap;gap:10px;}
   .actions-bottom .btn{flex:1 1 200px;justify-content:center;}
-  @media (max-width:480px){
+  @media (max-width:640px){
     body{padding:14px 10px;}
-    .receipt-head{padding:16px 18px;}
-    .receipt-body{padding:16px 18px;}
-    .row{font-size:13px;}
-    .amount-box{font-size:17px;}
+    .info{grid-template-columns:1fr;}
+    .receipt-head{padding:16px;flex-wrap:wrap;gap:8px;}
+    .receipt-body{padding:16px;}
+    table.receipt-table{display:block;overflow-x:auto;}
+    table.receipt-table th, table.receipt-table td{padding:7px 8px;font-size:12px;white-space:nowrap;}
+    .totals .row.grand{font-size:16px;}
   }
+  /* Shown inside a pop-up: the pop-up has its own buttons. */
+  body.embed{padding:0;}
+  body.embed .top-bar, body.embed .actions-bottom{display:none;}
+  body.embed .receipt{max-width:none;border:0;border-radius:0;}
 </style>
 </head>
-<body>
+<body @class(['embed' => request()->boolean('embed')])>
 @php
   $isPaid = $p->status === 'verified';
   $isPending = $p->status === 'pending';
-  $stampClass = $isPaid ? 'paid' : ($isPending ? 'pending' : 'rejected');
+  // In the Payment History pop-up only the payment is shown; the bill itself is in Billing History.
+  $paymentOnly = request()->boolean('embed');
 @endphp
   <div class="top-bar no-print">
     <a href="{{ $backUrl }}" class="btn btn-secondary">&larr; Back</a>
@@ -46,52 +57,80 @@
     <div class="receipt-head">
       <div>
         <div style="display:flex;align-items:center;gap:8px;font-size:20px;font-weight:700;">
-          <img src="{{ asset('assets/img/logo.png') }}" alt="AWAS logo" style="width:32px;height:32px;object-fit:contain;">AWAS
+          <img src="{{ asset('assets/img/logo.png') }}" alt="AWAS logo" style="width:34px;height:34px;object-fit:contain;">AWAS
         </div>
-        <div style="font-size:12px;opacity:.85;">Payment Receipt</div>
+        <div style="font-size:12px;opacity:.85;">Adlay Water Augmentation System</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:16px;font-weight:700;">Payment Receipt</div>
+        <div style="font-size:12px;opacity:.85;">{{ $barangayName }}</div>
       </div>
     </div>
 
     <div class="receipt-body">
-      <div style="text-align:center;margin-bottom:10px;">
-        <span class="stamp {{ $stampClass }}">{{ $isPaid ? 'PAID' : strtoupper(paymentStatusLabel($p->status)) }}</span>
-        @if ($isPending)
-          <div class="text-muted" style="font-size:12px;margin-top:6px;">Acknowledgment of your submitted payment. It becomes an official receipt once the water office verifies it.</div>
-        @elseif (!$isPaid && $p->rejection_reason)
-          <div class="text-danger" style="font-size:12px;margin-top:6px;">Reason: {{ $p->rejection_reason }}</div>
+      <div class="info">
+        <div>
+          @unless ($paymentOnly)
+            <div class="row"><span class="text-muted">Meter Number</span><strong>{{ $p->meter_number ?: '—' }}</strong></div>
+            <div class="row"><span class="text-muted">Name</span><strong>{{ $p->full_name }}</strong></div>
+            <div class="row"><span class="text-muted">Purok</span><strong>{{ $p->purok_name }}</strong></div>
+          @else
+            <div class="row"><span class="text-muted">Payment Reference</span><strong>{{ $p->payment_reference }}</strong></div>
+            <div class="row"><span class="text-muted">For the Bill of</span><strong>{{ billingPeriodLabel($p->billing_period) }}</strong></div>
+          @endunless
+        </div>
+        <div>
+          @unless ($paymentOnly)
+            <div class="row"><span class="text-muted">Payment Reference</span><strong>{{ $p->payment_reference }}</strong></div>
+            <div class="row"><span class="text-muted">Month of</span><strong>{{ billingPeriodLabel($p->billing_period) }}</strong></div>
+          @endunless
+          <div class="row"><span class="text-muted">Status</span><span class="badge {{ paymentStatusBadgeClass($p->status) }}">{{ $isPaid ? 'Paid' : paymentStatusLabel($p->status) }}</span></div>
+          @if ($isPaid && $p->verified_at)
+            <div class="row"><span class="text-muted">Verified On</span><strong>{{ formatDateTime($p->verified_at) }}</strong></div>
+          @endif
+        </div>
+      </div>
+      @if ($isPending)
+        <div class="status-note text-muted">Acknowledgment of your submitted payment. It becomes an official receipt once the water office verifies it.</div>
+      @elseif (!$isPaid && $p->rejection_reason)
+        <div class="status-note text-danger">Reason: {{ $p->rejection_reason }}</div>
+      @endif
+
+      @unless ($paymentOnly)
+        <table class="receipt-table">
+          <thead><tr><th>Previous Reading</th><th>Present Reading</th><th>Consumption</th><th class="num">Bill Total</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>{{ $p->previous_reading !== null ? number_format($p->previous_reading, 2) : '—' }}</td>
+              <td>{{ $p->current_reading !== null ? number_format($p->current_reading, 2) : '—' }}</td>
+              <td>{{ number_format($p->consumption, 2) }} m³</td>
+              <td class="num"><strong>{{ formatCurrency($p->total_amount) }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      @endunless
+
+      <table class="receipt-table">
+        <thead><tr><th>Payment Date</th><th>Method</th><th>GCash Ref. No.</th><th class="num">Amount</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>{{ formatDateTime($p->payment_date) }}</td>
+            <td>{{ paymentMethodLabel($p->payment_method, $p->wallet ?? null) }}<div class="text-muted" style="font-size:11.5px;">{{ paymentChannelLabel($p->channel ?? null) }}</div></td>
+            <td>{{ $p->payment_gateway_txn_id && !str_starts_with($p->payment_gateway_txn_id, 'pi_') && !str_starts_with($p->payment_gateway_txn_id, 'cs_') ? $p->payment_gateway_txn_id : '—' }}</td>
+            <td class="num">{{ formatCurrency($p->amount_paid) }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="totals">
+        <div class="row grand total-highlight"><span>{{ $isPaid ? 'Amount Paid' : 'Amount Submitted' }}</span><span>{{ formatCurrency($p->amount_paid) }}</span></div>
+        @if ($isPaid)
+          <div class="row"><span>Remaining Balance <small class="text-muted">(this bill)</small></span><strong>{{ formatCurrency($balance) }}</strong></div>
         @endif
       </div>
 
-      <div class="section-title">Consumer</div>
-      <div class="row"><span class="text-muted">Meter Number</span><strong>{{ $p->meter_number ?: '—' }}</strong></div>
-      <div class="row"><span class="text-muted">Name</span><strong>{{ $p->full_name }}</strong></div>
-      <div class="row"><span class="text-muted">Purok</span><strong>{{ $p->purok_name }}</strong></div>
-
-      <div class="section-title">Bill</div>
-      <div class="row"><span class="text-muted">Billing Period</span><strong>{{ billingPeriodLabel($p->billing_period) }}</strong></div>
-      <div class="row"><span class="text-muted">Previous Reading</span><strong>{{ $p->previous_reading !== null ? number_format($p->previous_reading, 2) : '—' }}</strong></div>
-      <div class="row"><span class="text-muted">Present Reading</span><strong>{{ $p->current_reading !== null ? number_format($p->current_reading, 2) : '—' }}</strong></div>
-      <div class="row"><span class="text-muted">Consumption</span><strong>{{ number_format($p->consumption, 2) }} m³</strong></div>
-      <div class="row"><span class="text-muted">Total</span><strong>{{ formatCurrency($p->total_amount) }}</strong></div>
-
-      <div class="section-title">Payment</div>
-      <div class="row"><span class="text-muted">Payment Date</span><strong>{{ formatDateTime($p->payment_date) }}</strong></div>
-      <div class="row"><span class="text-muted">Method</span><strong>{{ paymentMethodLabel($p->payment_method) }} · {{ paymentChannelLabel($p->channel ?? null) }}</strong></div>
-      @if ($p->payment_gateway_txn_id)
-        <div class="row"><span class="text-muted">GCash Ref. No.</span><strong>{{ $p->payment_gateway_txn_id }}</strong></div>
-      @endif
-      <div class="row"><span class="text-muted">Status</span><strong>{{ paymentStatusLabel($p->status) }}</strong></div>
-      @if ($isPaid && $p->verified_at)
-        <div class="row"><span class="text-muted">Verified On</span><strong>{{ formatDateTime($p->verified_at) }}</strong></div>
-      @endif
-      @if ($isPaid)
-        <div class="row"><span class="text-muted">Remaining Balance (this bill)</span><strong>{{ formatCurrency($balance) }}</strong></div>
-      @endif
-
-      <div class="amount-box"><span>{{ $isPaid ? 'Amount Paid' : 'Amount Submitted' }}</span><span>{{ formatCurrency($p->amount_paid) }}</span></div>
-
-      <p class="text-muted" style="margin-top:20px;font-size:11px;">
-        System-generated receipt from AWAS — Adlay Water Augmentation System of {{ $barangayName }}.
+      <p class="text-muted" style="margin-top:24px;font-size:11.5px;">
+        This is a system-generated payment receipt from AWAS — Adlay Water Augmentation System of {{ $barangayName }}.
         Printed {{ formatDateTime(now()) }}.
       </p>
     </div>

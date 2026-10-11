@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\DB;
  */
 class BillingService
 {
+    /** Notifications a consumer also receives by email (the bell always gets them). */
+    private const EMAILED_TYPES = ['bill_due', 'bill_overdue', 'payment_received', 'disconnection'];
+
     public function __construct(private Settings $settings)
     {
     }
@@ -43,14 +46,55 @@ class BillingService
     }
 
     /** Tariff values the browser needs to preview a bill exactly like computeBillAmount(). */
+    /**
+     * The water rate from System Settings: a minimum charge covering the first
+     * cubic meters, then excess tiers that each charge only the cubic meters
+     * inside them. Each tier: lower = where it starts (exclusive), to = where
+     * it ends (null = no limit).
+     */
     public function tariff(): array
     {
+        $includedCum = (float)$this->settings->get('minimum_cubic_meters', 10);
+        $saved = json_decode((string)$this->settings->get('excess_tiers', ''), true);
+        if (!is_array($saved) || !$saved) {
+            $saved = [['to' => null, 'rate' => (float)$this->settings->get('excess_rate_per_cubic_meter', 15)]];
+        }
+
+        $tiers = [];
+        $lower = $includedCum;
+        foreach (array_values($saved) as $i => $tier) {
+            $to = isset($tier['to']) && $tier['to'] !== '' ? (float)$tier['to'] : null;
+            $tiers[] = ['name' => 'Tier ' . ($i + 2), 'lower' => $lower, 'to' => $to, 'rate' => (float)($tier['rate'] ?? 0)];
+            if ($to === null) {
+                break;   // nothing comes after "no limit"
+            }
+            $lower = $to;
+        }
+
         return [
             'minimumCharge' => (float)$this->settings->get('minimum_charge', 150),
-            'includedCum'   => (float)$this->settings->get('minimum_cubic_meters', 10),
-            'excessRate'    => (float)$this->settings->get('excess_rate_per_cubic_meter', 15),
+            'includedCum'   => $includedCum,
+            'tiers'         => $tiers,
             'seniorPct'     => (float)$this->settings->get('senior_discount_percent', 20),
         ];
+    }
+
+    /**
+     * How a consumption splits across the excess tiers.
+     * @return array<int, array{name: string, from: float, to: ?float, cum: float, rate: float, amount: float}>
+     */
+    public function excessLines(float $consumption, ?array $tariff = null): array
+    {
+        $lines = [];
+        foreach (($tariff ?? $this->tariff())['tiers'] as $tier) {
+            $top = $tier['to'] === null ? $consumption : min($consumption, $tier['to']);
+            $cum = max(0, round($top - $tier['lower'], 2));
+            if ($cum > 0) {
+                $lines[] = ['name' => $tier['name'], 'from' => $tier['lower'], 'to' => $tier['to'], 'cum' => $cum,
+                    'rate' => $tier['rate'], 'amount' => round($cum * $tier['rate'], 2)];
+            }
+        }
+        return $lines;
     }
 
     /**
@@ -71,8 +115,9 @@ class BillingService
         $dueDay   = (int)$this->settings->get('due_day_of_month', 19);
         $discMonths = max(1, (int)$this->settings->get('disconnection_months', 3));
 
+        $lines        = $this->excessLines($consumption, $t);
         $excessCum    = max(0, $consumption - $t['includedCum']);
-        $excessCharge = round($excessCum * $t['excessRate'], 2);
+        $excessCharge = round(array_sum(array_column($lines, 'amount')), 2);
         $subtotal     = round($t['minimumCharge'] + $excessCharge, 2);
         $discount     = $isSenior ? round($subtotal * $t['seniorPct'] / 100, 2) : 0.0;
         $total        = round($subtotal - $discount, 2);
@@ -86,6 +131,7 @@ class BillingService
             'minimum_charge'     => $t['minimumCharge'],
             'excess_cum'         => $excessCum,
             'excess_charge'      => $excessCharge,
+            'excess_lines'       => $lines,
             'amount_due'         => $subtotal,
             'discount_amount'    => $discount,
             'total_amount'       => $total,
@@ -213,37 +259,107 @@ class BillingService
         return 'updated';
     }
 
-    /** Flags unpaid bills past due date + grace period as overdue and applies the rate's penalty. */
+    /** Flags unpaid bills past due date + grace period as overdue and adds the late penalty from System Settings. */
     public function refreshOverdueBills(): void
     {
         $graceDays = (int)$this->settings->get('overdue_grace_days', 5);
+        $penaltyPct = (float)$this->settings->get('late_penalty_percent', 0);
 
         $overdue = DB::table('water_bills as b')
-            ->leftJoin('billing_rates as r', 'r.rate_id', '=', 'b.rate_id')
             ->whereIn('b.status', ['unpaid', 'partially_paid'])
             // due_date + grace days < today  <=>  due_date < today - grace days
             ->where('b.due_date', '<', now()->subDays($graceDays)->toDateString())
-            ->select('b.bill_id', 'b.amount_due', 'b.discount_amount', 'r.penalty_percentage')
+            ->select('b.bill_id', 'b.consumer_id', 'b.billing_period', 'b.amount_due', 'b.discount_amount', 'b.amount_paid')
             ->get();
 
         foreach ($overdue as $bill) {
-            $penaltyPct = (float)($bill->penalty_percentage ?? 0);
             $payable = (float)$bill->amount_due - (float)$bill->discount_amount;
             $penalty = round($payable * ($penaltyPct / 100), 2);
+            $total = round($payable + $penalty, 2);
 
             DB::table('water_bills')->where('bill_id', $bill->bill_id)->update([
                 'status'         => 'overdue',
                 'penalty_amount' => $penalty,
-                'total_amount'   => round($payable + $penalty, 2),
+                'total_amount'   => $total,
             ]);
+
+            $this->notifyBillOnce((int)$bill->consumer_id, (int)$bill->bill_id, 'bill_overdue', 'Bill Overdue',
+                'Your ' . billingPeriodLabel($bill->billing_period) . ' water bill is now overdue.'
+                    . ($penalty > 0 ? ' A penalty of ' . formatCurrency($penalty) . ' was added.' : '')
+                    . ' Amount to pay: ' . formatCurrency(max(0, $total - (float)$bill->amount_paid)) . '. Please pay as soon as possible to avoid disconnection.');
         }
     }
 
-    public function createNotification(int $userId, ?int $billId, string $title, string $message, string $type = 'general'): void
+    /**
+     * Reminders for unpaid bills: due within 3 days, and disconnection within
+     * 7 days. Overdue notices are sent by refreshOverdueBills(). Each reminder
+     * is sent once per bill, so this is safe to run as often as needed.
+     */
+    public function sendBillReminders(): void
+    {
+        $this->refreshOverdueBills();
+        $today = now()->toDateString();
+
+        $dueSoon = DB::table('water_bills')->whereIn('status', ['unpaid', 'partially_paid'])
+            ->whereBetween('due_date', [$today, now()->addDays(3)->toDateString()])
+            ->get(['bill_id', 'consumer_id', 'billing_period', 'due_date', 'total_amount', 'amount_paid']);
+        foreach ($dueSoon as $bill) {
+            $this->notifyBillOnce((int)$bill->consumer_id, (int)$bill->bill_id, 'bill_due', 'Bill Due Soon',
+                'Your ' . billingPeriodLabel($bill->billing_period) . ' water bill of '
+                    . formatCurrency(max(0, (float)$bill->total_amount - (float)$bill->amount_paid))
+                    . ' is due on ' . formatDate($bill->due_date) . '. Pay on time to avoid a penalty.');
+        }
+
+        $disconnection = DB::table('water_bills')->whereIn('status', ['unpaid', 'partially_paid', 'overdue'])
+            ->whereNotNull('disconnection_date')
+            ->whereBetween('disconnection_date', [$today, now()->addDays(7)->toDateString()])
+            ->get(['bill_id', 'consumer_id', 'billing_period', 'disconnection_date', 'total_amount', 'amount_paid']);
+        foreach ($disconnection as $bill) {
+            $this->notifyBillOnce((int)$bill->consumer_id, (int)$bill->bill_id, 'disconnection', 'Disconnection Warning',
+                'Your water service may be disconnected on ' . formatDate($bill->disconnection_date) . ' because your '
+                    . billingPeriodLabel($bill->billing_period) . ' bill of '
+                    . formatCurrency(max(0, (float)$bill->total_amount - (float)$bill->amount_paid))
+                    . ' is unpaid. Please pay before that date or visit the barangay water office.');
+        }
+    }
+
+    /** Notifies a consumer's account about a bill, once per bill and kind of notice. */
+    private function notifyBillOnce(int $consumerId, int $billId, string $type, string $title, string $message): void
+    {
+        $userId = DB::table('consumers')->where('consumer_id', $consumerId)->value('user_id');
+        if (!$userId || DB::table('notifications')->where('bill_id', $billId)->where('type', $type)->where('title', $title)->exists()) {
+            return;
+        }
+        $this->createNotification((int)$userId, $billId, $title, $message, $type);
+    }
+
+    public function createNotification(int $userId, ?int $billId, string $title, string $message, string $type = 'general', ?bool $email = null): void
     {
         DB::table('notifications')->insert([
             'user_id' => $userId, 'bill_id' => $billId, 'title' => $title, 'message' => $message, 'type' => $type,
         ]);
+        if ($email ?? in_array($type, self::EMAILED_TYPES, true)) {
+            $this->emailNotification($userId, $title, $message);
+        }
+    }
+
+    /**
+     * Emails a consumer a copy of a notification. Sent after the page has been
+     * returned, so a slow mail server never delays saving a reading or payment.
+     */
+    public function emailNotification(int $userId, string $title, string $message): void
+    {
+        $user = DB::table('users')->where('user_id', $userId)->where('role', 'resident')->where('status', 'active')
+            ->first(['full_name', 'email']);
+        if (!$user || !filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+            return;
+        }
+        $url = route('login');
+        app()->terminating(function () use ($user, $title, $message, $url) {
+            app(Mailer::class)->send($user->email, $user->full_name, "AWAS: $title", 'emails.notification', [
+                'name' => $user->full_name, 'title' => $title, 'body' => $message, 'url' => $url,
+            ]);
+        });
     }
 
     /**
@@ -410,9 +526,10 @@ class BillingService
                     ->join('water_bills as b', 'b.bill_id', '=', 'p.bill_id')
                     ->orderByDesc('p.payment_date')
                     ->get(['p.payment_reference', 'c.meter_number', 'c.full_name', 'b.billing_period', 'p.amount_paid', 'p.payment_method',
-                        'p.channel', 'p.payment_gateway_txn_id', 'p.status', 'p.payment_date'])
+                        'p.channel', 'p.payment_gateway_txn_id', 'p.status', 'p.payment_date', 'p.wallet'])
                     ->map(function ($r) {
-                        $r->payment_method = paymentMethodLabel($r->payment_method);
+                        $r->payment_method = paymentMethodLabel($r->payment_method, $r->wallet);
+                        unset($r->wallet);
                         $r->channel = paymentChannelLabel($r->channel);
                         $r->status = paymentStatusLabel($r->status);
                         return $r;

@@ -5,12 +5,11 @@
 @section('content')
 @php $isReader = auth()->user()->isMeterReader(); @endphp
 <div class="card">
-  <div class="card-header">
-    <h3>Consumer Accounts</h3>
-    @unless ($isReader)
+  @unless ($isReader)
+    <div class="card-header justify-content-end">
       <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addModal">+ Add Consumer</button>
-    @endunless
-  </div>
+    </div>
+  @endunless
   <div class="card-body">
     <form method="GET" action="{{ route('admin.consumers.index') }}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
       <div class="input-group flex-grow-1" style="min-width:200px;">

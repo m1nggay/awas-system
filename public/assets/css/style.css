@@ -175,6 +175,15 @@ select.form-control{appearance:auto;}
 }
 .sidebar-brand,.sidebar-user,.sidebar-nav .nav-label{color:#fff;}
 .sidebar .offcanvas-body{overflow-y:auto;}
+/* Thin, see-through scrollbar that blends with the blue sidebar. */
+@supports not selector(::-webkit-scrollbar){
+  .sidebar,.sidebar .offcanvas-body{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.3) transparent;}
+}
+.sidebar::-webkit-scrollbar,.sidebar .offcanvas-body::-webkit-scrollbar{width:6px;}
+.sidebar::-webkit-scrollbar-track,.sidebar .offcanvas-body::-webkit-scrollbar-track{background:transparent;}
+.sidebar::-webkit-scrollbar-button,.sidebar .offcanvas-body::-webkit-scrollbar-button{display:none;}
+.sidebar::-webkit-scrollbar-thumb,.sidebar .offcanvas-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.3);border-radius:10px;}
+.sidebar::-webkit-scrollbar-thumb:hover,.sidebar .offcanvas-body::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.55);}
 @media (min-width:992px){
   .sidebar.offcanvas-lg{
     width:var(--sidebar-w);flex-shrink:0;
@@ -230,6 +239,8 @@ select.form-control{appearance:auto;}
 .notif-panel-title{font-weight:600;font-size:12.5px;}
 .notif-panel-msg{font-size:12px;color:var(--text-muted);margin-top:2px;}
 .notif-panel-time{font-size:10.5px;color:#a3b3ba;margin-top:4px;}
+.notif-panel-footer{display:block;position:sticky;bottom:0;padding:11px 16px;text-align:center;font-size:12.5px;font-weight:600;color:var(--primary-dark);background:#fff;border-top:1px solid var(--border);text-decoration:none;}
+.notif-panel-footer:hover{background:#f4fafc;}
 
 .page-body{padding:24px 26px;flex:1;}
 

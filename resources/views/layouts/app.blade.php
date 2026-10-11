@@ -12,16 +12,16 @@
                 ['admin.bills.index', 'admin.bills.*', '🧾', 'Water Bills'],
                 ['admin.payments.index', 'admin.payments.*', '💳', 'Payments'],
             ],
-            'Reports' => [['admin.reports.index', 'admin.reports.*', '📈', 'Reports']],
             'Administration' => [
-                ['admin.rates.index', 'admin.rates.*', '⚙️', 'Billing Rates'],
-                ['admin.puroks.index', 'admin.puroks.*', '📍', 'Puroks'],
+                // Most used first: talking to consumers, monitoring, then setup.
+                ['admin.announcements.index', 'admin.announcements.*', '📣', 'Announcements'],
+                ['admin.reports.index', 'admin.reports.*', '📈', 'Reports'],
                 ['admin.users.index', 'admin.users.index', '🔐', 'Manage Users'],
-                ['admin.users.logs', 'admin.users.logs', '📋', 'Activity Logs'],
-                ['admin.faqs.index', 'admin.faqs.*', '🤖', 'Chatbot FAQs'],
-                ['admin.settings.edit', 'admin.settings.*', '🛠️', 'System Settings'],
+                ['admin.puroks.index', 'admin.puroks.*', '📍', 'Puroks'],
+                // Change Password is opened from System Settings.
+                ['admin.settings.edit', ['admin.settings.*', 'admin.faqs.*', 'account.*'], '🛠️', 'System Settings'],
             ],
-            'Account' => [['account.password', 'account.*', '🔑', 'Change Password']],
+            'Account' => [['admin.users.logs', 'admin.users.logs', '📋', 'Activity Logs']],
         ];
     } elseif ($user->isMeterReader()) {
         // The Meter Reader's simpler menu: readings are their job.
@@ -31,7 +31,7 @@
                 ['admin.consumers.index', 'admin.consumers.*', '👤', 'Consumer List'],
                 ['admin.readings.index', 'admin.readings.*', '🧮', 'Meter Readings'],
                 ['admin.reports.index', 'admin.reports.*', '📈', 'Reports'],
-                ['admin.users.logs', 'admin.users.logs', '📋', 'My Activity Logs'],
+                ['admin.users.logs', 'admin.users.logs', '📋', 'Activity Logs'],
             ],
             'Account' => [['account.password', 'account.*', '🔑', 'Change Password']],
         ];
@@ -41,12 +41,12 @@
                 ['resident.dashboard', 'resident.dashboard', '📊', 'Dashboard'],
                 ['resident.bill', 'resident.bill*', '🧾', 'Current Bills'],
                 ['resident.billing-history', 'resident.billing-history', '📜', 'Billing History'],
-                ['resident.consumption', 'resident.consumption', '💧', 'My Consumption'],
                 ['resident.payment-history', 'resident.payment-history', '💳', 'Payment History'],
             ],
             'Account' => [
-                ['resident.profile', 'resident.profile*', '👤', 'My Profile'],
-                ['account.password', 'account.*', '🔑', 'Change Password'],
+                ['notifications.index', 'notifications.*', '🔔', 'Notifications', $unreadCount ?? 0],
+                // Change Password is opened from My Profile.
+                ['resident.profile', ['resident.profile*', 'account.*'], '👤', 'My Profile'],
             ],
         ];
     }
@@ -90,7 +90,7 @@
           <div class="nav-label">{{ $section }}</div>
           @foreach ($items as $item)
             @php [$route, $pattern, $icon, $label] = $item; $badge = $item[4] ?? 0; @endphp
-            <div class="position-relative">
+            <div class="position-relative" data-nav="{{ $route }}">
               <a href="{{ route($route) }}" class="{{ request()->routeIs($pattern) ? 'active' : '' }}"><span class="ic">{{ $icon }}</span>{{ $label }}</a>
               @if ($badge > 0)
                 <span class="badge text-bg-warning position-absolute" style="right:12px;top:9px;font-size:10px;padding:1px 6px;">{{ $badge > 9 ? '9+' : $badge }}</span>
@@ -129,12 +129,19 @@
             @empty
               <div class="notif-panel-empty">No notifications yet.</div>
             @endforelse
+            <a href="{{ route('notifications.index') }}" class="notif-panel-footer">View all notifications</a>
           </div>
         </div>
       </div>
     </header>
 
     <main class="page-body">
+      @if ($user->isAdmin() && setting('maintenance_mode', '0') === '1')
+        <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2 py-2">
+          <span>🔧 <strong>Maintenance mode is ON</strong> — consumers and meter readers can't use AWAS right now.</span>
+          <a href="{{ route('admin.settings.edit') }}#maintenance" class="btn btn-sm btn-outline">Turn off</a>
+        </div>
+      @endif
       @include('partials.flash')
       @yield('content')
     </main>

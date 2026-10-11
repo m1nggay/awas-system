@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', !$isAdmin ? 'My Activity Logs' : ($user ? 'Activity Logs — ' . $user->full_name : 'Activity Logs'))
+@section('title', $isAdmin && $user ? 'Activity Logs — ' . $user->full_name : 'Activity Logs')
 
 @section('content')
 @if ($isAdmin)
@@ -11,7 +11,7 @@
   <div class="card-header">
     <h3>
       @if (!$isAdmin)
-        My Activity
+        Activity Logs
       @elseif ($user)
         Activity of {{ $user->full_name }} <span class="text-muted" style="font-weight:400;">({{ $user->username }} · {{ roleLabel($user->role) }})</span>
       @else

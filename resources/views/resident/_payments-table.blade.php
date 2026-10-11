@@ -6,7 +6,7 @@
       <td>{{ $p->payment_reference }}</td>
       <td>{{ billingPeriodLabel($p->billing_period) }}</td>
       <td>{{ formatCurrency($p->amount_paid) }}</td>
-      <td>{{ paymentMethodLabel($p->payment_method) }}<div class="text-muted" style="font-size:11px;">{{ paymentChannelLabel($p->channel ?? null) }}</div></td>
+      <td>{{ paymentMethodLabel($p->payment_method, $p->wallet ?? null) }}<div class="text-muted" style="font-size:11px;">{{ paymentChannelLabel($p->channel ?? null) }}</div></td>
       <td>{{ $p->payment_gateway_txn_id ?: '—' }}</td>
       <td>
         <span class="badge {{ paymentStatusBadgeClass($p->status) }}">{{ paymentStatusLabel($p->status) }}</span>
@@ -14,8 +14,13 @@
       </td>
       <td>{{ formatDateTime($p->payment_date) }}</td>
       <td class="text-nowrap">
-        <a href="{{ route('payments.receipt', $p->payment_id) }}" class="btn btn-outline btn-sm" title="View Receipt">🧾 View</a>
-        <a href="{{ route('payments.receipt', ['payment' => $p->payment_id, 'download' => 1]) }}" class="btn btn-outline btn-sm" title="Download Receipt">⬇️ Download</a>
+        @if ($receiptPopup ?? false)
+          <button type="button" class="btn btn-outline btn-sm" title="View Receipt"
+                  data-receipt-view="{{ route('payments.receipt', ['payment' => $p->payment_id, 'embed' => 1]) }}"
+                  data-receipt-title="Payment Receipt — {{ billingPeriodLabel($p->billing_period) }}">🧾 View</button>
+        @else
+          <a href="{{ route('payments.receipt', $p->payment_id) }}" class="btn btn-outline btn-sm" title="View Receipt">🧾 View</a>
+        @endif
       </td>
     </tr>
   @empty

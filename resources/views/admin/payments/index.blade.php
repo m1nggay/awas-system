@@ -56,6 +56,7 @@
         <option value="">All</option>
         <option value="gcash" @selected($methodFil === 'gcash')>GCash QR</option>
         <option value="cash" @selected($methodFil === 'cash')>Cash</option>
+        <option value="paymongo" @selected($methodFil === 'paymongo')>E-wallet (PayMongo)</option>
       </select>
       <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
       @if ($search !== '' || $methodFil !== '' || $channelFil !== '')
@@ -76,21 +77,39 @@
             <td>{{ $p->full_name }}</td>
             <td>{{ billingPeriodLabel($p->billing_period) }}<div class="text-muted" style="font-size:11px;">Bill total {{ formatCurrency($p->bill_total) }}</div></td>
             <td><strong>{{ formatCurrency($p->amount_paid) }}</strong></td>
-            <td>{{ paymentMethodLabel($p->payment_method) }}<div class="text-muted" style="font-size:11px;">{{ paymentChannelLabel($p->channel) }}</div></td>
+            <td>{{ paymentMethodLabel($p->payment_method, $p->wallet ?? null) }}<div class="text-muted" style="font-size:11px;">{{ paymentChannelLabel($p->channel) }}</div></td>
             <td>{{ formatDateTime($p->payment_date) }}</td>
             <td>
               @if ($p->receipt_file)<a href="{{ route('admin.payments.receipt', $p->payment_id) }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">📎 View screenshot</a>@endif
-              @if ($p->payment_gateway_txn_id)<div class="text-muted" style="font-size:11.5px;">Ref. {{ $p->payment_gateway_txn_id }}</div>@endif
+              @if ($p->payment_gateway_txn_id)<div class="text-muted" style="font-size:11.5px;">{{ $p->payment_method === 'paymongo' ? 'PayMongo' : 'Ref.' }} {{ $p->payment_gateway_txn_id }}</div>@endif
               @if (!$p->receipt_file && !$p->payment_gateway_txn_id)—@endif
             </td>
             <td>
-              <span class="badge {{ paymentStatusBadgeClass($p->status) }}">{{ paymentStatusLabel($p->status) }}</span>
-              @if ($p->status === 'verified' && $p->staff_name)<div class="text-muted" style="font-size:11px;">by {{ $p->staff_name }}</div>@endif
+              <span class="badge {{ paymentStatusBadgeClass($p->status) }}">{{ $p->status === 'pending' && $p->payment_method === 'paymongo' ? 'Waiting for PayMongo' : paymentStatusLabel($p->status) }}</span>
+              @if ($p->status === 'verified' && $p->payment_method === 'paymongo')<div class="text-muted" style="font-size:11px;">by PayMongo{{ $p->verified_at ? ' · ' . formatDateTime($p->verified_at) : '' }}</div>@endif
+              @if ($p->status === 'verified' && $p->staff_name)<div class="text-muted" style="font-size:11px;">by {{ $p->staff_name }}{{ $p->verified_at ? ' · ' . formatDateTime($p->verified_at) : '' }}</div>@endif
+              @if ($p->status === 'rejected' && $p->staff_name)<div class="text-muted" style="font-size:11px;">by {{ $p->staff_name }}</div>@endif
               @if ($p->rejection_reason)<div class="text-danger" style="font-size:11px;">{{ $p->rejection_reason }}</div>@endif
             </td>
             <td class="actions">
               <a href="{{ route('payments.receipt', $p->payment_id) }}" target="_blank" class="btn btn-outline btn-sm" title="View / download receipt">🧾 Receipt</a>
-              @if ($p->status === 'pending')
+              @if ($p->status === 'pending' && $p->payment_method === 'paymongo')
+                <form method="POST" action="{{ route('admin.payments.paymongo-check', $p->payment_id) }}" class="d-inline">
+                  @csrf
+                  <button class="btn btn-secondary btn-sm" type="submit" title="Ask PayMongo: confirms it if paid, cancels it if not">Check PayMongo</button>
+                </form>
+              @elseif ($p->status === 'pending' && $p->payment_method === 'gcash' && !$p->payment_gateway_txn_id)
+                {{-- The screenshot wasn't read automatically: the Ref. No. and amount are typed in from it. --}}
+                <button class="btn btn-success btn-sm" type="button"
+                        onclick="openVerify({{ json_encode([
+                          'action'  => route('admin.payments.verify', $p->payment_id),
+                          'shot'    => $p->receipt_file ? route('admin.payments.receipt', $p->payment_id) : null,
+                          'who'     => $p->full_name . ' · Meter ' . $p->meter_number . ' · ' . billingPeriodLabel($p->billing_period),
+                          'amount'  => formatCurrency($p->amount_paid),
+                        ]) }})">Verify</button>
+                <button class="btn btn-danger btn-sm" type="button"
+                        onclick="openReject('{{ route('admin.payments.reject', $p->payment_id) }}', {{ json_encode($p->full_name . ' — ' . formatCurrency($p->amount_paid)) }})">Reject</button>
+              @elseif ($p->status === 'pending')
                 <form method="POST" action="{{ route('admin.payments.verify', $p->payment_id) }}" class="d-inline"
                       data-confirm="Verify this GCash payment?&#10;&#10;Only verify after checking the consumer's receipt screenshot and confirming that {{ formatCurrency($p->amount_paid) }} was received in the barangay GCash account.">
                   @csrf
@@ -122,6 +141,9 @@
         <div class="modal-header"><h3 class="h6 mb-0">Record Payment</h3><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         @csrf
         <div class="modal-body">
+          @if (session('pay_error'))
+            <div class="alert alert-danger py-2 mb-3" role="alert">{{ session('pay_error') }}</div>
+          @endif
           <div class="mb-3">
             <div class="input-group mb-2">
               <span class="input-group-text">🔍</span>
@@ -150,9 +172,36 @@
           <label class="form-label">Payment Method *</label>
           <div class="method-choice mb-3">
             <label><input type="radio" name="payment_method" value="cash" @checked(old('payment_method', 'cash') === 'cash')><span>💵 Cash</span></label>
-            <label><input type="radio" name="payment_method" value="gcash" @checked(old('payment_method') === 'gcash')><span>📱 GCash QR</span></label>
+            <label><input type="radio" name="payment_method" value="gcash" @checked(old('payment_method') === 'gcash')><span>📱 {{ $paymongo ? 'GCash / Maya QR' : 'GCash QR' }}</span></label>
           </div>
 
+          @if ($paymongo)
+          {{-- A QR code for this bill's exact balance; PayMongo confirms the payment automatically. --}}
+          <div id="gcashCounter" data-paymongo hidden>
+            <div id="qrIntro" class="counter-gcash mb-3">
+              <div class="counter-steps">
+                <strong>How it works</strong>
+                <ol class="mb-2 ps-3">
+                  <li>Click <strong>Show QR Code</strong> — it is made for this bill's exact amount.</li>
+                  <li>The consumer scans it with <strong>GCash, Maya</strong> or any bank app and pays.</li>
+                  <li>This screen shows <strong>Paid</strong> by itself — no screenshot, no checking.</li>
+                </ol>
+                <button type="button" class="btn btn-primary" id="qrStartBtn">Show QR Code</button>
+              </div>
+            </div>
+            <div id="qrShow" class="text-center mb-3" hidden>
+              <div class="counter-qr d-inline-block">
+                <img id="qrImg" alt="QR code to pay this bill with GCash or Maya" style="width:240px;height:240px;image-rendering:pixelated;">
+                <div class="fw-bold mt-1" id="qrAmount"></div>
+              </div>
+              <div class="mt-2" id="qrState"><span class="spinner-border spinner-border-sm text-primary me-1"></span> Waiting for the consumer to pay…</div>
+              <div class="text-muted small" id="qrCountdown"></div>
+              <a id="qrTestLink" href="#" target="_blank" rel="noopener" class="small d-block mt-1" hidden>Test mode: simulate the consumer paying</a>
+              <button type="button" class="btn btn-secondary btn-sm mt-2" id="qrCancelBtn">Cancel QR</button>
+            </div>
+            <div class="alert alert-danger py-2 small" id="qrError" hidden></div>
+          </div>
+          @else
           <div id="gcashCounter" hidden>
             <div class="counter-gcash mb-3">
               <div class="counter-qr-wrap">
@@ -174,19 +223,20 @@
                   <li>Enter the amount below and complete the payment.</li>
                   <li>Show you the GCash receipt.</li>
                 </ol>
-                <div class="text-muted" style="font-size:12px;">Check that the money arrived in the barangay GCash account, then upload a screenshot of the payment below.</div>
+                <div class="text-muted" style="font-size:12px;">Check that the money arrived in the barangay GCash account, then upload a screenshot of the receipt below.</div>
               </div>
             </div>
             <div class="mb-3">
               <label for="gcash_screenshot" class="form-label">Screenshot of the GCash Payment *</label>
               <input type="file" id="gcash_screenshot" name="gcash_screenshot" class="form-control" accept="image/jpeg,image/png,image/webp">
-              <div class="text-muted" style="font-size:11.5px;">The GCash receipt showing the amount, date and Ref. No. JPG, PNG or WEBP, up to 5 MB.</div>
+              <div class="text-muted" style="font-size:11.5px;">The full GCash receipt. The system reads its Ref. No. and amount, refuses a Ref. No. that was already used, and checks that the amount equals the bill balance. JPG, PNG or WEBP, up to 5 MB.</div>
               <img id="gcashShotPreview" alt="Preview of the GCash payment screenshot" hidden style="display:block;max-width:200px;max-height:300px;margin:8px auto 0;border:1px solid var(--border);border-radius:10px;">
             </div>
           </div>
+          @endif
 
           <div class="row g-3">
-            <div class="col-md-6">
+            <div class="col-md-6" id="amountField">
               <label for="amount_paid" class="form-label">Amount Paid *</label>
               <input type="number" step="0.01" min="0.01" id="amount_paid" name="amount_paid" class="form-control" required value="{{ old('amount_paid') }}">
               <div class="text-muted" style="font-size:11.5px;">Filled with the bill balance; a full payment marks the bill Paid.</div>
@@ -200,6 +250,47 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-primary" id="counterSubmit">Confirm Payment Received</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="verifyModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <form method="POST" action="" id="verifyForm">
+        @csrf
+        <div class="modal-header"><h3 class="h6 mb-0">Verify GCash Payment</h3><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6 text-center">
+              <a id="verifyShotLink" href="#" target="_blank" rel="noopener">
+                <img id="verifyShot" alt="Consumer's GCash receipt screenshot" style="max-width:100%;max-height:420px;border:1px solid var(--border);border-radius:10px;">
+              </a>
+              <div class="text-muted small mt-1">Click the screenshot to open it full size.</div>
+            </div>
+            <div class="col-md-6">
+              <p class="mb-1 small text-muted" id="verifyWho"></p>
+              <p class="mb-3">Amount to receive: <strong id="verifyAmount"></strong></p>
+              <div class="mb-3">
+                <label for="verify_ref" class="form-label">GCash Ref. No. on the screenshot *</label>
+                <input type="text" id="verify_ref" name="gcash_reference" class="form-control" required inputmode="numeric"
+                       pattern="[\d\s-]{13,17}" maxlength="17" autocomplete="off" placeholder="e.g. 1234 567 890123">
+                <div class="text-muted" style="font-size:11.5px;">13 digits. A Ref. No. already used for another payment is refused.</div>
+              </div>
+              <div class="mb-3">
+                <label for="verify_amount" class="form-label">Amount on the screenshot (₱) *</label>
+                <input type="number" step="0.01" min="0" id="verify_amount" name="amount_seen" class="form-control" required>
+                <div class="text-muted" style="font-size:11.5px;">Must equal the amount to receive.</div>
+              </div>
+              <div class="alert alert-warning small mb-0">Also check the barangay GCash app that this payment really arrived before verifying.</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success">Verify Payment</button>
         </div>
       </form>
     </div>
@@ -229,6 +320,17 @@
 </div>
 
 <script>
+function openVerify(p) {
+  const form = document.getElementById('verifyForm');
+  form.action = p.action;
+  form.reset();
+  document.getElementById('verifyWho').textContent = p.who;
+  document.getElementById('verifyAmount').textContent = p.amount;
+  const img = document.getElementById('verifyShot'), link = document.getElementById('verifyShotLink');
+  img.hidden = !p.shot; link.href = p.shot || '#';
+  if (p.shot) img.src = p.shot;
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('verifyModal')).show();
+}
 function openReject(action, who) {
   document.getElementById('rejectForm').action = action;
   document.getElementById('rejectWho').textContent = who;
@@ -241,6 +343,7 @@ function openReject(action, who) {
   const gcashBox = document.getElementById('gcashCounter');
   const submit = document.getElementById('counterSubmit');
 
+  const isGcash = () => document.querySelector('input[name="payment_method"]:checked')?.value === 'gcash';
   function fillAmount() {
     const opt = picker.querySelector('input[name="bill_id"]:checked');
     if (opt && opt.dataset.balance) {
@@ -248,24 +351,23 @@ function openReject(action, who) {
       amount.max = opt.dataset.balance;
     }
   }
-  // Names stay hidden until the admin searches; the chosen bill always stays visible.
+  // Names stay hidden until the admin searches.
   function filterBills() {
     const q = search.value.trim().toLowerCase();
     let shown = 0;
     picker.querySelectorAll('.bill-option').forEach(o => {
-      const chosen = o.querySelector('input').checked;
       const match = q !== '' && o.dataset.search.includes(q);
-      o.hidden = !(match || chosen);
+      o.hidden = !match;
       if (match) shown++;
     });
     // The list box only appears once there is something to show.
-    picker.hidden = q === '' && !picker.querySelector('input[name="bill_id"]:checked');
+    picker.hidden = q === '';
     document.getElementById('billNoMatch').hidden = q === '' || shown > 0;
   }
   search.addEventListener('input', filterBills);
   picker.addEventListener('change', filterBills);
   filterBills();
-  document.getElementById('gcash_screenshot').addEventListener('change', function () {
+  document.getElementById('gcash_screenshot')?.addEventListener('change', function () {
     const img = document.getElementById('gcashShotPreview'), f = this.files && this.files[0];
     if (f && f.size > 5 * 1024 * 1024) { alert('The screenshot is larger than 5 MB. Please choose a smaller image.'); this.value = ''; img.hidden = true; return; }
     img.hidden = !f;
@@ -275,20 +377,105 @@ function openReject(action, who) {
   document.getElementById('payModal').addEventListener('shown.bs.modal', () => {
     picker.querySelector('input[name="bill_id"]:checked')?.closest('.bill-option').scrollIntoView({ block: 'nearest' });
   });
+  const qrMode = gcashBox.hasAttribute('data-paymongo');
   function syncMethod() {
-    const isGcash = document.querySelector('input[name="payment_method"]:checked')?.value === 'gcash';
-    gcashBox.hidden = !isGcash;
-    document.getElementById('gcash_screenshot').required = isGcash;
+    const gcash = isGcash();
+    gcashBox.hidden = !gcash;
+    const shot = document.getElementById('gcash_screenshot');
+    if (shot) shot.required = gcash;
+    // GCash: the amount comes from the QR / screenshot, so the field is not needed.
+    document.getElementById('amountField').hidden = gcash;
+    amount.disabled = gcash;
+    // GCash / Maya QR is confirmed by PayMongo itself — there is nothing to submit.
+    submit.hidden = gcash && qrMode;
 
-    submit.textContent = isGcash ? 'Confirm GCash Payment Received' : 'Confirm Cash Received';
+    submit.textContent = gcash ? 'Confirm GCash Payment Received' : 'Confirm Cash Received';
+  }
+
+  // ---- GCash / Maya QR (PayMongo): show the code, then wait until it is paid ----
+  if (qrMode) {
+    const $ = id => document.getElementById(id);
+    const token = document.querySelector('meta[name="csrf-token"]').content;
+    const post = (url, body) => fetch(url, { method: 'POST', credentials: 'same-origin',
+      headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+    let current = null, poll = null, tick = null;
+
+    function reset(message) {
+      clearInterval(poll); clearInterval(tick); current = null;
+      $('qrShow').hidden = true; $('qrIntro').hidden = false;
+      $('qrStartBtn').disabled = false; $('qrStartBtn').textContent = 'Show QR Code';
+      $('qrError').hidden = !message; $('qrError').textContent = message || '';
+      document.querySelectorAll('#payModal input[name="bill_id"], #payModal input[name="payment_method"]').forEach(i => { i.disabled = false; });
+    }
+
+    $('qrStartBtn').addEventListener('click', () => {
+      const bill = picker.querySelector('input[name="bill_id"]:checked');
+      if (!bill) { reset('Search for the consumer and choose the bill first.'); return; }
+      $('qrStartBtn').disabled = true; $('qrStartBtn').textContent = 'Creating QR code…'; $('qrError').hidden = true;
+      post({{ Js::from(route('admin.payments.qr')) }}, { bill_id: bill.value })
+        .then(r => r.json())
+        .then(d => {
+          if (d.error) { reset(d.error); return; }
+          current = d;
+          // The bill and method can't change while its QR is on screen.
+          document.querySelectorAll('#payModal input[name="bill_id"], #payModal input[name="payment_method"]').forEach(i => { i.disabled = true; });
+          $('qrImg').src = d.image;
+          $('qrAmount').textContent = '₱' + Number(d.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+          $('qrTestLink').hidden = !d.test_url; if (d.test_url) $('qrTestLink').href = d.test_url;
+          $('qrIntro').hidden = true; $('qrShow').hidden = false;
+          poll = setInterval(checkStatus, 3000);
+          if (d.expires_at) {
+            const end = new Date(d.expires_at).getTime();
+            const show = () => {
+              const s = Math.max(0, Math.round((end - Date.now()) / 1000));
+              $('qrCountdown').textContent = 'QR code valid for ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+            };
+            show(); tick = setInterval(show, 1000);
+          }
+        })
+        .catch(() => reset('The QR code could not be created. Please try again.'));
+    });
+
+    function checkStatus() {
+      if (!current) return;
+      fetch({{ Js::from(route('admin.payments.qr-status', ['payment' => '__ID__'])) }}.replace('__ID__', current.payment_id),
+        { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+        .then(r => r.json())
+        .then(d => {
+          if (d.status === 'paid') {
+            clearInterval(poll); clearInterval(tick);
+            $('qrState').innerHTML = '<span class="badge badge-success" style="font-size:14px;">✅ Paid</span>';
+            $('qrCancelBtn').hidden = true;
+            setTimeout(() => { location.href = d.redirect; }, 1200);
+          } else if (d.status === 'expired' || d.status === 'gone') {
+            reset('The QR code expired before it was paid. Click Show QR Code to make a new one.');
+          }
+        })
+        .catch(() => { /* try again on the next tick */ });
+    }
+
+    function cancelCurrent() {
+      if (!current) return;
+      const id = current.payment_id;
+      reset();
+      post({{ Js::from(route('admin.payments.qr-cancel', ['payment' => '__ID__'])) }}.replace('__ID__', id))
+        .then(r => r.json())
+        .then(d => { if (d.paid) location.href = {{ Js::from(route('admin.payments.index', ['tab' => 'paid'])) }}; });
+    }
+    $('qrCancelBtn').addEventListener('click', cancelCurrent);
+    // Closing the pop-up with a QR still on screen cancels it, so it can't be paid later by mistake.
+    document.getElementById('payModal').addEventListener('hide.bs.modal', cancelCurrent);
   }
   picker.addEventListener('change', fillAmount);
   document.querySelectorAll('input[name="payment_method"]').forEach(r => r.addEventListener('change', syncMethod));
-  document.getElementById('counterForm').addEventListener('submit', () => { submit.disabled = true; });
+  document.getElementById('counterForm').addEventListener('submit', () => {
+    submit.disabled = true;
+    if (isGcash()) submit.textContent = 'Checking the screenshot…';
+  });
   if (!amount.value) fillAmount();
   syncMethod();
 
-  @if ($preselectBillId || old('bill_id'))
+  @if ($preselectBillId || old('bill_id') || session('pay_error'))
   document.addEventListener('DOMContentLoaded', () => bootstrap.Modal.getOrCreateInstance(document.getElementById('payModal')).show());
   @endif
 })();
