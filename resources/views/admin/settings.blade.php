@@ -284,12 +284,4 @@ document.getElementById('maintenanceForm').addEventListener('submit', function (
   }
 });
 </script>
-
-<div class="card" id="change-password">
-  <div class="card-header"><h3>🔑 Change Password</h3></div>
-  <div class="card-body">
-    <p class="text-muted mb-3">For your security, changing your password needs a 6-digit code sent to your registered email.</p>
-    <a href="{{ route('account.password') }}" class="btn btn-primary">Change Password</a>
-  </div>
-</div>
 @endsection

@@ -18,10 +18,12 @@
                 ['admin.reports.index', 'admin.reports.*', '📈', 'Reports'],
                 ['admin.users.index', 'admin.users.index', '🔐', 'Manage Users'],
                 ['admin.puroks.index', 'admin.puroks.*', '📍', 'Puroks'],
-                // Change Password is opened from System Settings.
-                ['admin.settings.edit', ['admin.settings.*', 'admin.faqs.*', 'account.*'], '🛠️', 'System Settings'],
+                ['admin.settings.edit', ['admin.settings.*', 'admin.faqs.*'], '🛠️', 'System Settings'],
             ],
-            'Account' => [['admin.users.logs', 'admin.users.logs', '📋', 'Activity Logs']],
+            'Account' => [
+                ['admin.profile', ['admin.profile*', 'account.*'], '👤', 'Profile'],
+                ['admin.users.logs', 'admin.users.logs', '📋', 'Activity Logs'],
+            ],
         ];
     } elseif ($user->isMeterReader()) {
         // The Meter Reader's simpler menu: readings are their job.
@@ -33,7 +35,8 @@
                 ['admin.reports.index', 'admin.reports.*', '📈', 'Reports'],
                 ['admin.users.logs', 'admin.users.logs', '📋', 'Activity Logs'],
             ],
-            'Account' => [['account.password', 'account.*', '🔑', 'Change Password']],
+            // Change Password is opened from Profile.
+            'Account' => [['admin.profile', ['admin.profile*', 'account.*'], '👤', 'Profile']],
         ];
     } elseif ($role === 'resident') {
         $nav = [
@@ -81,9 +84,14 @@
           <div class="sub">BARANGAY ADLAY</div>
         </div>
       </div>
-      <div class="sidebar-user">
-        <div class="u-name">{{ $user->full_name }}</div>
-        <div class="u-role">{{ roleLabel($role) }}</div>
+      <div class="sidebar-user d-flex align-items-center gap-2">
+        @if ($user->profile_photo)
+          <img src="{{ route('account.photo', ['v' => $user->profile_photo]) }}" alt="" class="u-photo">
+        @endif
+        <div>
+          <div class="u-name">{{ $user->full_name }}</div>
+          <div class="u-role">{{ roleLabel($role) }}</div>
+        </div>
       </div>
       <nav class="sidebar-nav">
         @foreach ($nav as $section => $items)

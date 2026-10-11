@@ -4,6 +4,7 @@
 
 @section('content')
 @include('partials.errors')
+@include('partials.profile-header', ['user' => $user])
 
 <div class="row g-3 align-items-start">
   <div class="col-md-6 d-flex flex-column gap-3">
@@ -12,7 +13,6 @@
     <div class="card-body">
       @if ($consumer)
         <div class="d-flex justify-content-between mb-2"><span class="text-muted">Meter Number</span><strong>{{ $consumer->meter_number ?: '—' }}</strong></div>
-        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Name</span><strong>{{ $consumer->full_name }}</strong></div>
         <div class="d-flex justify-content-between mb-2"><span class="text-muted">Address</span><strong>{{ $consumer->address }}</strong></div>
         <div class="d-flex justify-content-between mb-2"><span class="text-muted">Purok</span><strong>{{ $consumer->purok_name }}</strong></div>
         <div class="d-flex justify-content-between mb-2"><span class="text-muted">Type of Consumer</span><strong>{{ consumerTypeLabel($consumer->consumer_type) }}</strong></div>

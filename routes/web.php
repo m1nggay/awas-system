@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AccountProfileController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\ApplicantStatusController;
 use App\Http\Controllers\Auth;
@@ -62,6 +63,12 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
     Route::post('/account/password/verify', [AccountController::class, 'verifyCode'])->name('account.password.verify');
     Route::post('/account/password', [AccountController::class, 'update'])->name('account.password.update');
 
+    // Name and profile picture — every signed-in role.
+    Route::post('/account/name', [AccountProfileController::class, 'updateName'])->name('account.name');
+    Route::get('/account/photo', [AccountProfileController::class, 'show'])->name('account.photo');
+    Route::post('/account/photo', [AccountProfileController::class, 'update'])->name('account.photo.update');
+    Route::delete('/account/photo', [AccountProfileController::class, 'destroy'])->name('account.photo.remove');
+
     // Printable bill — administrators can print any bill, consumers only their own.
     Route::get('/bills/{bill}/print', BillPrintController::class)
         ->middleware('role:admin,resident')->name('bills.print');
@@ -72,6 +79,9 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
     /* ---- Administrator & Meter Reader -------------------------------- */
     Route::prefix('admin')->name('admin.')->middleware('role:admin,staff')->group(function () {
         Route::get('/dashboard', Admin\DashboardController::class)->name('dashboard');
+        // Profile for administrators and meter readers (consumers have their own).
+        Route::get('/profile', [Admin\ProfileController::class, 'show'])->name('profile');
+        Route::post('/profile/contact', [Admin\ProfileController::class, 'updateContact'])->name('profile.contact');
 
         Route::get('/meter-readings', [Admin\MeterReadingController::class, 'index'])->name('readings.index');
         Route::get('/meter-readings/lookup', [Admin\MeterReadingController::class, 'lookup'])->name('readings.lookup');

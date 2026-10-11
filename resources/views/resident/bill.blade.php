@@ -16,6 +16,7 @@
   .bill-line.total{font-weight:700;}
   @media (max-width:640px){ .bill-summary .action{flex-basis:100%;min-width:0;} .bill-summary .amount{font-size:26px;} }
 </style>
+@include('resident._pay-styles')
 @endpush
 
 @section('content')
@@ -70,7 +71,7 @@
               <div class="mb-1"><span class="badge badge-warning">Payment Not Finished</span></div>
               <div>You started a {{ paymentMethodLabel('paymongo', $last->wallet) }} payment of <strong>{{ formatCurrency($last->amount_paid) }}</strong>, but it was not completed.</div>
               <div class="text-muted small mt-1">If you already paid, refresh this page in a moment. Otherwise, pay again.</div>
-              <a href="{{ route('resident.bill.pay', $bill->bill_id) }}" class="btn btn-primary w-100 mt-2">Pay Bill</a>
+              <button type="button" class="btn btn-primary w-100 mt-2" data-pay-url="{{ route('resident.bill.pay', [$bill->bill_id, 'partial' => 1]) }}" data-pay-page="{{ route('resident.bill.pay', $bill->bill_id) }}">Pay Bill</button>
             </div>
           @elseif ($last && $last->status === 'pending')
             <div class="p-3" style="background:#fff8e6;border:1px solid #f1d58a;border-radius:10px;">
@@ -84,7 +85,7 @@
               </div>
             </div>
           @else
-            <a href="{{ route('resident.bill.pay', $bill->bill_id) }}" class="btn btn-primary btn-lg w-100">💳 Pay Bill</a>
+            <button type="button" class="btn btn-primary btn-lg w-100" data-pay-url="{{ route('resident.bill.pay', [$bill->bill_id, 'partial' => 1]) }}" data-pay-page="{{ route('resident.bill.pay', $bill->bill_id) }}">💳 Pay Bill</button>
             <p class="text-muted mt-2 small mb-0 text-center">GCash or Maya — or pay in person at the barangay water office.</p>
           @endif
         </div>
@@ -124,4 +125,37 @@
 @empty
   <div class="card"><div class="card-body text-center"><p style="font-size:15px;">🎉 You have no outstanding bills right now.</p></div></div>
 @endforelse
+
+{{-- "Pay Bill" opens the Online Payment panel here instead of another page. --}}
+<div class="modal fade" id="payModal" tabindex="-1" aria-label="Online Payment" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" style="max-width:560px;">
+    <div class="modal-content" id="payModalContent"></div>
+  </div>
+</div>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('assets/js/pay-panel.js') }}?v={{ @filemtime(public_path('assets/js/pay-panel.js')) ?: '1' }}"></script>
+<script>
+(function () {
+  const modal = document.getElementById('payModal'), content = document.getElementById('payModalContent');
+  document.querySelectorAll('[data-pay-url]').forEach(btn => btn.addEventListener('click', () => {
+    content.innerHTML = '<div class="text-center text-muted p-5">Loading…</div>';
+    bootstrap.Modal.getOrCreateInstance(modal).show();
+    fetch(btn.dataset.payUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+      .then(r => {
+        // Already paid / waiting for verification: the server sends back to Current Bills with a message.
+        if (r.redirected) { location.href = r.url; return null; }
+        return r.ok ? r.text() : Promise.reject();
+      })
+      .then(html => {
+        if (html === null) return;
+        content.innerHTML = html;
+        initPayPanel(content.querySelector('[data-pay-panel]'));
+      })
+      .catch(() => { location.href = btn.dataset.payPage; });   // fall back to the Pay Bill page
+  }));
+  modal.addEventListener('hidden.bs.modal', () => { content.innerHTML = ''; });
+})();
+</script>
+@endpush

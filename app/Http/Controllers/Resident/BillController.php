@@ -77,13 +77,17 @@ class BillController extends ResidentController
             return redirect()->route('resident.bill');
         }
 
-        return view('resident.pay', [
+        $data = [
             'consumer' => $consumer,
             'bill'     => $row,
             'amount'   => $payments->balance($row),
             'qr'       => $qr,
             'paymongo' => $paymongo->isConfigured(),
-        ]);
+        ];
+        // ?partial=1: only the panel, for the Pay Bill pop-up on Current Bills.
+        return $request->boolean('partial')
+            ? view('resident._pay-panel', $data + ['inModal' => true])
+            : view('resident.pay', $data);
     }
 
     /** Resident picked an e-wallet (GCash, Maya, …) — sends them to PayMongo's checkout page. */
@@ -138,7 +142,7 @@ class BillController extends ResidentController
         $receipt = $files->in('payment-receipts')->store($request->file('receipt'), '', 'GCash receipt screenshot', true, $errors);
         if ($errors) {
             flash('danger', $errors[0]);
-            return back()->withInput();
+            return redirect()->route('resident.bill.pay', $bill)->withInput();
         }
 
         // The Ref. No. and amount are read from the screenshot, then checked.
@@ -151,7 +155,7 @@ class BillController extends ResidentController
         if ($error) {
             $files->in('payment-receipts')->delete($receipt);
             flash('danger', $error);
-            return back()->withInput();
+            return redirect()->route('resident.bill.pay', $bill)->withInput();
         }
 
         flash('success', 'Payment submitted! Your ' . formatCurrency($payment->amount_paid)
