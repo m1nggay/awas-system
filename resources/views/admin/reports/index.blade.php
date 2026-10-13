@@ -10,8 +10,8 @@
   <div class="card-header">
     <h3>Reports</h3>
     <div class="d-flex gap-2">
-      <a class="btn btn-outline btn-sm" href="{{ route('admin.reports.export', $query) }}">⬇ Download Excel (CSV)</a>
-      <a class="btn btn-primary btn-sm" href="{{ route('admin.reports.index', $query + ['print' => 1]) }}" target="_blank" rel="noopener">⬇ Download PDF / Print</a>
+      <a class="btn btn-outline btn-sm" href="{{ route('admin.reports.export', $query) }}"><i class="ph ph-download-simple" aria-hidden="true"></i> Download Excel (CSV)</a>
+      <a class="btn btn-primary btn-sm" href="{{ route('admin.reports.index', $query + ['print' => 1]) }}" target="_blank" rel="noopener"><i class="ph ph-download-simple" aria-hidden="true"></i> Download PDF / Print</a>
     </div>
   </div>
   <div class="card-body">

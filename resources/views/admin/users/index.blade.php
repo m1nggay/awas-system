@@ -7,7 +7,7 @@
   <div class="card-header">
     <h3>System Users</h3>
     <div class="d-flex gap-2">
-      <a href="{{ route('admin.users.logs') }}" class="btn btn-outline btn-sm">📋 Activity Logs</a>
+      <a href="{{ route('admin.users.logs') }}" class="btn btn-outline btn-sm"><i class="ph ph-scroll" aria-hidden="true"></i> Activity Logs</a>
       <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#userModal">+ Add User</button>
     </div>
   </div>
@@ -27,31 +27,42 @@
         <tbody>
         @forelse ($users as $u)
           <tr>
-            <td>{{ $u->username }}</td>
-            <td>{{ $u->full_name }}</td>
-            <td><span class="badge badge-info">{{ roleLabel($u->role) }}</span></td>
-            <td>
+            <td class="text-nowrap">{{ $u->username }}</td>
+            <td class="text-nowrap">{{ $u->full_name }}</td>
+            <td class="text-nowrap"><span class="badge badge-info">{{ roleLabel($u->role) }}</span></td>
+            <td style="min-width:150px;">
               @if ($u->role === 'staff')
                 @php $mine = $userPuroks[$u->user_id] ?? collect(); @endphp
                 @if ($mine->isEmpty())<span class="badge badge-warning">None assigned</span>
-                @else{{ $mine->pluck('purok_name')->implode(', ') }}@endif
+                @else
+                  <div class="d-flex flex-wrap gap-1">
+                    @foreach ($mine as $pk)<span class="badge badge-secondary">{{ $pk->purok_name }}</span>@endforeach
+                  </div>
+                @endif
               @else<span class="text-muted">—</span>@endif
             </td>
-            <td>{{ $u->email ?: '—' }}</td>
-            <td><span class="badge {{ $u->status === 'active' ? 'badge-success' : ($u->status === 'pending' ? 'badge-warning' : 'badge-secondary') }}">{{ $u->status }}</span></td>
-            <td>{{ formatDateTime($u->last_login) }}</td>
-            <td class="actions">
-              <a class="btn btn-outline btn-sm" href="{{ route('admin.users.logs', ['user_id' => $u->user_id]) }}">Logs</a>
-              @if ($u->role === 'staff')
-                <button class="btn btn-primary btn-sm" onclick="openPuroks('{{ route('admin.users.puroks', $u) }}', {{ json_encode($u->username) }}, {{ json_encode(($userPuroks[$u->user_id] ?? collect())->pluck('purok_id')->map(fn ($id) => (int)$id)->values()) }}, {{ (int)$u->user_id }})">Puroks</button>
-              @endif
-              <button class="btn btn-secondary btn-sm" onclick="openResetPw('{{ route('admin.users.reset-password', $u) }}', {{ json_encode($u->username) }})">Reset PW</button>
-              @if ((int)$u->user_id !== (int)auth()->user()->user_id)
-                <form method="POST" action="{{ route('admin.users.toggle', $u) }}" class="d-inline" data-confirm="Toggle active status for this user?">
-                  @csrf
-                  <button class="btn {{ $u->status === 'active' ? 'btn-danger' : 'btn-success' }} btn-sm" type="submit">{{ $u->status === 'active' ? 'Deactivate' : 'Activate' }}</button>
-                </form>
-              @endif
+            <td class="text-nowrap">{{ $u->email ?: '—' }}</td>
+            <td><span class="badge {{ $u->status === 'active' ? 'badge-success' : ($u->status === 'pending' ? 'badge-warning' : 'badge-secondary') }}">{{ ucfirst($u->status) }}</span></td>
+            <td class="text-nowrap small">
+              @if ($u->last_login)
+                {{ formatDateTime($u->last_login, 'M j, Y') }}<br><span class="text-muted">{{ formatDateTime($u->last_login, 'g:i A') }}</span>
+              @else<span class="text-muted">Never</span>@endif
+            </td>
+            <td>
+              {{-- Fixed slots so every row's buttons line up, even when a slot is empty. --}}
+              <div class="user-actions">
+                @if ($u->role === 'staff')
+                  <button class="btn btn-outline btn-sm" onclick="openPuroks('{{ route('admin.users.puroks', $u) }}', {{ json_encode($u->username) }}, {{ json_encode(($userPuroks[$u->user_id] ?? collect())->pluck('purok_id')->map(fn ($id) => (int)$id)->values()) }}, {{ (int)$u->user_id }})">Puroks</button>
+                @else
+                  <span></span>
+                @endif
+                @if ((int)$u->user_id !== (int)auth()->user()->user_id)
+                  <form method="POST" action="{{ route('admin.users.toggle', $u) }}" data-confirm="Toggle active status for this user?">
+                    @csrf
+                    <button class="btn {{ $u->status === 'active' ? 'btn-outline-danger' : 'btn-outline-success' }} btn-sm w-100" type="submit">{{ $u->status === 'active' ? 'Deactivate' : 'Activate' }}</button>
+                  </form>
+                @endif
+              </div>
             </td>
           </tr>
         @empty
@@ -102,28 +113,6 @@
   </div>
 </div>
 
-<div class="modal fade" id="resetPwModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="POST" action="" id="resetPwForm">
-        <div class="modal-header"><h3 class="h6 mb-0">Reset Password for <span id="resetPwUsername"></span></h3><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-        @csrf
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label" for="reset_user_password">New Password *</label>
-            <input type="password" id="reset_user_password" name="new_password" class="form-control" required minlength="8" autocomplete="new-password">
-            @include('partials.password-hint', ['for' => 'reset_user_password'])
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Reset Password</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
 <div class="modal fade" id="puroksModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -157,10 +146,5 @@ function openPuroks(action, username, assigned, userId) {
 document.getElementById('newUserRole').addEventListener('change', function () {
   document.getElementById('newUserPuroks').hidden = this.value !== 'staff';
 });
-function openResetPw(action, username) {
-  document.getElementById('resetPwForm').action = action;
-  document.getElementById('resetPwUsername').textContent = username;
-  bootstrap.Modal.getOrCreateInstance(document.getElementById('resetPwModal')).show();
-}
 </script>
 @endsection

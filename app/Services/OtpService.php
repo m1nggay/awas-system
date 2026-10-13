@@ -27,6 +27,12 @@ class OtpService
         return new self('password_reset_otps', 10, 5, 60, 5);
     }
 
+    /** Confirming an email change: the code goes to the current email. */
+    public static function emailChange(): self
+    {
+        return new self('email_change_otps', 10, 5, 60, 5);
+    }
+
     /** Registration / membership-application email verification codes. */
     public static function emailVerification(): self
     {

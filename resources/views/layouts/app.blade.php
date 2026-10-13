@@ -4,52 +4,52 @@
     $nav = [];
     if ($user->isAdmin()) {
         $nav = [
-            'Main' => [['admin.dashboard', 'admin.dashboard', '📊', 'Dashboard']],
+            'Main' => [['admin.dashboard', 'admin.dashboard', 'ph-squares-four', 'Dashboard']],
             'Water Management' => [
-                ['admin.consumers.index', 'admin.consumers.*', '👤', 'Consumers'],
-                ['admin.applications.index', 'admin.applications.*', '📝', 'Applications', $pendingApplicationCount ?? 0],
-                ['admin.readings.index', 'admin.readings.*', '🧮', 'Meter Readings'],
-                ['admin.bills.index', 'admin.bills.*', '🧾', 'Water Bills'],
-                ['admin.payments.index', 'admin.payments.*', '💳', 'Payments'],
+                ['admin.consumers.index', 'admin.consumers.*', 'ph-users-three', 'Consumers'],
+                ['admin.applications.index', 'admin.applications.*', 'ph-clipboard-text', 'Applications', $pendingApplicationCount ?? 0],
+                ['admin.readings.index', 'admin.readings.*', 'ph-gauge', 'Meter Readings'],
+                ['admin.bills.index', 'admin.bills.*', 'ph-invoice', 'Water Bills'],
+                ['admin.payments.index', 'admin.payments.*', 'ph-hand-coins', 'Payments'],
             ],
             'Administration' => [
                 // Most used first: talking to consumers, monitoring, then setup.
-                ['admin.announcements.index', 'admin.announcements.*', '📣', 'Announcements'],
-                ['admin.reports.index', 'admin.reports.*', '📈', 'Reports'],
-                ['admin.users.index', 'admin.users.index', '🔐', 'Manage Users'],
-                ['admin.puroks.index', 'admin.puroks.*', '📍', 'Puroks'],
-                ['admin.settings.edit', ['admin.settings.*', 'admin.faqs.*'], '🛠️', 'System Settings'],
+                ['admin.announcements.index', 'admin.announcements.*', 'ph-megaphone-simple', 'Announcements'],
+                ['admin.reports.index', 'admin.reports.*', 'ph-chart-bar', 'Reports'],
+                ['admin.users.index', 'admin.users.index', 'ph-user-gear', 'Manage Users'],
+                ['admin.puroks.index', 'admin.puroks.*', 'ph-map-pin', 'Puroks'],
+                ['admin.settings.edit', ['admin.settings.*', 'admin.faqs.*'], 'ph-gear-six', 'System Settings'],
             ],
             'Account' => [
-                ['admin.profile', ['admin.profile*', 'account.*'], '👤', 'Profile'],
-                ['admin.users.logs', 'admin.users.logs', '📋', 'Activity Logs'],
+                ['admin.profile', ['admin.profile*', 'account.*'], 'ph-user', 'Profile'],
+                ['admin.users.logs', 'admin.users.logs', 'ph-scroll', 'Activity Logs'],
             ],
         ];
     } elseif ($user->isMeterReader()) {
         // The Meter Reader's simpler menu: readings are their job.
         $nav = [
             'Main' => [
-                ['admin.dashboard', 'admin.dashboard', '📊', 'Dashboard'],
-                ['admin.consumers.index', 'admin.consumers.*', '👤', 'Consumer List'],
-                ['admin.readings.index', 'admin.readings.*', '🧮', 'Meter Readings'],
-                ['admin.reports.index', 'admin.reports.*', '📈', 'Reports'],
-                ['admin.users.logs', 'admin.users.logs', '📋', 'Activity Logs'],
+                ['admin.dashboard', 'admin.dashboard', 'ph-squares-four', 'Dashboard'],
+                ['admin.consumers.index', 'admin.consumers.*', 'ph-users-three', 'Consumer List'],
+                ['admin.readings.index', 'admin.readings.*', 'ph-gauge', 'Meter Readings'],
+                ['admin.reports.index', 'admin.reports.*', 'ph-chart-bar', 'Reports'],
+                ['admin.users.logs', 'admin.users.logs', 'ph-scroll', 'Activity Logs'],
             ],
             // Change Password is opened from Profile.
-            'Account' => [['admin.profile', ['admin.profile*', 'account.*'], '👤', 'Profile']],
+            'Account' => [['admin.profile', ['admin.profile*', 'account.*'], 'ph-user', 'Profile']],
         ];
     } elseif ($role === 'resident') {
         $nav = [
             'Main' => [
-                ['resident.dashboard', 'resident.dashboard', '📊', 'Dashboard'],
-                ['resident.bill', 'resident.bill*', '🧾', 'Current Bills'],
-                ['resident.billing-history', 'resident.billing-history', '📜', 'Billing History'],
-                ['resident.payment-history', 'resident.payment-history', '💳', 'Payment History'],
+                ['resident.dashboard', 'resident.dashboard', 'ph-squares-four', 'Dashboard'],
+                ['resident.bill', 'resident.bill*', 'ph-drop-half-bottom', 'Current Bills'],
+                ['resident.billing-history', 'resident.billing-history', 'ph-clock-counter-clockwise', 'Billing History'],
+                ['resident.payment-history', 'resident.payment-history', 'ph-wallet', 'Payment History'],
             ],
             'Account' => [
-                ['notifications.index', 'notifications.*', '🔔', 'Notifications', $unreadCount ?? 0],
+                ['notifications.index', 'notifications.*', 'ph-bell-simple', 'Notifications', $unreadCount ?? 0],
                 // Change Password is opened from My Profile.
-                ['resident.profile', ['resident.profile*', 'account.*'], '👤', 'My Profile'],
+                ['resident.profile', ['resident.profile*', 'account.*'], 'ph-user', 'My Profile'],
             ],
         ];
     }
@@ -63,6 +63,8 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>{{ $pageTitle }} · {{ config('agas.short_name') }}</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}?v={{ @filemtime(public_path('assets/css/style.css')) ?: '1' }}">
 <link rel="icon" type="image/png" href="{{ asset('assets/img/logo.png') }}">
 @stack('styles')
@@ -99,7 +101,9 @@
           @foreach ($items as $item)
             @php [$route, $pattern, $icon, $label] = $item; $badge = $item[4] ?? 0; @endphp
             <div class="position-relative" data-nav="{{ $route }}">
-              <a href="{{ route($route) }}" class="{{ request()->routeIs($pattern) ? 'active' : '' }}"><span class="ic">{{ $icon }}</span>{{ $label }}</a>
+              @php $active = request()->routeIs($pattern); @endphp
+              {{-- Outline icon; the filled one for the page you are on. --}}
+              <a href="{{ route($route) }}" class="{{ $active ? 'active' : '' }}"><i class="ic {{ $active ? 'ph-fill' : 'ph' }} {{ $icon }}" aria-hidden="true"></i>{{ $label }}</a>
               @if ($badge > 0)
                 <span class="badge text-bg-warning position-absolute" style="right:12px;top:9px;font-size:10px;padding:1px 6px;">{{ $badge > 9 ? '9+' : $badge }}</span>
               @endif
@@ -108,7 +112,7 @@
         @endforeach
         <form method="POST" action="{{ route('logout') }}" id="logoutForm">
           @csrf
-          <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logoutForm').submit();"><span class="ic">🚪</span>Logout</a>
+          <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logoutForm').submit();"><i class="ic ph ph-sign-out" aria-hidden="true"></i>Logout</a>
         </form>
       </nav>
     </div>
@@ -117,13 +121,13 @@
   <div class="main-content">
     <header class="topbar">
       <div class="d-flex align-items-center gap-3">
-        <button class="menu-toggle d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">☰</button>
+        <button class="menu-toggle d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar"><i class="ph ph-list" aria-hidden="true"></i></button>
         <div class="topbar-title">{{ $pageTitle }}</div>
       </div>
       <div class="topbar-right">
         <div class="dropdown">
           <button class="notif-btn" id="notifBtn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications" data-read-url="{{ route('notifications.read') }}">
-            🔔
+            <i class="ph ph-bell-simple" aria-hidden="true"></i>
             @if (($unreadCount ?? 0) > 0)<span class="notif-badge">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>@endif
           </button>
           <div class="dropdown-menu dropdown-menu-end notif-panel" aria-labelledby="notifBtn" id="notifPanel">
@@ -146,7 +150,7 @@
     <main class="page-body">
       @if ($user->isAdmin() && setting('maintenance_mode', '0') === '1')
         <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2 py-2">
-          <span>🔧 <strong>Maintenance mode is ON</strong> — consumers and meter readers can't use AWAS right now.</span>
+          <span><i class="ph ph-wrench" aria-hidden="true"></i> <strong>Maintenance mode is ON</strong> — consumers and meter readers can't use AWAS right now.</span>
           <a href="{{ route('admin.settings.edit') }}#maintenance" class="btn btn-sm btn-outline">Turn off</a>
         </div>
       @endif

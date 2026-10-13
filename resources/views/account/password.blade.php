@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="card" style="max-width:520px;">
-  <div class="card-header"><h3>🔑 Change Password</h3></div>
+  <div class="card-header"><h3><i class="ph ph-key" aria-hidden="true"></i> Change Password</h3></div>
   <div class="card-body">
     @if (session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
     @if (session('error'))<div class="alert alert-danger">{{ session('error') }}</div>@endif

@@ -45,7 +45,7 @@
       <input type="date" name="from" class="form-control w-auto" value="{{ $from }}" title="From date">
       <input type="date" name="to" class="form-control w-auto" value="{{ $to }}" title="To date">
       <div class="input-group flex-grow-1" style="min-width:180px;">
-        <span class="input-group-text">🔍</span>
+        <span class="input-group-text"><i class="ph ph-magnifying-glass" aria-hidden="true"></i></span>
         <input type="text" name="q" class="form-control" placeholder="Search description or IP..." value="{{ $search }}">
       </div>
       <button type="submit" class="btn btn-secondary btn-sm">Filter</button>

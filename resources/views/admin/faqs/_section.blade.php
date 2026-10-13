@@ -1,6 +1,6 @@
 {{-- Chatbot FAQs section of the System Settings page. Needs $faqs, $unanswered, $categories. --}}
 <div id="chatbot-faqs" style="scroll-margin-top:80px;">
-<h3 class="set-title mt-2">🤖 Chatbot FAQs</h3>
+<h3 class="set-title mt-2"><i class="ph ph-robot" aria-hidden="true"></i> Chatbot FAQs</h3>
 <p class="set-sub">The AWAS Assistant chatbot answers residents from these FAQs first. Add, edit, or disable entries to control exactly what it can say — it never edits bills, payments, or meter readings.</p>
 
 <div class="card">

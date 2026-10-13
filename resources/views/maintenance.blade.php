@@ -7,7 +7,7 @@
 @endpush
 
 @section('content')
-  <div class="text-center" style="font-size:44px;line-height:1;" aria-hidden="true">🔧</div>
+  <div class="text-center" style="font-size:44px;line-height:1;" aria-hidden="true"><i class="ph ph-wrench" aria-hidden="true"></i></div>
   <h1>Under Maintenance</h1>
   <p class="subtitle">AWAS — Barangay Adlay</p>
 

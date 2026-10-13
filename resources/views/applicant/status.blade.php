@@ -19,7 +19,7 @@
 
 @section('content')
   @php
-    $stepIcons = ['done' => '✓', 'pending' => '⏳', 'failed' => '✕', 'waiting' => '—'];
+    $stepIcons = ['done' => 'ph-check', 'pending' => 'ph-hourglass', 'failed' => 'ph-x', 'waiting' => 'ph-minus'];
     $stepText  = ['done' => 'Completed', 'pending' => 'Pending', 'failed' => 'Rejected', 'waiting' => ''];
   @endphp
 
@@ -57,7 +57,7 @@
     <ul class="steps">
       @foreach ($app->progress() as $step)
         <li class="{{ $step['state'] }}">
-          <span class="mark">{{ $stepIcons[$step['state']] }}</span>
+          <span class="mark"><i class="ph {{ $stepIcons[$step['state']] }}" aria-hidden="true"></i></span>
           <span>{{ $step['label'] }}</span>
           <span class="state">{{ $stepText[$step['state']] }}</span>
         </li>

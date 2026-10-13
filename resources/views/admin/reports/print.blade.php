@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ $reportTypes[$reportType] }}{{ in_array($reportType, ['purok', 'consumption'], true) ? ' — ' . billingPeriodLabel($period) : '' }}</title>
@@ -18,7 +20,7 @@
 </head>
 <body>
   <div class="actions-bar">
-    <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    <button class="btn btn-primary" onclick="window.print()"><i class="ph ph-printer" aria-hidden="true"></i> Print / Save as PDF</button>
     <span class="text-muted ms-2" style="font-size:12px;">In the print window, choose <strong>Save as PDF</strong> to download.</span>
   </div>
 

@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Water Bill — Meter {{ $bill->meter_number }} — {{ billingPeriodLabel($bill->billing_period) }}</title>
@@ -38,9 +40,14 @@
 <body @class(['embed' => request()->boolean('embed')])>
   <div class="actions-bar no-print">
     <a href="{{ $backUrl }}" class="btn btn-secondary" id="backBtn">&larr; Back</a>
-    <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    {{-- Consumers download their bill; printing is done by the water office. --}}
+    @if (auth()->user()->role === 'resident')
+      <button class="btn btn-primary" id="downloadBtn"><i class="ph ph-download-simple" aria-hidden="true"></i> Download Bill (PDF)</button>
+    @else
+      <button class="btn btn-primary" onclick="window.print()"><i class="ph ph-printer" aria-hidden="true"></i> Print / Save as PDF</button>
+    @endif
   </div>
-  <div class="invoice">
+  <div class="invoice" id="invoice">
     <div class="invoice-head">
       <div>
         <div style="display:flex;align-items:center;gap:8px;font-size:20px;font-weight:700;">
@@ -139,5 +146,40 @@ document.getElementById('backBtn').addEventListener('click', function (e) {
   if (history.length > 1 && document.referrer.indexOf(location.origin) === 0) { e.preventDefault(); history.back(); }
 });
 </script>
+@if (auth()->user()->role === 'resident')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// "Download Bill (PDF)": saves this bill as a PDF (same way as the payment receipt).
+(function () {
+  const btn = document.getElementById('downloadBtn');
+  const fileName = {{ Js::from('AWAS-Bill-' . ($bill->meter_number ?: $bill->bill_id) . '-' . $bill->billing_period . '.pdf') }};
+
+  function download() {
+    // Without the PDF libraries (e.g. offline), fall back to the browser's "Save as PDF".
+    if (!window.html2canvas || !window.jspdf) { window.print(); return; }
+    btn.disabled = true;
+    btn.textContent = 'Preparing PDF…';
+    html2canvas(document.getElementById('invoice'), { scale: 2, backgroundColor: '#ffffff', useCORS: true })
+      .then(function (canvas) {
+        const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+        const margin = 12, width = 210 - margin * 2;
+        const height = Math.min(canvas.height * width / canvas.width, 297 - margin * 2);
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, width, height);
+        pdf.save(fileName);
+        // Let the page that asked for it (e.g. Current Bills) know it's done.
+        if (window.parent !== window) window.parent.postMessage('awas-bill-downloaded', location.origin);
+      })
+      .catch(function () { window.print(); })
+      .finally(function () { btn.disabled = false; btn.innerHTML = '<i class="ph ph-download-simple" aria-hidden="true"></i> Download Bill (PDF)'; });
+  }
+
+  btn.addEventListener('click', download);
+  @if (request()->boolean('download'))
+    window.addEventListener('load', download);
+  @endif
+})();
+</script>
+@endif
 </body>
 </html>

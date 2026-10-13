@@ -56,7 +56,7 @@ class DatabaseSeeder extends Seeder
 
         $hash = Hash::make('Password123!');
         $users = [
-            ['admin', 'Jenela Costan', 'admin@agas-adlay.local', '09171000001', 'admin'],
+            ['admin', 'Jenela Costan', 'adlawwateraugmentationsystem@gmail.com', '09171000001', 'admin'],
             ['meterreader', 'Juana Dela Cruz', 'meterreader@agas-adlay.local', '09171000002', 'staff'],
             ['resident1', 'Pedro Santos', 'pedro.santos@example.com', '09171000003', 'resident'],
             ['resident2', 'Maria Reyes', 'maria.reyes@example.com', '09171000004', 'resident'],

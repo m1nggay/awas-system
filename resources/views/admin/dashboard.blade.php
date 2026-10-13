@@ -5,13 +5,13 @@
 @section('content')
 @php
   $statCards = [
-      ['Total Consumers', number_format($totalConsumers), '👤', ''],
-      ['Consumption (' . billingPeriodLabel($currentPeriod) . ')', number_format($totalConsumption, 1) . ' m³', '💧', ''],
-      ["This Month's Bills", number_format($currentMonthBills), '🧾', ''],
-      ['Paid Bills', number_format($billsByStatus['paid']), '✅', 'success'],
-      ['Unpaid Bills', number_format($billsByStatus['unpaid'] + $billsByStatus['partially_paid']), '⏳', 'warning'],
-      ['Overdue Bills', number_format($billsByStatus['overdue']), '⚠️', 'danger'],
-      ['Total Verified Payments', formatCurrency($totalPayments), '💳', 'success'],
+      ['Total Consumers', number_format($totalConsumers), 'ph-users-three', ''],
+      ['Consumption (' . billingPeriodLabel($currentPeriod) . ')', number_format($totalConsumption, 1) . ' m³', 'ph-drop', ''],
+      ["This Month's Bills", number_format($currentMonthBills), 'ph-invoice', ''],
+      ['Paid Bills', number_format($billsByStatus['paid']), 'ph-check-circle', 'success'],
+      ['Unpaid Bills', number_format($billsByStatus['unpaid'] + $billsByStatus['partially_paid']), 'ph-hourglass', 'warning'],
+      ['Overdue Bills', number_format($billsByStatus['overdue']), 'ph-warning', 'danger'],
+      ['Total Verified Payments', formatCurrency($totalPayments), 'ph-wallet', 'success'],
   ];
 @endphp
 <div class="row g-3 mb-4">
@@ -20,7 +20,7 @@
     <div class="{{ $loop->last ? 'col-12 col-xl-3' : 'col-6 col-md-4 col-xl-3' }}">
       <div class="stat-card h-100 {{ $variant }}">
         <div class="stat-info"><div class="label">{{ $label }}</div><div class="value">{{ $value }}</div></div>
-        <div class="stat-icon">{{ $icon }}</div>
+        <div class="stat-icon"><i class="ph {{ $icon }}" aria-hidden="true"></i></div>
       </div>
     </div>
   @endforeach
@@ -42,7 +42,7 @@
         @if (array_sum($billsByStatus) > 0)
           <canvas id="statusChart" height="220"></canvas>
         @else
-          <div class="text-center text-muted py-5" style="font-size:13.5px;">🧾 No bills yet for {{ billingPeriodLabel($currentPeriod) }}.<br>They appear here once the meter readers record this month's readings.</div>
+          <div class="text-center text-muted py-5" style="font-size:13.5px;"><i class="ph ph-invoice" aria-hidden="true"></i> No bills yet for {{ billingPeriodLabel($currentPeriod) }}.<br>They appear here once the meter readers record this month's readings.</div>
         @endif
       </div>
     </div>

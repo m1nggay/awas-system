@@ -13,7 +13,7 @@
   <div class="card-body">
     <form method="GET" action="{{ route('admin.consumers.index') }}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
       <div class="input-group flex-grow-1" style="min-width:200px;">
-        <span class="input-group-text">🔍</span>
+        <span class="input-group-text"><i class="ph ph-magnifying-glass" aria-hidden="true"></i></span>
         <input type="search" name="q" class="form-control" placeholder="Search by Meter Number, Name or Purok..." value="{{ $search }}" aria-label="Search consumers">
         <button type="submit" class="btn btn-primary">Search</button>
       </div>

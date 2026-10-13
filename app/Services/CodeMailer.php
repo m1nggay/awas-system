@@ -23,6 +23,18 @@ class CodeMailer
         ));
     }
 
+    /** Code to confirm an email change, sent to the CURRENT email (same email layout as password codes). */
+    public function sendEmailChangeCode(int $userId, string $currentEmail, string $name, string $newEmail): string
+    {
+        $otp = OtpService::emailChange();
+        return $otp->issueAndSend($userId, fn (string $code) => $this->mailer->send(
+            $currentEmail, $name, 'Your AWAS change-email code', 'emails.password-reset-code',
+            ['name' => $name, 'code' => $code, 'ttl' => $otp->ttlMinutes,
+             'purpose' => "Use this code to confirm that you want to change your AWAS email address to $newEmail:",
+             'footer'  => 'If you did not request this, someone may know your password — your email stays the same, but please change your password.']
+        ));
+    }
+
     /** Password code: "Forgot Password" and signed-in "Change Password". */
     public function sendPasswordCode(int $userId, string $email, string $name, string $subject, string $purpose): string
     {

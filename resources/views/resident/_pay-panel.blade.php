@@ -41,22 +41,16 @@
       <div class="alert alert-warning mt-3 mb-0">Online payment is not available yet. Please pay in person at the barangay water office (Cash or GCash QR).</div>
     @else
       <div class="pay-q">How do you want to pay?</div>
-      <div class="method-tabs" role="tablist">
-        @if ($paymongo)
-          <button type="button" class="method-tab" role="tab" id="tab-wallet" aria-controls="panel-wallet" aria-selected="{{ $tab === 'wallet' ? 'true' : 'false' }}">
-            <strong>GCash / Maya</strong>
-          </button>
-        @endif
-        @if ($qrReady)
-          <button type="button" class="method-tab" role="tab" id="tab-qr" aria-controls="panel-qr" aria-selected="{{ $tab === 'qr' ? 'true' : 'false' }}">
-            <strong>Scan QR</strong>
-          </button>
-        @endif
-      </div>
+      {{-- Each way to pay is a dropdown: tap it to show its options right underneath. --}}
+      <div class="method-list">
 
       {{-- GCash / Maya through PayMongo: opens the wallet, confirmed automatically --}}
       @if ($paymongo)
-        <div class="method-panel" role="tabpanel" id="panel-wallet" aria-labelledby="tab-wallet" @if ($tab !== 'wallet') hidden @endif>
+        <div class="method-item">
+        <button type="button" class="method-tab" id="tab-wallet" aria-controls="panel-wallet" aria-expanded="{{ $tab === 'wallet' ? 'true' : 'false' }}">
+          <strong>E-wallet</strong><span class="method-arrow" aria-hidden="true">▾</span>
+        </button>
+        <div class="method-panel" role="region" id="panel-wallet" aria-labelledby="tab-wallet" @if ($tab !== 'wallet') hidden @endif>
           <form method="POST" action="{{ route('resident.bill.paymongo', $bill->bill_id) }}" class="wallet-choices" data-paymongo-form>
             @csrf
             @foreach (['gcash' => ['GCash', '#007dfe', 'G'], 'paymaya' => ['Maya', '#00b464', 'M']] as $code => [$name, $color, $letter])
@@ -74,11 +68,16 @@
             @endif
           </div>
         </div>
+        </div>
       @endif
 
       {{-- The barangay's GCash QR: pay, then upload the receipt for the water office to verify --}}
       @if ($qrReady)
-        <div class="method-panel" role="tabpanel" id="panel-qr" aria-labelledby="tab-qr" @if ($tab !== 'qr') hidden @endif>
+        <div class="method-item">
+        <button type="button" class="method-tab" id="tab-qr" aria-controls="panel-qr" aria-expanded="{{ $tab === 'qr' ? 'true' : 'false' }}">
+          <strong>Scan QR</strong><span class="method-arrow" aria-hidden="true">▾</span>
+        </button>
+        <div class="method-panel" role="region" id="panel-qr" aria-labelledby="tab-qr" @if ($tab !== 'qr') hidden @endif>
           <form method="POST" action="{{ route('resident.bill.pay.submit', $bill->bill_id) }}" enctype="multipart/form-data" data-receipt-form>
             @csrf
             <input type="hidden" name="receipt_tab" value="1">
@@ -88,9 +87,9 @@
                 <a href="{{ route('gcash.qr') }}" download="barangay-gcash-qr.png" class="btn btn-outline btn-sm w-100 mt-2">Save QR image</a>
               </div>
               <div>
-                <strong style="font-size:14px;">{{ setting('barangay_name', 'Barangay Adlay') }} Water Office</strong>
-                @if ($qr->accountName() || $qr->number())
-                  <div class="text-muted small">Collector: {{ $qr->accountName() }}{{ $qr->accountName() && $qr->number() ? ' · ' : '' }}{{ $qr->number() ? 'GCash ' . $qr->number() : '' }}</div>
+                <strong style="font-size:14px;">AWAS Office</strong>
+                @if ($qr->accountName())
+                  <div class="text-muted small">Administrator: {{ $qr->accountName() }}</div>
                 @endif
                 <ol class="qr-steps">
                   <li>Scan this QR in GCash (or upload the saved image).</li>
@@ -118,7 +117,9 @@
             </div>
           </form>
         </div>
+        </div>
       @endif
+      </div>{{-- .method-list --}}
     @endif
   </div>
 </div>

@@ -85,7 +85,7 @@
                 <td class="tier-from"></td>
                 <td><input type="number" step="0.01" min="0" class="form-control form-control-sm" name="tier_to[]" value="{{ $t['to'] }}" placeholder="No limit" aria-label="To (m³)"></td>
                 <td><input type="number" step="0.01" min="0" class="form-control form-control-sm" name="tier_rate[]" value="{{ $t['rate'] }}" required aria-label="Rate per m³"></td>
-                <td class="text-end"><button type="button" class="btn btn-outline btn-sm tier-del text-danger" title="Remove this tier" aria-label="Remove this tier">🗑</button></td>
+                <td class="text-end"><button type="button" class="btn btn-outline btn-sm tier-del text-danger" title="Remove this tier" aria-label="Remove this tier"><i class="ph ph-trash" aria-hidden="true"></i></button></td>
               </tr>
             @endforeach
           </tbody>
@@ -153,7 +153,7 @@
     <td class="tier-from"></td>
     <td><input type="number" step="0.01" min="0" class="form-control form-control-sm" name="tier_to[]" placeholder="No limit" aria-label="To (m³)"></td>
     <td><input type="number" step="0.01" min="0" class="form-control form-control-sm" name="tier_rate[]" required aria-label="Rate per m³"></td>
-    <td class="text-end"><button type="button" class="btn btn-outline btn-sm tier-del text-danger" title="Remove this tier" aria-label="Remove this tier">🗑</button></td>
+    <td class="text-end"><button type="button" class="btn btn-outline btn-sm tier-del text-danger" title="Remove this tier" aria-label="Remove this tier"><i class="ph ph-trash" aria-hidden="true"></i></button></td>
   </tr>
 </template>
 
@@ -247,7 +247,7 @@
 @endphp
 <div class="card" id="maintenance" style="scroll-margin-top:80px;">
   <div class="card-header">
-    <h3>🔧 Maintenance</h3>
+    <h3><i class="ph ph-wrench" aria-hidden="true"></i> Maintenance</h3>
     <span class="badge {{ $maintOn ? 'badge-warning' : 'badge-success' }}">{{ $maintOn ? 'Maintenance mode is ON' : 'System is running normally' }}</span>
   </div>
   <div class="card-body">
@@ -271,7 +271,7 @@
         </div>
       </div>
       <button type="submit" class="btn {{ $maintOn ? 'btn-success' : 'btn-warning' }} mt-3">
-        {{ $maintOn ? '✅ Turn Off Maintenance Mode' : '🔧 Turn On Maintenance Mode' }}
+        <i class="ph {{ $maintOn ? 'ph-check-circle' : 'ph-wrench' }}" aria-hidden="true"></i> {{ $maintOn ? 'Turn Off Maintenance Mode' : 'Turn On Maintenance Mode' }}
       </button>
     </form>
   </div>

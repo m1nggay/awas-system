@@ -17,13 +17,13 @@ window.initPayPanel = function (root) {
     detailsBtn.textContent = show ? 'Hide bill details' : 'View bill details';
   });
 
-  // Payment method choices: tap one to open it, tap it again to close it.
+  // Payment method dropdowns: tap one to open its options, tap again to close; one open at a time.
   const tabs = root.querySelectorAll('.method-tab');
   tabs.forEach(tab => tab.addEventListener('click', () => {
-    const opening = tab.getAttribute('aria-selected') !== 'true';
+    const opening = tab.getAttribute('aria-expanded') !== 'true';
     tabs.forEach(t => {
       const on = opening && t === tab;
-      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.setAttribute('aria-expanded', on ? 'true' : 'false');
       root.querySelector('#' + t.getAttribute('aria-controls')).hidden = !on;
     });
   }));

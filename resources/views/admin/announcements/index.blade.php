@@ -10,6 +10,23 @@
       <div class="card-body">
         <form method="POST" action="{{ route('admin.announcements.store') }}" id="announceForm">
           @csrf
+          {{-- Ready-made announcements: pick one, fill in the [bracketed] parts, choose who gets it. --}}
+          <div class="mb-3">
+            <label for="template" class="form-label">Use a ready-made announcement</label>
+            <select id="template" class="form-select">
+              <option value="">— Write my own —</option>
+              @foreach ($templates as $group => $items)
+                <optgroup label="{{ $group }}">
+                  @foreach ($items as $name => $t)
+                    <option value="{{ $group }}|{{ $name }}">{{ $name }}</option>
+                  @endforeach
+                </optgroup>
+              @endforeach
+            </select>
+            <div class="text-muted small mt-1" id="templateHint" hidden>
+              <i class="ph ph-info" aria-hidden="true"></i> Replace the parts in <strong>[brackets]</strong>, then choose who gets it.
+            </div>
+          </div>
           <div class="mb-3">
             <label for="title" class="form-label">Title *</label>
             <input type="text" id="title" name="title" class="form-control" maxlength="150" required value="{{ old('title') }}" placeholder="e.g. Water interruption on Oct 15">
@@ -43,7 +60,7 @@
             <input class="form-check-input" type="checkbox" name="email" id="email" value="1" @checked(old('email'))>
             <label class="form-check-label" for="email">Also send by email</label>
           </div>
-          <button type="submit" class="btn btn-primary w-100" id="announceBtn">📣 Send Announcement</button>
+          <button type="submit" class="btn btn-primary w-100" id="announceBtn"><i class="ph ph-megaphone-simple" aria-hidden="true"></i> Send Announcement</button>
           <p class="text-muted small mt-2 mb-0">It appears in each consumer's notification bell. Consumers without an online account won't receive it.</p>
         </form>
       </div>
@@ -83,7 +100,40 @@
   document.querySelectorAll('input[name="audience"]').forEach(r => r.addEventListener('change', () => {
     document.getElementById('purokChoices').hidden = !document.getElementById('audPuroks').checked;
   }));
+  // Ready-made announcements fill in the title and message.
+  const templates = {{ Js::from($templates) }};
+  const title = document.getElementById('title'), hint = document.getElementById('templateHint');
+  const blank = /\[[^\]]+\]/;
+  document.getElementById('template').addEventListener('change', function () {
+    if (!this.value) { hint.hidden = true; return; }
+    const [group, name] = this.value.split('|');
+    const t = templates[group][name];
+    if ((title.value.trim() || msg.value.trim()) && !confirm('Replace what you have typed with "' + name + '"?')) {
+      this.value = ''; return;
+    }
+    title.value = t.title;
+    msg.value = t.message;
+    showCount();
+    hint.hidden = false;
+    // Jump to the first blank to fill in.
+    const field = blank.test(title.value) ? title : msg;
+    const m = field.value.match(blank);
+    field.focus();
+    if (m) field.setSelectionRange(m.index, m.index + m[0].length);
+  });
+
   document.getElementById('announceForm').addEventListener('submit', function (e) {
+    // Don't send an announcement that still has [blanks] in it.
+    const left = (title.value + ' ' + msg.value).match(blank);
+    if (left) {
+      e.preventDefault();
+      alert('Please fill in ' + left[0] + ' before sending.');
+      const field = blank.test(title.value) ? title : msg;
+      const m = field.value.match(blank);
+      field.focus();
+      field.setSelectionRange(m.index, m.index + m[0].length);
+      return;
+    }
     if (!confirm('Send this announcement now?')) { e.preventDefault(); return; }
     document.getElementById('announceBtn').disabled = true;
   });

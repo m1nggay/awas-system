@@ -24,7 +24,7 @@ class AccountController extends Controller
 
         return view('account.password', [
             'user'     => $user,
-            'step'     => $this->isVerified($request) ? 'new' : ($request->session()->get('pwd_change_code_sent') ? 'code' : 'request'),
+            'step'     => self::passwordStep($request),
             'resendIn' => $otp->secondsUntilResend($user->user_id),
             'ttl'      => $otp->ttlMinutes,
             'layout'   => $user->role === 'applicant' ? 'auth' : 'app',
@@ -48,7 +48,7 @@ class AccountController extends Controller
         if ($result === 'sent') {
             log_activity($user->user_id, 'password_change_requested', 'Requested a change-password code by email');
         }
-        return redirect()->route('account.password')->with($type === 'success' ? 'success' : 'error', $message);
+        return $this->stepPage($request)->with($type === 'success' ? 'success' : 'error', $message);
     }
 
     public function verifyCode(Request $request)
@@ -73,13 +73,13 @@ class AccountController extends Controller
 
         $request->session()->put('pwd_change_verified_at', time());
         $request->session()->forget('pwd_change_code_sent');
-        return redirect()->route('account.password')->with('success', 'Code verified. You can now choose a new password.');
+        return $this->stepPage($request)->with('success', 'Code verified. You can now choose a new password.');
     }
 
     public function update(Request $request)
     {
         if (!$this->isVerified($request)) {
-            return redirect()->route('account.password')->with('error', 'Please verify the code sent to your email first.');
+            return $this->stepPage($request)->with('error', 'Please verify the code sent to your email first.');
         }
 
         $user = $request->user();
@@ -100,12 +100,35 @@ class AccountController extends Controller
         log_activity($user->user_id, 'password_change', 'Changed own password (verified by email code)');
 
         flash('success', 'Your password was changed.');
-        return redirect()->route($user->role === 'resident' ? 'resident.profile' : $user->dashboardRoute());
+        return redirect()->route(match (true) {
+            $user->role === 'resident' => 'resident.profile',
+            $request->input('from') === 'profile' => 'admin.profile',
+            default => $user->dashboardRoute(),
+        });
+    }
+
+    /** Which step the signed-in user is on: 'request' (get a code), 'code' (enter it) or 'new' (new password). */
+    public static function passwordStep(Request $request): string
+    {
+        return (new self())->isVerified($request) ? 'new' : ($request->session()->get('pwd_change_code_sent') ? 'code' : 'request');
     }
 
     private function isVerified(Request $request): bool
     {
         $at = (int)$request->session()->get('pwd_change_verified_at', 0);
         return $at > 0 && (time() - $at) <= self::VERIFIED_TTL_SECONDS;
+    }
+
+    /** Back to where the steps are shown: My Profile's Security card, or the Change Password page. */
+    private function stepPage(Request $request)
+    {
+        if ($request->input('from') !== 'profile') {
+            return redirect()->route('account.password');
+        }
+        return match ($request->user()->role) {
+            'resident'       => redirect()->to(route('resident.profile') . '#security'),
+            'admin', 'staff' => redirect()->to(route('admin.profile') . '#security'),
+            default          => redirect()->route('account.password'),
+        };
     }
 }

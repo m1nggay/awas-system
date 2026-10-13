@@ -105,8 +105,8 @@
         lastNotif = Math.max(lastNotif, d.notif || 0);
         if (d.readings && d.readings.length) {
           var shown = d.readings.slice(-3);
-          shown.forEach(function (r) { toast('🧮 New meter reading', r.text); });
-          if (d.readings.length > 3) toast('🧮 New meter readings', '+' + (d.readings.length - 3) + ' more new readings.');
+          shown.forEach(function (r) { toast('New meter reading', r.text); });
+          if (d.readings.length > 3) toast('New meter readings', '+' + (d.readings.length - 3) + ' more new readings.');
           addRows(d.readings);
         }
         updateBell(d.unread || 0, d.notifications || []);

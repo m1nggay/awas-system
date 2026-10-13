@@ -17,9 +17,9 @@
         @if ($receiptPopup ?? false)
           <button type="button" class="btn btn-outline btn-sm" title="View Receipt"
                   data-receipt-view="{{ route('payments.receipt', ['payment' => $p->payment_id, 'embed' => 1]) }}"
-                  data-receipt-title="Payment Receipt — {{ billingPeriodLabel($p->billing_period) }}">🧾 View</button>
+                  data-receipt-title="Payment Receipt — {{ billingPeriodLabel($p->billing_period) }}"><i class="ph ph-receipt" aria-hidden="true"></i> View</button>
         @else
-          <a href="{{ route('payments.receipt', $p->payment_id) }}" class="btn btn-outline btn-sm" title="View Receipt">🧾 View</a>
+          <a href="{{ route('payments.receipt', $p->payment_id) }}" class="btn btn-outline btn-sm" title="View Receipt"><i class="ph ph-receipt" aria-hidden="true"></i> View</a>
         @endif
       </td>
     </tr>

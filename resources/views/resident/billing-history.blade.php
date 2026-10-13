@@ -43,7 +43,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" onclick="document.getElementById('billViewFrame').contentWindow.print()">🖨️ Print / Save as PDF</button>
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('billViewFrame').contentWindow.document.getElementById('downloadBtn')?.click()"><i class="ph ph-download-simple" aria-hidden="true"></i> Download Bill</button>
       </div>
     </div>
   </div>

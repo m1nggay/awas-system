@@ -8,19 +8,19 @@
   <div class="col-6 col-md-4">
     <div class="stat-card">
       <div class="stat-info"><div class="label">Read this period ({{ billingPeriodLabel($period) }})</div><div class="value">{{ number_format($readThisPeriod) }} / {{ number_format($activeCount) }}</div></div>
-      <div class="stat-icon">🧮</div>
+      <div class="stat-icon"><i class="ph ph-gauge" aria-hidden="true"></i></div>
     </div>
   </div>
   <div class="col-6 col-md-4">
     <div class="stat-card warning">
       <div class="stat-info"><div class="label">Meters still to read</div><div class="value">{{ number_format(max(0, $activeCount - $readThisPeriod)) }}</div></div>
-      <div class="stat-icon">⏳</div>
+      <div class="stat-icon"><i class="ph ph-hourglass" aria-hidden="true"></i></div>
     </div>
   </div>
   <div class="col-12 col-md-4">
     <div class="stat-card success">
       <div class="stat-info"><div class="label">My readings today</div><div class="value">{{ number_format($myToday) }}</div></div>
-      <div class="stat-icon">✅</div>
+      <div class="stat-icon"><i class="ph ph-check-circle" aria-hidden="true"></i></div>
     </div>
   </div>
 </div>
@@ -41,7 +41,7 @@
             @forelse ($toRead as $c)
               <tr><td><strong>{{ $c->meter_number ?: '—' }}</strong></td><td>{{ $c->full_name }}</td><td>{{ $c->purok_name }}</td></tr>
             @empty
-              <tr class="empty-row"><td colspan="3">All active meters have been read this period. 🎉</td></tr>
+              <tr class="empty-row"><td colspan="3">All active meters have been read this period.</td></tr>
             @endforelse
             </tbody>
           </table>

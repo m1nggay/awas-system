@@ -194,7 +194,7 @@
         <div class="id-widget" data-id-widget data-side="{{ $side }}">
           <label for="{{ $fileName }}">{{ $title }} *</label>
           <div class="cam-actions">
-            <button type="button" class="btn btn-primary btn-sm" data-role="open">📷 Capture {{ strtolower($title) }}</button>
+            <button type="button" class="btn btn-primary btn-sm" data-role="open"><i class="ph ph-camera" aria-hidden="true"></i> Capture {{ strtolower($title) }}</button>
             <button type="button" class="btn btn-success btn-sm" data-role="snap" hidden>Capture</button>
             <button type="button" class="btn btn-secondary btn-sm" data-role="retake" hidden>Retake</button>
             <button type="button" class="btn btn-secondary btn-sm" data-role="close" hidden>Cancel</button>
@@ -225,7 +225,7 @@
         <div class="liveness-prompt" id="livenessPrompt" aria-live="polite"></div>
         <img id="livenessResult" alt="Face captured during the blink check" hidden>
         <div class="cam-actions" style="justify-content:center;">
-          <button type="button" class="btn btn-outline btn-sm" id="livenessStart">📷 Start face verification</button>
+          <button type="button" class="btn btn-outline btn-sm" id="livenessStart"><i class="ph ph-camera" aria-hidden="true"></i> Start face verification</button>
           <button type="button" class="btn btn-secondary btn-sm" id="livenessRetry" hidden>Try again</button>
         </div>
         <div class="form-check mt-2">

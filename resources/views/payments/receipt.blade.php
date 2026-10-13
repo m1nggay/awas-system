@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Payment Receipt — {{ $p->payment_reference }}</title>
@@ -137,8 +139,8 @@
   </div>
 
   <div class="actions-bottom no-print">
-    <button type="button" class="btn btn-outline" onclick="window.print()">🖨️ Print</button>
-    <button type="button" class="btn btn-primary" id="downloadBtn">⬇️ Download Receipt (PDF)</button>
+    <button type="button" class="btn btn-outline" onclick="window.print()"><i class="ph ph-printer" aria-hidden="true"></i> Print</button>
+    <button type="button" class="btn btn-primary" id="downloadBtn"><i class="ph ph-download-simple" aria-hidden="true"></i> Download Receipt (PDF)</button>
   </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -162,7 +164,7 @@
         pdf.save(fileName);
       })
       .catch(function () { window.print(); })
-      .finally(function () { btn.disabled = false; btn.textContent = '⬇️ Download Receipt (PDF)'; });
+      .finally(function () { btn.disabled = false; btn.innerHTML = '<i class="ph ph-download-simple" aria-hidden="true"></i> Download Receipt (PDF)'; });
   }
 
   btn.addEventListener('click', download);

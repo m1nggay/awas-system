@@ -7,7 +7,7 @@
   <div class="card-body">
     <form method="GET" action="{{ route('admin.bills.index') }}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
       <div class="input-group flex-grow-1" style="min-width:200px;">
-        <span class="input-group-text">🔍</span>
+        <span class="input-group-text"><i class="ph ph-magnifying-glass" aria-hidden="true"></i></span>
         <input type="text" name="q" class="form-control" placeholder="Search by name or meter number..." value="{{ $search }}">
       </div>
       <select name="status" class="form-select w-auto" onchange="this.form.submit()">
@@ -73,7 +73,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" id="billViewPrint">🖨️ Print / Save as PDF</button>
+        <button type="button" class="btn btn-primary" id="billViewPrint"><i class="ph ph-printer" aria-hidden="true"></i> Print / Save as PDF</button>
       </div>
     </div>
   </div>

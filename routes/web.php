@@ -89,7 +89,6 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
         // Only the Meter Reader records readings; the bill is generated automatically.
         Route::post('/meter-readings', [Admin\MeterReadingController::class, 'store'])->middleware('role:staff')->name('readings.store');
         Route::put('/meter-readings/{reading}', [Admin\MeterReadingController::class, 'update'])->middleware('role:staff')->name('readings.update');
-        Route::delete('/meter-readings/{reading}', [Admin\MeterReadingController::class, 'destroy'])->middleware('role:staff')->name('readings.destroy');
 
         Route::get('/reports', [Admin\ReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/export', [Admin\ReportController::class, 'export'])->name('reports.export');
@@ -177,6 +176,10 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
 
         Route::get('/profile', [Resident\ProfileController::class, 'show'])->name('profile');
         Route::post('/profile/contact', [Resident\ProfileController::class, 'updateContact'])->name('profile.contact');
+        // A new email is confirmed with a code sent to the current one.
+        Route::post('/profile/contact/confirm', [Resident\ProfileController::class, 'confirmEmail'])->name('profile.contact.confirm');
+        Route::post('/profile/contact/resend', [Resident\ProfileController::class, 'resendEmailCode'])->name('profile.contact.resend');
+        Route::post('/profile/contact/cancel', [Resident\ProfileController::class, 'cancelEmailChange'])->name('profile.contact.cancel');
     });
 
     // The barangay's official GCash QR image (payment pages).

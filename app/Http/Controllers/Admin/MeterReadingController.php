@@ -205,32 +205,6 @@ class MeterReadingController extends Controller
         return back();
     }
 
-    public function destroy(Request $request, MeterReading $reading)
-    {
-        if (!$this->canManage($request, $reading)) {
-            flash('danger', 'This reading is not in a purok assigned to you.');
-            return back();
-        }
-
-        $bill = DB::table('water_bills')->where('reading_id', $reading->reading_id)->first(['bill_id', 'amount_paid']);
-        if ($bill && ((float)$bill->amount_paid > 0
-            || DB::table('payments')->where('bill_id', $bill->bill_id)->whereIn('status', ['pending', 'verified'])->exists())) {
-            flash('danger', 'This reading cannot be deleted because its bill already has payments.');
-            return back();
-        }
-
-        $meter = DB::table('consumers')->where('consumer_id', $reading->consumer_id)->value('meter_number');
-        DB::transaction(function () use ($reading, $bill) {
-            if ($bill) {
-                DB::table('water_bills')->where('bill_id', $bill->bill_id)->delete();
-            }
-            $reading->delete();
-        });
-        log_activity($request->user()->user_id, 'meter_reading_delete', 'Deleted the ' . billingPeriodLabel($reading->billing_period) . " reading of meter $meter");
-        flash('success', 'Meter reading and its bill were deleted.');
-        return back();
-    }
-
     private function canManage(Request $request, MeterReading $reading): bool
     {
         $purokId = DB::table('consumers')->where('consumer_id', $reading->consumer_id)->value('purok_id');

@@ -49,7 +49,7 @@
     <form method="GET" action="{{ route('admin.payments.index') }}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
       <input type="hidden" name="tab" value="{{ $tab }}">
       <div class="input-group flex-grow-1" style="min-width:200px;">
-        <span class="input-group-text">🔍</span>
+        <span class="input-group-text"><i class="ph ph-magnifying-glass" aria-hidden="true"></i></span>
         <input type="text" name="q" class="form-control" placeholder="Search by Meter Number, Name, or reference number..." value="{{ $search }}">
       </div>
       <select name="method" class="form-select w-auto" onchange="this.form.submit()">
@@ -80,7 +80,7 @@
             <td>{{ paymentMethodLabel($p->payment_method, $p->wallet ?? null) }}<div class="text-muted" style="font-size:11px;">{{ paymentChannelLabel($p->channel) }}</div></td>
             <td>{{ formatDateTime($p->payment_date) }}</td>
             <td>
-              @if ($p->receipt_file)<a href="{{ route('admin.payments.receipt', $p->payment_id) }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">📎 View screenshot</a>@endif
+              @if ($p->receipt_file)<a href="{{ route('admin.payments.receipt', $p->payment_id) }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm"><i class="ph ph-paperclip" aria-hidden="true"></i> View screenshot</a>@endif
               @if ($p->payment_gateway_txn_id)<div class="text-muted" style="font-size:11.5px;">{{ $p->payment_method === 'paymongo' ? 'PayMongo' : 'Ref.' }} {{ $p->payment_gateway_txn_id }}</div>@endif
               @if (!$p->receipt_file && !$p->payment_gateway_txn_id)—@endif
             </td>
@@ -92,7 +92,7 @@
               @if ($p->rejection_reason)<div class="text-danger" style="font-size:11px;">{{ $p->rejection_reason }}</div>@endif
             </td>
             <td class="actions">
-              <a href="{{ route('payments.receipt', $p->payment_id) }}" target="_blank" class="btn btn-outline btn-sm" title="View / download receipt">🧾 Receipt</a>
+              <a href="{{ route('payments.receipt', $p->payment_id) }}" target="_blank" class="btn btn-outline btn-sm" title="View / download receipt"><i class="ph ph-receipt" aria-hidden="true"></i> Receipt</a>
               @if ($p->status === 'pending' && $p->payment_method === 'paymongo')
                 <form method="POST" action="{{ route('admin.payments.paymongo-check', $p->payment_id) }}" class="d-inline">
                   @csrf
@@ -123,7 +123,7 @@
             </td>
           </tr>
         @empty
-          <tr class="empty-row"><td colspan="10">{{ $tab === 'pending' ? 'No payments waiting for verification. 🎉' : 'No payments found.' }}</td></tr>
+          <tr class="empty-row"><td colspan="10">{{ $tab === 'pending' ? 'No payments waiting for verification.' : 'No payments found.' }}</td></tr>
         @endforelse
         </tbody>
       </table>
@@ -146,7 +146,7 @@
           @endif
           <div class="mb-3">
             <div class="input-group mb-2">
-              <span class="input-group-text">🔍</span>
+              <span class="input-group-text"><i class="ph ph-magnifying-glass" aria-hidden="true"></i></span>
               <input type="search" id="billSearch" class="form-control" placeholder="Type a name or meter number to find the bill" autocomplete="off" aria-label="Find the water bill">
             </div>
             <div class="bill-pick" id="billPick" role="radiogroup" aria-label="Water bill">
@@ -171,8 +171,8 @@
 
           <label class="form-label">Payment Method *</label>
           <div class="method-choice mb-3">
-            <label><input type="radio" name="payment_method" value="cash" @checked(old('payment_method', 'cash') === 'cash')><span>💵 Cash</span></label>
-            <label><input type="radio" name="payment_method" value="gcash" @checked(old('payment_method') === 'gcash')><span>📱 {{ $paymongo ? 'GCash / Maya QR' : 'GCash QR' }}</span></label>
+            <label><input type="radio" name="payment_method" value="cash" @checked(old('payment_method', 'cash') === 'cash')><span><i class="ph ph-money" aria-hidden="true"></i> Cash</span></label>
+            <label><input type="radio" name="payment_method" value="gcash" @checked(old('payment_method') === 'gcash')><span><i class="ph ph-device-mobile" aria-hidden="true"></i> {{ $paymongo ? 'GCash / Maya QR' : 'GCash QR' }}</span></label>
           </div>
 
           @if ($paymongo)
@@ -444,7 +444,7 @@ function openReject(action, who) {
         .then(d => {
           if (d.status === 'paid') {
             clearInterval(poll); clearInterval(tick);
-            $('qrState').innerHTML = '<span class="badge badge-success" style="font-size:14px;">✅ Paid</span>';
+            $('qrState').innerHTML = '<span class="badge badge-success" style="font-size:14px;"><i class="ph ph-check-circle" aria-hidden="true"></i> Paid</span>';
             $('qrCancelBtn').hidden = true;
             setTimeout(() => { location.href = d.redirect; }, 1200);
           } else if (d.status === 'expired' || d.status === 'gone') {

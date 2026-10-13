@@ -7,7 +7,7 @@
   <div class="card-body">
     <form method="GET" class="d-flex flex-wrap gap-2 align-items-center mb-3">
       <div class="input-group flex-grow-1" style="min-width:200px;">
-        <span class="input-group-text">🔍</span>
+        <span class="input-group-text"><i class="ph ph-magnifying-glass" aria-hidden="true"></i></span>
         <input type="text" name="q" class="form-control" value="{{ $search }}"
                placeholder="{{ isset($accounts) ? 'Search by name, username, email, or meter number...' : 'Search by applicant name, email, or application ID...' }}">
       </div>

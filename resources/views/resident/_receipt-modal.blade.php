@@ -11,7 +11,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" id="receiptViewDownload">⬇️ Download Receipt</button>
+        <button type="button" class="btn btn-primary" id="receiptViewDownload"><i class="ph ph-download-simple" aria-hidden="true"></i> Download Receipt</button>
       </div>
     </div>
   </div>

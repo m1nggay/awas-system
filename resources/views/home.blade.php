@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AWAS: Adlay Water Augmentation System</title>
@@ -144,17 +146,17 @@
   <section class="features">
     <div class="wrap">
       <div class="feature">
-        <div class="glyph">💧</div>
+        <div class="glyph"><i class="ph ph-drop" aria-hidden="true"></i></div>
         <h3>Digital meter reading</h3>
         <p>Field staff log current and previous readings for each household; consumption is calculated the moment it's saved.</p>
       </div>
       <div class="feature">
-        <div class="glyph">🧾</div>
+        <div class="glyph"><i class="ph ph-invoice" aria-hidden="true"></i></div>
         <h3>Automated billing</h3>
         <p>Bills are computed against the barangay's configured rate tiers — no manual math, no spreadsheets to reconcile.</p>
       </div>
       <div class="feature">
-        <div class="glyph">💳</div>
+        <div class="glyph"><i class="ph ph-wallet" aria-hidden="true"></i></div>
         <h3>Online payments</h3>
         <p>Residents review their bill and submit payment online; staff verify it and the account updates on its own.</p>
       </div>

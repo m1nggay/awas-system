@@ -8,19 +8,19 @@
   <div class="col-6 col-md-3">
     <div class="stat-card">
       <div class="stat-info"><div class="label">Latest Consumption</div><div class="value">{{ $latestReading ? number_format($latestReading->consumption, 2) . ' m³' : '—' }}</div></div>
-      <div class="stat-icon">💧</div>
+      <div class="stat-icon"><i class="ph ph-drop" aria-hidden="true"></i></div>
     </div>
   </div>
   <div class="col-6 col-md-3">
     <div class="stat-card {{ $currentBill && $currentBill->status === 'overdue' ? 'danger' : 'warning' }}">
       <div class="stat-info"><div class="label">Unpaid Balance</div><div class="value">{{ formatCurrency($totalBalance) }}</div></div>
-      <div class="stat-icon">🧾</div>
+      <div class="stat-icon"><i class="ph ph-invoice" aria-hidden="true"></i></div>
     </div>
   </div>
   <div class="col-6 col-md-3">
     <div class="stat-card">
       <div class="stat-info"><div class="label">Due Date</div><div class="value fs-6">{{ $currentBill ? formatDate($currentBill->due_date) : 'No pending bill' }}</div></div>
-      <div class="stat-icon">📅</div>
+      <div class="stat-icon"><i class="ph ph-calendar-blank" aria-hidden="true"></i></div>
     </div>
   </div>
   <div class="col-6 col-md-3">
@@ -36,7 +36,7 @@
           <span class="badge badge-success">All Paid</span>
         @endif
       </div></div>
-      <div class="stat-icon">✅</div>
+      <div class="stat-icon"><i class="ph ph-check-circle" aria-hidden="true"></i></div>
     </div>
   </div>
 </div>
@@ -55,7 +55,7 @@
       <div class="card-header"><h3>Current Bill</h3></div>
       <div class="card-body">
         @if (!$currentBill)
-          <p class="text-muted">You have no outstanding bills. 🎉</p>
+          <p class="text-muted">You have no outstanding bills.</p>
         @else
           <div class="d-flex justify-content-between mb-2"><span class="text-muted">Meter Number</span><strong>{{ $consumer->meter_number }}</strong></div>
           <div class="d-flex justify-content-between mb-2"><span class="text-muted">Billing Period</span><strong>{{ billingPeriodLabel($currentBill->billing_period) }}</strong></div>
