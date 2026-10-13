@@ -1,6 +1,6 @@
 # Deploying AWAS to the Hostinger VPS
 
-Server: Hostinger KVM 1, Ubuntu 26.04, IP `201.18.210.94`.
+Server: Hostinger KVM 1, Ubuntu 24.04 LTS (26.04 has no PHP 8.3 packages), IP `201.18.210.94`.
 
 ## 0. Before you start
 
@@ -44,18 +44,20 @@ Save with `Ctrl+O`, `Enter`, then exit with `Ctrl+X`.
 Choose **one** option.
 
 **A. Copy your local data** (keeps existing consumers, bills and payments). On your Windows PC, in the project folder.
-If `pg_dump` is not found, use its full path, e.g. `& "C:\Program Files\PostgreSQL\16\bin\pg_dump.exe"`:
+If `pg_dump` is not found, use its full path, e.g. `& "C:\Program Files\PostgreSQL\18\bin\pg_dump.exe"`.
+The server runs PostgreSQL 16 and the PC runs 18, so use a plain SQL dump. Before uploading, delete any
+`\restrict`, `\unrestrict` and `SET transaction_timeout` lines from the file.
 
 ```
-pg_dump -U postgres -Fc awas_db -f awas.dump
-scp awas.dump root@201.18.210.94:/root/
-scp -r storage/app root@201.18.210.94:/var/www/awas/storage/
+pg_dump -U postgres --no-owner --no-privileges -d awas_db -f awas_db.sql
+scp awas_db.sql root@201.18.210.94:/root/
+scp -r storage/app/applications storage/app/gcash storage/app/payment-receipts storage/app/profile-photos storage/app/public root@201.18.210.94:/var/www/awas/storage/app/
 ```
 
 Then on the server:
 
 ```
-sudo -u postgres pg_restore --no-owner --role=awas -d awas_db /root/awas.dump
+(echo "SET ROLE awas;"; cat /root/awas_db.sql) | sudo -u postgres psql -d awas_db -v ON_ERROR_STOP=1
 chown -R www-data:www-data /var/www/awas/storage
 ```
 
@@ -79,8 +81,14 @@ certbot --nginx -d awas-system.online -d www.awas-system.online
 
 ## 6. PayMongo webhook
 
-In the PayMongo dashboard, set the webhook URL to `https://awas-system.online/api/paymongo/webhook`.
-Then put its signing secret in `PAYMONGO_WEBHOOK_SECRET` and run `php artisan config:cache` again.
+PayMongo webhooks are created through its API. Run this on the server. It registers
+`https://awas-system.online/api/paymongo/webhook` and saves the returned `whsk_...` secret into `.env`:
+
+```
+cd /var/www/awas && SK=$(grep '^PAYMONGO_SECRET_KEY=' .env | cut -d= -f2- | tr -d '"') && RESP=$(curl -s https://api.paymongo.com/v1/webhooks -u "$SK:" -H 'Content-Type: application/json' -d '{"data":{"attributes":{"url":"https://awas-system.online/api/paymongo/webhook","events":["checkout_session.payment.paid","payment.paid"]}}}') && WH=$(echo "$RESP" | php -r '$j=json_decode(stream_get_contents(STDIN),true); echo $j["data"]["attributes"]["secret_key"] ?? "";') && if [ -n "$WH" ]; then sed -i "s|^PAYMONGO_WEBHOOK_SECRET=.*|PAYMONGO_WEBHOOK_SECRET=$WH|" .env && sudo -u www-data php artisan config:cache && echo "Webhook created and saved"; else echo "$RESP"; fi
+```
+
+If you switch to live keys, create a new webhook the same way using the `sk_live_` key.
 
 ## Updating later
 
