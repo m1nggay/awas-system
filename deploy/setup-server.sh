@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# setup-server.sh — prepares a fresh Ubuntu 26.04 VPS (Hostinger KVM 1) for AWAS.
+# setup-server.sh — prepares a fresh Ubuntu 24.04 VPS (Hostinger KVM 1) for AWAS.
 #
 # Run on the VPS as root:
 #   curl -fsSL https://raw.githubusercontent.com/m1nggay/awas-system/main/deploy/setup-server.sh -o setup-server.sh
