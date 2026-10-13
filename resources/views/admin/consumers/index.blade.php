@@ -11,7 +11,7 @@
     </div>
   @endunless
   <div class="card-body">
-    <form method="GET" action="{{ route('admin.consumers.index') }}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
+    <form method="GET" action="{{ route('admin.consumers.index') }}" class="d-flex flex-wrap gap-2 align-items-center mb-3 filter-bar">
       <div class="input-group flex-grow-1" style="min-width:200px;">
         <span class="input-group-text"><i class="ph ph-magnifying-glass" aria-hidden="true"></i></span>
         <input type="search" name="q" class="form-control" placeholder="Search by Meter Number, Name or Purok..." value="{{ $search }}" aria-label="Search consumers">
@@ -41,15 +41,15 @@
     </form>
 
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0 data-table consumer-table">
+      <table class="table table-hover align-middle mb-0 data-table consumer-table {{ $isReader ? 'table-stack' : '' }}">
         <thead>
           <tr><th>No.</th><th>Meter Number</th><th>Name</th><th>Purok</th><th>Type of Consumer</th><th>Status</th>@unless ($isReader)<th>Balance</th>@endunless @if ($isReader)<th>Last Reading</th><th>This Month</th>@endif<th>Actions</th></tr>
         </thead>
         <tbody>
         @forelse ($consumers as $i => $c)
           <tr>
-            <td>{{ $consumers->firstItem() + $i }}</td>
-            <td><strong>{{ $c->meter_number ?: '—' }}</strong></td>
+            <td class="stack-hide">{{ $consumers->firstItem() + $i }}</td>
+            <td class="stack-title"><strong>{{ $c->meter_number ?: '—' }}</strong></td>
             <td class="consumer-name">{{ $c->display_name }}<div class="text-muted small consumer-addr">{{ $c->address }}</div></td>
             <td>{{ $c->purok_name }}</td>
             <td>{{ consumerTypeLabel($c->consumer_type) }}</td>

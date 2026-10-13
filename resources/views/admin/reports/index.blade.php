@@ -15,7 +15,7 @@
     </div>
   </div>
   <div class="card-body">
-    <form method="GET" action="{{ route('admin.reports.index') }}" class="d-flex flex-wrap gap-2 align-items-center">
+    <form method="GET" action="{{ route('admin.reports.index') }}" class="d-flex flex-wrap gap-2 align-items-center filter-bar">
       <select name="type" class="form-select flex-grow-1" style="min-width:240px;" onchange="this.form.submit()">
         @foreach ($reportTypes as $key => $label)
           <option value="{{ $key }}" @selected($reportType === $key)>{{ $label }}</option>
@@ -51,7 +51,7 @@
   <div class="card-header"><h3>{{ $reportTypes[$reportType] }}{{ $reportType === 'consumption' ? ' — ' . billingPeriodLabel($period) : '' }}</h3></div>
   <div class="card-body no-pad">
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0 data-table">
+      <table class="table table-hover align-middle mb-0 data-table {{ auth()->user()->isMeterReader() ? 'table-stack' : '' }}">
         <thead><tr>@foreach ($columns as $col)<th>{{ $col }}</th>@endforeach</tr></thead>
         <tbody>
         @forelse ($rows as $row)

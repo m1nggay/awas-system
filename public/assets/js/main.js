@@ -75,3 +75,24 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('#notifPanel .notif-panel-item.unread').forEach(function (el) { el.classList.remove('unread'); });
   });
 });
+
+// Phones: tables with .table-stack show each row as a card. Every cell gets its
+// column name (from the table header) as a label; rows added later get one too.
+(function () {
+  function label(table) {
+    var heads = Array.prototype.map.call(table.querySelectorAll('thead th'), function (th) { return th.textContent.trim(); });
+    table.querySelectorAll('tbody tr').forEach(function (tr) {
+      Array.prototype.forEach.call(tr.children, function (td, i) {
+        if (!td.hasAttribute('data-label') && heads[i]) td.setAttribute('data-label', heads[i]);
+      });
+    });
+  }
+  function init() {
+    document.querySelectorAll('table.table-stack').forEach(function (table) {
+      label(table);
+      var body = table.querySelector('tbody');
+      if (body && window.MutationObserver) new MutationObserver(function () { label(table); }).observe(body, { childList: true });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();

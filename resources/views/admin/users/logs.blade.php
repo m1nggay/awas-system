@@ -21,7 +21,7 @@
     <span class="text-muted small">{{ number_format($logs->total()) }} {{ Str::plural('entry', $logs->total()) }}</span>
   </div>
   <div class="card-body">
-    <form method="GET" action="{{ route('admin.users.logs') }}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
+    <form method="GET" action="{{ route('admin.users.logs') }}" class="d-flex flex-wrap gap-2 align-items-center mb-3 filter-bar">
       @if ($isAdmin)
         <select name="user_id" class="form-select w-auto" onchange="this.form.submit()">
           <option value="0">All users</option>
@@ -55,7 +55,7 @@
     </form>
 
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0 data-table">
+      <table class="table table-hover align-middle mb-0 data-table {{ $isAdmin ? '' : 'table-stack' }}">
         <thead><tr><th>User</th><th>Role</th><th>Action</th><th>Description</th><th>Date</th><th>Time</th><th>IP Address</th></tr></thead>
         <tbody>
         @forelse ($logs as $log)
@@ -69,7 +69,8 @@
             };
           @endphp
           <tr>
-            <td>
+            {{-- A Meter Reader only sees their own activity, so on phones the User / Role lines are left out. --}}
+            <td @unless ($isAdmin) class="stack-hide" @endunless>
               @if ($log->user_id)
                 @if ($isAdmin)
                   <a href="{{ route('admin.users.logs', ['user_id' => $log->user_id]) }}">{{ $log->full_name ?? 'Deleted user' }}</a>
@@ -81,7 +82,7 @@
                 <span class="text-muted">System / not signed in</span>
               @endif
             </td>
-            <td>{{ $log->user_id ? roleLabel($log->role) : '—' }}</td>
+            <td @unless ($isAdmin) class="stack-hide" @endunless>{{ $log->user_id ? roleLabel($log->role) : '—' }}</td>
             <td><span class="badge {{ $badge }}">{{ str_replace('_', ' ', $log->action) }}</span></td>
             <td style="max-width:380px;">{{ $log->details ?: '—' }}</td>
             <td style="white-space:nowrap;">{{ formatDate($log->created_at) }}</td>

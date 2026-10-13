@@ -7,11 +7,11 @@
 <div class="card">
   @if ($isReader)
     <div class="card-header justify-content-end">
-      <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addReadingModal">+ Record Reading</button>
+      <button class="btn btn-primary btn-sm btn-phone-block" data-bs-toggle="modal" data-bs-target="#addReadingModal">+ Record Reading</button>
     </div>
   @endif
   <div class="card-body">
-    <form method="GET" action="{{ route('admin.readings.index') }}" class="d-flex flex-wrap gap-2 align-items-center mb-3" id="readingFilter">
+    <form method="GET" action="{{ route('admin.readings.index') }}" class="d-flex flex-wrap gap-2 align-items-center mb-3 filter-bar" id="readingFilter">
       <div class="input-group flex-grow-1" style="min-width:200px;">
         <span class="input-group-text"><i class="ph ph-magnifying-glass" aria-hidden="true"></i></span>
         <input type="search" name="q" class="form-control" placeholder="Search by Meter Number or Name..." value="{{ $search }}" aria-label="Search meter readings">
@@ -41,7 +41,7 @@
     </form>
 
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0 data-table" @if ($isAdmin && $readings->currentPage() === 1 && $search === '' && !$purokFil && $statusFil === '' && $periodFil === '') data-live-readings @endif>
+      <table class="table table-hover align-middle mb-0 data-table {{ $isReader ? 'table-stack' : '' }}" @if ($isAdmin && $readings->currentPage() === 1 && $search === '' && !$purokFil && $statusFil === '' && $periodFil === '') data-live-readings @endif>
         <thead>
           <tr>
             <th>No.</th><th>Meter Number</th><th>Name</th><th>Previous Reading</th><th>Present Reading</th>
@@ -65,7 +65,7 @@
 
 @if ($isReader)
 <div class="modal fade" id="addReadingModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-fullscreen-sm-down">
     <div class="modal-content">
       <form method="POST" action="{{ route('admin.readings.store') }}" id="readingForm">
         <div class="modal-header"><h3 class="h6 mb-0">Record Meter Reading</h3><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
@@ -85,11 +85,11 @@
           <div class="row g-3 mb-3">
             <div class="col-6">
               <label for="previous_reading" class="form-label">Previous Reading *</label>
-              <input type="number" step="0.01" min="0" id="previous_reading" name="previous_reading" class="form-control" required>
+              <input type="number" step="0.01" min="0" inputmode="decimal" id="previous_reading" name="previous_reading" class="form-control" required>
             </div>
             <div class="col-6">
               <label for="current_reading" class="form-label">Present Reading *</label>
-              <input type="number" step="0.01" min="0" id="current_reading" name="current_reading" class="form-control" required>
+              <input type="number" step="0.01" min="0" inputmode="decimal" id="current_reading" name="current_reading" class="form-control" required>
             </div>
           </div>
 
@@ -134,15 +134,15 @@
 
 @if ($canManage)
 <div class="modal fade" id="editReadingModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-fullscreen-sm-down">
     <div class="modal-content">
       <form method="POST" action="" id="editReadingForm">
         <div class="modal-header"><h3 class="h6 mb-0">Edit Meter Reading —<span id="er_meter"></span></h3><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         @csrf @method('PUT')
         <div class="modal-body">
           <div class="row g-3">
-            <div class="col-md-6"><label class="form-label">Previous Reading</label><input type="number" step="0.01" min="0" name="previous_reading" id="er_prev" class="form-control" required></div>
-            <div class="col-md-6"><label class="form-label">Present Reading</label><input type="number" step="0.01" min="0" name="current_reading" id="er_curr" class="form-control" required></div>
+            <div class="col-md-6"><label class="form-label">Previous Reading</label><input type="number" step="0.01" min="0" inputmode="decimal" name="previous_reading" id="er_prev" class="form-control" required></div>
+            <div class="col-md-6"><label class="form-label">Present Reading</label><input type="number" step="0.01" min="0" inputmode="decimal" name="current_reading" id="er_curr" class="form-control" required></div>
           </div>
           <div class="mb-3 mt-3"><label class="form-label">Reading Date</label><input type="date" name="reading_date" id="er_date" class="form-control" required></div>
           <div class="mb-3"><label class="form-label">Remarks</label><input type="text" name="remarks" id="er_remarks" class="form-control"></div>

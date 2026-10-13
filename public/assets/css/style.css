@@ -467,3 +467,45 @@ tr.live-new > td{animation:liveRow 4s ease;}
 .btn-outline-danger:hover{background:var(--danger);color:#fff;}
 .btn-outline-success{background:transparent;border:1px solid var(--success);color:var(--success);}
 .btn-outline-success:hover{background:var(--success);color:#fff;}
+
+/* ---------------------------------------------------------------
+   Phones (Meter Readers work in the field): roomier page, filters
+   that fill the width, and .table-stack tables shown as cards.
+--------------------------------------------------------------- */
+@media (max-width:576px){
+  .page-body{padding:14px 12px;}
+  .topbar{padding:10px 14px;}
+  .card-header{flex-wrap:wrap;gap:8px;}
+  .card-header > .d-flex{flex-wrap:wrap;}
+
+  /* Filter rows: search on its own line, dropdowns two per line. */
+  .filter-bar > .input-group{flex:1 1 100% !important;min-width:0 !important;}
+  .filter-bar > .form-select, .filter-bar > input.form-control{flex:1 1 calc(50% - 8px);width:auto !important;min-width:0 !important;}
+  .filter-bar > .btn{flex:1 1 auto;}
+
+  /* Big, easy-to-tap main buttons. */
+  .btn-phone-block{width:100%;padding:12px 16px;font-size:15px;}
+
+  /* Each row becomes a card; each cell is "Column name ........ value". */
+  .table-responsive:has(> .table-stack){overflow:visible;}
+  table.table-stack thead{display:none;}
+  table.table-stack, table.table-stack tbody{display:block;width:100%;}
+  table.table-stack tbody tr{display:block;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(16,40,60,.05);}
+  table.table-stack.table > :not(caption) > * > *{background:transparent;box-shadow:none;}
+  table.table-stack tbody td{display:block;padding:6px 0 !important;border:0;border-bottom:1px dashed #e6eef2;text-align:right;white-space:normal !important;font-size:13.5px;overflow:hidden;}
+  table.table-stack tbody td:last-child{border-bottom:0;}
+  table.table-stack tbody td::before{content:attr(data-label);float:left;max-width:45%;margin-right:12px;text-align:left;font-size:12px;font-weight:500;line-height:1.9;color:var(--text-muted);}
+  /* The first cell is the card's title (e.g. the meter number). */
+  table.table-stack tbody td.stack-title{font-size:15px;text-align:left;padding-bottom:8px !important;}
+  table.table-stack tbody td.stack-title::before{display:none;}
+  table.table-stack tbody td.stack-hide{display:none;}
+  /* Buttons fill the card's bottom edge. */
+  table.table-stack tbody td.actions{display:flex;gap:8px;padding-top:10px !important;}
+  table.table-stack tbody td.actions::before{display:none;}
+  table.table-stack tbody td.actions > .btn, table.table-stack tbody td.actions > form{flex:1;margin:0;}
+  table.table-stack tbody td.actions .btn{width:100%;padding:10px 12px;font-size:14px;}
+  table.table-stack tbody tr.empty-row{text-align:center;}
+  table.table-stack tbody tr.empty-row td{text-align:center;}
+  table.table-stack tbody tr.empty-row td::before{display:none;}
+  .card-body.no-pad .table-responsive:has(> .table-stack){padding:10px 10px 0;}
+}

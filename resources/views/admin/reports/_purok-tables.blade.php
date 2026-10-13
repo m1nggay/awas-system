@@ -4,7 +4,7 @@
     <div class="card-header"><h3>{{ mb_strtoupper($group['purok']) }}</h3><span class="text-muted small">{{ billingPeriodLabel($period) }} · {{ count($group['rows']) }} {{ Str::plural('consumer', count($group['rows'])) }}</span></div>
     <div class="card-body no-pad">
       <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0 data-table">
+        <table class="table table-hover align-middle mb-0 data-table {{ auth()->user()->isMeterReader() ? 'table-stack' : '' }}">
           <thead>
             <tr><th>No.</th><th>Meter Number</th><th>Name</th><th>Present</th><th>Previous</th><th>Consumption</th><th>Total</th><th>Balance</th><th>Status</th><th>Date Paid</th></tr>
           </thead>

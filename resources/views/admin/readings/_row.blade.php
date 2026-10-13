@@ -1,7 +1,7 @@
 {{-- One Meter Readings table row. Used by the page and by the admin's live updates. Needs $r, $no, $canManage. --}}
 <tr>
-  <td>{!! $no !!}</td>
-  <td><strong>{{ $r->meter_number ?: '—' }}</strong></td>
+  <td class="stack-hide">{!! $no !!}</td>
+  <td class="stack-title"><strong>{{ $r->meter_number ?: '—' }}</strong></td>
   <td>{{ $r->full_name }}</td>
   <td>{{ number_format($r->previous_reading, 2) }}</td>
   <td>{{ number_format($r->current_reading, 2) }}</td>

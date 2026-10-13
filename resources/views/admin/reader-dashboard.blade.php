@@ -26,7 +26,7 @@
 </div>
 
 <div class="mb-4">
-  <a href="{{ route('admin.readings.index', ['record' => 1]) }}" class="btn btn-primary">+ Record Meter Reading</a>
+  <a href="{{ route('admin.readings.index', ['record' => 1]) }}" class="btn btn-primary btn-phone-block">+ Record Meter Reading</a>
 </div>
 
 <div class="row g-3">
@@ -35,13 +35,13 @@
       <div class="card-header"><h3>Still to read — {{ billingPeriodLabel($period) }}</h3></div>
       <div class="card-body no-pad">
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0 data-table">
-            <thead><tr><th>Meter Number</th><th>Name</th><th>Purok</th></tr></thead>
+          <table class="table table-hover align-middle mb-0 data-table table-stack">
+            <thead><tr><th>Meter Number</th><th>Name</th><th>Purok</th><th></th></tr></thead>
             <tbody>
             @forelse ($toRead as $c)
-              <tr><td><strong>{{ $c->meter_number ?: '—' }}</strong></td><td>{{ $c->full_name }}</td><td>{{ $c->purok_name }}</td></tr>
+              <tr><td class="stack-title"><strong>{{ $c->meter_number ?: '—' }}</strong></td><td>{{ $c->full_name }}</td><td>{{ $c->purok_name }}</td><td class="actions"><a class="btn btn-outline btn-sm" href="{{ route('admin.readings.index', ['record' => 1, 'meter' => $c->meter_number]) }}">Record</a></td></tr>
             @empty
-              <tr class="empty-row"><td colspan="3">All active meters have been read this period.</td></tr>
+              <tr class="empty-row"><td colspan="4">All active meters have been read this period.</td></tr>
             @endforelse
             </tbody>
           </table>
@@ -54,12 +54,12 @@
       <div class="card-header"><h3>My Recent Readings</h3><a href="{{ route('admin.readings.index') }}" class="btn btn-outline btn-sm">View All</a></div>
       <div class="card-body no-pad">
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0 data-table">
+          <table class="table table-hover align-middle mb-0 data-table table-stack">
             <thead><tr><th>Meter Number</th><th>Name</th><th>Previous</th><th>Present</th><th>Consumption</th><th>Total</th><th>Date</th></tr></thead>
             <tbody>
             @forelse ($myReadings as $r)
               <tr>
-                <td><strong>{{ $r->meter_number }}</strong></td>
+                <td class="stack-title"><strong>{{ $r->meter_number }}</strong></td>
                 <td>{{ $r->full_name }}</td>
                 <td>{{ number_format($r->previous_reading, 2) }}</td>
                 <td>{{ number_format($r->current_reading, 2) }}</td>
