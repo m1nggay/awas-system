@@ -95,6 +95,9 @@ class MeterReadingController extends Controller
         $last = DB::table('meter_readings')->where('consumer_id', $c->consumer_id)
             ->orderByDesc('billing_period')->first(['current_reading', 'billing_period']);
         $period = clean($request->query('period'));
+        // Usual use (average of the last 3 months), to warn about an unusual new reading.
+        $usual = (float)DB::table('meter_readings')->where('consumer_id', $c->consumer_id)
+            ->orderByDesc('billing_period')->limit(3)->pluck('consumption')->avg();
 
         return response()->json([
             'found'            => true,
@@ -105,6 +108,7 @@ class MeterReadingController extends Controller
             'is_senior'        => (bool)$c->is_senior,
             'previous_reading' => (float)($last->current_reading ?? $c->initial_meter_reading ?? 0),
             'last_period'      => $last ? billingPeriodLabel($last->billing_period) : null,
+            'usual_consumption' => round($usual, 2),
             'balance'          => $billing->unpaidBalance($c->consumer_id),
             'already_read'     => $period !== '' && DB::table('meter_readings')
                 ->where('consumer_id', $c->consumer_id)->where('billing_period', $period)->exists(),
@@ -165,7 +169,10 @@ class MeterReadingController extends Controller
         } catch (QueryException $e) {
             flash('danger', "Meter $meter already has a reading for " . billingPeriodLabel($period) . '.');
         }
-        return back();
+        // Back to the Consumer List when it was opened from there; otherwise the readings list
+        // (not back(), which would reopen the form for the meter just read).
+        $to = (string)$request->input('back');
+        return str_starts_with($to, url('/') . '/') ? redirect()->to($to) : redirect()->route('admin.readings.index');
     }
 
     public function update(Request $request, MeterReading $reading, BillingService $billing)

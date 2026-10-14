@@ -21,6 +21,12 @@ class ConsumerController extends Controller
         $statusFil = clean($request->query('status'));
         $typeFil = clean($request->query('type'));
         $allowed = $request->user()->assignedPurokIds();   // Meter Reader: only their puroks
+        $isReader = $request->user()->isMeterReader();
+        $period = date('Y-m');
+        // Meter Reader tabs: still to read this month (default), already read, or everyone.
+        $readTab = $isReader ? (in_array($request->query('read'), ['done', 'all'], true) ? $request->query('read') : 'todo') : 'all';
+        $readThisPeriod = fn ($q) => $q->select(DB::raw(1))->from('meter_readings as mr')
+            ->whereColumn('mr.consumer_id', 'consumers.consumer_id')->where('mr.billing_period', $period);
 
         $consumers = Consumer::query()
             ->join('puroks as p', 'p.purok_id', '=', 'consumers.purok_id')
@@ -35,6 +41,9 @@ class ConsumerController extends Controller
             ->when($purokFil > 0, fn ($q) => $q->where('consumers.purok_id', $purokFil))
             ->when(in_array($statusFil, self::STATUSES, true), fn ($q) => $q->where('consumers.status', $statusFil))
             ->when(isset(Consumer::TYPES[$typeFil]), fn ($q) => $q->where('consumers.consumer_type', $typeFil))
+            // "Not yet read" lists only active accounts — the ones that can be read.
+            ->when($readTab === 'todo', fn ($q) => $q->where('consumers.status', 'active')->whereNotExists($readThisPeriod))
+            ->when($readTab === 'done', fn ($q) => $q->whereExists($readThisPeriod))
             // Surname (last word of the name) first, as the list displays "Surname, Given".
             ->orderByRaw(DB::getDriverName() === 'pgsql'
                 ? "reverse(split_part(reverse(regexp_replace(regexp_replace(split_part(consumers.full_name, ' / ', 1), '\\s*\\([^)]*\\)\$', ''), '\\s+(jr\\.?|sr\\.?|i{1,3}|iv|#\\d+)\$', '', 'i')), ' ', 1)) ASC, consumers.full_name ASC"
@@ -43,18 +52,29 @@ class ConsumerController extends Controller
 
         // Meter Reader: latest reading of each listed consumer, to see who still needs this month's reading.
         $lastReadings = collect();
-        if ($request->user()->isMeterReader()) {
+        $progress = null;
+        if ($isReader) {
             $lastReadings = DB::table('meter_readings')
                 ->whereIn('consumer_id', $consumers->pluck('consumer_id'))
                 ->orderBy('billing_period')
-                ->get(['consumer_id', 'billing_period', 'current_reading'])
+                ->get(['consumer_id', 'billing_period', 'current_reading', 'reading_date'])
                 ->keyBy('consumer_id');
+
+            // Progress for this month: active meters read so far (in the chosen purok, or all of theirs).
+            $scope = DB::table('consumers')->where('status', 'active')
+                ->whereIn('purok_id', $purokFil > 0 ? [$purokFil] : ($allowed ?: [0]));
+            $progress = [
+                'total' => (clone $scope)->count(),
+                'read'  => (clone $scope)->whereExists($readThisPeriod)->count(),
+            ];
         }
 
         return view('admin.consumers.index', [
             'consumers' => $consumers,
             'lastReadings' => $lastReadings,
-            'currentPeriod' => date('Y-m'),
+            'currentPeriod' => $period,
+            'readTab'   => $readTab,
+            'progress'  => $progress,
             'puroks'    => Purok::when($allowed !== null, fn ($q) => $q->whereIn('purok_id', $allowed ?: [0]))->orderBy('purok_name')->get(),
             'noPuroks'  => $allowed === [],
             'search'    => $search,

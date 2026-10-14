@@ -4,6 +4,10 @@
 
 @section('content')
 @php $isReader = auth()->user()->isMeterReader(); @endphp
+@if ($isReader)
+  {{-- Meter Reader: a phone-first to-do list of meters (see _reader-list). --}}
+  @include('admin.consumers._reader-list')
+@else
 <div class="card">
   @unless ($isReader)
     <div class="card-header justify-content-end">
@@ -89,6 +93,7 @@
     @include('partials.pagination', ['paginator' => $consumers])
   </div>
 </div>
+@endif
 
 @unless ($isReader)
 <div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">

@@ -110,8 +110,8 @@
 
   <div id="pageTransitionOverlay" aria-hidden="true"></div>
 
-  <video class="bg-video" autoplay muted loop playsinline preload="auto" aria-hidden="true">
-    <source src="{{ asset('assets/drone.mp4') }}" type="video/mp4">
+  <video class="bg-video" autoplay muted loop playsinline preload="auto" poster="{{ asset('assets/drone-poster.jpg') }}" aria-hidden="true">
+    <source src="{{ asset('assets/drone.mp4') }}?v={{ @filemtime(public_path('assets/drone.mp4')) ?: '1' }}" type="video/mp4">
   </video>
   <div class="bg-video-tint" aria-hidden="true"></div>
 

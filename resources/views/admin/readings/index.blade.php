@@ -120,12 +120,14 @@
             <label for="remarks" class="form-label">Remarks</label>
             <input type="text" id="remarks" name="remarks" class="form-control" placeholder="Optional notes (e.g. high usage, meter issue)">
           </div>
+          <p class="text-muted mt-3 mb-0" style="font-size:12px;">Saving sends the reading and the calculated bill to the administrator automatically.</p>
         </div>
+        {{-- Opened from the Consumer List: go back there after saving. --}}
+        <input type="hidden" name="back" value="{{ request('back') }}">
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-primary" id="saveReadingBtn" disabled>Save Reading</button>
         </div>
-        <p class="text-muted px-3 pb-3 mb-0" style="font-size:12px;">Saving sends the reading and the calculated bill to the administrator automatically.</p>
       </form>
     </div>
   </div>
@@ -309,6 +311,28 @@ function openEditReading(r, action) {
     document.addEventListener('DOMContentLoaded', () => bootstrap.Modal.getOrCreateInstance($('addReadingModal')).show());
   }
   $('addReadingModal').addEventListener('shown.bs.modal', () => ($('meter_number').value ? $('current_reading') : $('meter_number')).focus());
+
+  // Unusual reading? Ask before saving: no water used at all, or far more than usual.
+  let saving = false;
+  $('readingForm').addEventListener('submit', e => {
+    const used = parseFloat($('current_reading').value) - parseFloat($('previous_reading').value);
+    const usual = consumer ? consumer.usual_consumption : 0;
+    let ask = '';
+    if (used === 0) ask = 'This reading shows 0 m³ used (same as last time).';
+    else if (usual > 0 && used > Math.max(usual * 2, usual + 10)) {
+      ask = 'This reading shows ' + used.toFixed(2) + ' m³ used — much more than usual (about ' + usual.toFixed(2) + ' m³ a month).';
+    }
+    if (ask && !confirm(ask + '\n\nPlease double-check the meter. Save this reading anyway?')) { e.preventDefault(); return; }
+    saving = true;
+    $('saveReadingBtn').disabled = true;
+    $('saveReadingBtn').textContent = 'Saving…';
+  });
+
+  // Opened from the Consumer List: closing the form goes back there.
+  const back = params.get('back');
+  if (back && back.indexOf(location.origin + '/') === 0) {
+    $('addReadingModal').addEventListener('hidden.bs.modal', () => { if (!saving) location.href = back; });
+  }
 })();
 </script>
 @endpush

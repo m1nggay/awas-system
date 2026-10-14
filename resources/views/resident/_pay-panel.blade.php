@@ -84,7 +84,7 @@
             <div class="qr-row">
               <div>
                 <div class="qr-frame"><img src="{{ route('gcash.qr') }}" alt="Barangay GCash QR code — scan with the GCash app"></div>
-                <a href="{{ route('gcash.qr') }}" download="barangay-gcash-qr.png" class="btn btn-outline btn-sm w-100 mt-2">Save QR image</a>
+                <a href="{{ route('gcash.qr') }}" download="awas-gcash-qr.jpg" class="btn btn-outline btn-sm w-100 mt-2">Save QR image</a>
               </div>
               <div>
                 <strong style="font-size:14px;">AWAS Office</strong>

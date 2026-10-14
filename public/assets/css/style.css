@@ -51,7 +51,8 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 
 body{
-  font-family:'Poppins',sans-serif;
+  /* Fallbacks carry the peso sign (₱) on phones whose Poppins lacks it. */
+  font-family:'Poppins',system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans',Arial,sans-serif;
   background:var(--bg);
   color:var(--text-dark);
   font-size:14px;
@@ -103,6 +104,8 @@ a:focus-visible, button:focus-visible{outline:2px solid var(--primary-light);out
   opacity:0;transition:opacity .6s ease; /* crossfade in once a frame is ready, no hard "pop" */
 }
 .bg-video.loaded{opacity:1;}
+/* With a still picture (first frame) it shows right away while the video loads. */
+.bg-video[poster]{opacity:1;}
 .bg-video-tint{
   position:fixed;inset:0;z-index:0;pointer-events:none;
   background:linear-gradient(135deg,rgba(2,62,138,0.62),rgba(0,119,182,0.5) 45%,rgba(0,180,216,0.4));
@@ -306,6 +309,13 @@ table.data-table td.actions > form .btn{margin:0;}
 .modal-header h3{font-size:16px;font-weight:600;}
 .modal-body{padding:22px;}
 .modal-footer{padding:16px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+/* A form wrapping body + footer: let the body scroll and keep the footer at the bottom (needed for full-screen pop-ups on phones). */
+.modal-content > form{display:flex;flex-direction:column;min-height:0;flex:1 1 auto;}
+.modal-fullscreen-sm-down .modal-content > form > .modal-body{flex:1 1 auto;overflow-y:auto;}
+@media (max-width:575.98px){
+  .modal-fullscreen-sm-down .modal-footer{background:#fff;}
+  .modal-fullscreen-sm-down .modal-footer .btn{flex:1;min-height:48px;}
+}
 
 /* ---------------------------------------------------------------
    Misc
