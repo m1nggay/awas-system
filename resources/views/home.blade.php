@@ -42,12 +42,14 @@
     position:fixed;inset:0;width:100%;height:100%;object-fit:cover;
     z-index:0;pointer-events:none;
     opacity:0;transition:opacity .6s ease;
+    /* A slight blur on the video itself (one layer, cheap to draw — no lag like blurred cards). Scaled a little so the blurred edges stay off-screen. */
+    filter:blur(2px);transform:scale(1.04);
   }
   .bg-video.loaded{opacity:1;}
   .bg-video-tint{
     position:fixed;inset:0;z-index:0;pointer-events:none;
-    /* Light only where the headline is (left); the rest of the video stays clear. */
-    background:linear-gradient(90deg,rgba(246,251,253,0.62) 0%,rgba(246,251,253,0.5) 45%,rgba(246,251,253,0.12) 72%,rgba(246,251,253,0) 100%);
+    /* The same soft white over the whole video, like its left side. */
+    background:rgba(246,251,253,0.55);
   }
 
   .site-nav{position:relative;z-index:2;border-bottom:1px solid var(--line);}
@@ -110,7 +112,6 @@
     .hero .wrap{padding-top:48px;}
     .hero h1{font-size:34px;}
     .features .wrap{grid-template-columns:1fr;gap:12px;}
-    .bg-video-tint{background:linear-gradient(180deg,rgba(246,251,253,0.6) 0%,rgba(246,251,253,0.42) 45%,rgba(246,251,253,0.15) 100%);}
   }
   /* Phones: compact header, full-width buttons */
   @media (max-width: 560px){
