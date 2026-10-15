@@ -78,8 +78,7 @@
   .features .wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:26px 28px;}
   .feature{
     padding:22px 22px 24px;border-radius:16px;
-    background:rgba(255,255,255,0.78);
-    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    background:rgba(255,255,255,0.84);   /* no blur: blurring over a playing video makes the page lag */
     border:1px solid rgba(255,255,255,0.7);
     box-shadow:0 8px 24px rgba(4,38,63,0.08);
     transition:transform .2s ease, box-shadow .2s ease;
@@ -93,10 +92,17 @@
   .features .sec-title{
     grid-column:1 / -1;justify-self:start;margin:14px 0 0;
     padding:7px 16px;border-radius:999px;
-    background:rgba(255,255,255,0.85);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+    background:rgba(255,255,255,0.9);
     color:var(--primary-dark);font-size:13px;font-weight:600;letter-spacing:.3px;
     box-shadow:0 4px 14px rgba(4,38,63,0.08);
   }
+
+  /* Contact: plain text, no cards; a soft light glow keeps it readable over the video. */
+  .features.plain .feature{background:none;border:0;box-shadow:none;padding:4px 2px;}
+  .features.plain .feature:hover{transform:none;box-shadow:none;}
+  .features.plain .feature h3, .features.plain .feature p{text-shadow:0 0 10px rgba(246,251,253,0.95), 0 1px 2px rgba(246,251,253,0.95);}
+  .features.plain .feature p{color:#17324a;font-weight:500;}
+  .features.plain .feature a{color:var(--primary-dark);font-weight:600;}
 
   footer.site-foot{position:relative;z-index:2;padding:22px 28px 30px;font-size:12px;color:var(--muted);}
 
@@ -264,30 +270,8 @@
     </div>
   </section>
 
-  {{-- Common questions --}}
-  <section class="features" id="faq">
-    <div class="wrap">
-      <div class="eyebrow-line sec-title">Common questions</div>
-      <div class="feature">
-        <div class="glyph"><i class="ph ph-gauge" aria-hidden="true"></i></div>
-        <h3>How is my water use measured?</h3>
-        <p>Each month the meter reader records your meter. Your consumption is the present reading minus the previous reading, in cubic meters (m³).</p>
-      </div>
-      <div class="feature">
-        <div class="glyph"><i class="ph ph-lock-key-open" aria-hidden="true"></i></div>
-        <h3>Forgot your password?</h3>
-        <p>Tap <strong>Forgot your password?</strong> on the login page and enter your account's Gmail — we'll email a code to set a new one. This also unlocks a locked account.</p>
-      </div>
-      <div class="feature">
-        <div class="glyph"><i class="ph ph-shield-check" aria-hidden="true"></i></div>
-        <h3>Is my information safe?</h3>
-        <p>Your information is used only for the water service and is protected under the Data Privacy Act of 2012. Read our <a href="{{ route('privacy') }}" style="text-decoration:underline;">Privacy Policy</a>.</p>
-      </div>
-    </div>
-  </section>
-
   {{-- Contact --}}
-  <section class="features" id="contact">
+  <section class="features plain" id="contact">
     <div class="wrap">
       <div class="eyebrow-line sec-title">Contact the water office</div>
       <div class="feature">
