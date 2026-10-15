@@ -42,7 +42,18 @@
               @else<span class="text-muted">—</span>@endif
             </td>
             <td class="text-nowrap">{{ $u->email ?: '—' }}</td>
-            <td><span class="badge {{ $u->status === 'active' ? 'badge-success' : ($u->status === 'pending' ? 'badge-warning' : 'badge-secondary') }}">{{ ucfirst($u->status) }}</span></td>
+            <td class="text-nowrap">
+              @if ($u->locked_at)
+                {{-- Locked after too many failed logins --}}
+                <span class="badge badge-danger" title="Locked {{ formatDateTime($u->locked_at) }} after {{ \App\Models\User::MAX_LOGIN_ATTEMPTS }} failed logins"><i class="ph ph-lock-simple" aria-hidden="true"></i> Locked</span>
+                <form method="POST" action="{{ route('admin.users.unlock', $u) }}" class="mt-1" data-confirm="Unlock {{ $u->full_name }}'s account?">
+                  @csrf @method('PATCH')
+                  <button type="submit" class="btn btn-outline btn-sm">Unlock</button>
+                </form>
+              @else
+                <span class="badge {{ $u->status === 'active' ? 'badge-success' : ($u->status === 'pending' ? 'badge-warning' : 'badge-secondary') }}">{{ ucfirst($u->status) }}</span>
+              @endif
+            </td>
             <td class="text-nowrap small">
               @if ($u->last_login)
                 {{ formatDateTime($u->last_login, 'M j, Y') }}<br><span class="text-muted">{{ formatDateTime($u->last_login, 'g:i A') }}</span>

@@ -31,20 +31,39 @@ class LoginController extends Controller
 
         // Membership applicants and the residents they become sign in with
         // their email address. Only tried when no username matched; if several
-        // accounts share an email, the one whose password matches wins.
+        // accounts share an email, the one whose password matches wins (and a
+        // wrong password counts against the account only when there is one).
         if (!$user && str_contains($username, '@')) {
-            $user = User::where('email', $username)->whereIn('role', ['applicant', 'resident'])->get()
-                ->first(fn (User $candidate) => Hash::check($password, $candidate->password_hash));
+            $candidates = User::where('email', $username)->whereIn('role', ['applicant', 'resident'])->get();
+            $user = $candidates->first(fn (User $candidate) => Hash::check($password, $candidate->password_hash))
+                ?? ($candidates->count() === 1 ? $candidates->first() : null);
         }
 
         if (!$user) {
             log_activity(null, 'login_failed', "Unknown username attempt: $username");
-            return $this->failed($request);
+            return $this->failed($request, 'These credentials do not match our records.');
         }
+
+        // Locked after too many wrong passwords: Forgot Password or the administrator unlocks it.
+        if ($user->isLocked()) {
+            log_activity($user->user_id, 'login_blocked', 'Login attempt on a locked account');
+            return $this->failed($request, self::lockedMessage());
+        }
+
         if (!Hash::check($password, $user->password_hash)) {
-            log_activity($user->user_id, 'login_failed', 'Incorrect password');
-            return $this->failed($request);
+            $attempts = (int)$user->failed_login_attempts + 1;
+            $locked = $attempts >= User::MAX_LOGIN_ATTEMPTS;
+            $user->forceFill(['failed_login_attempts' => $attempts, 'locked_at' => $locked ? now() : null])->save();
+
+            if ($locked) {
+                log_activity($user->user_id, 'account_locked', 'Account locked after ' . User::MAX_LOGIN_ATTEMPTS . ' failed login attempts');
+                return $this->failed($request, self::lockedMessage());
+            }
+            log_activity($user->user_id, 'login_failed', "Incorrect password (attempt $attempts of " . User::MAX_LOGIN_ATTEMPTS . ')');
+            $left = User::MAX_LOGIN_ATTEMPTS - $attempts;
+            return $this->failed($request, "Incorrect password. $left " . ($left === 1 ? 'attempt' : 'attempts') . ' left before your account is locked.');
         }
+        $user->clearLockout();
 
         // Checked only AFTER the password verifies, so a wrong guess never
         // reveals whether an account is awaiting email verification.
@@ -79,11 +98,17 @@ class LoginController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        // Every role signs out to the landing page.
+        return redirect()->route('home');
     }
 
-    private function failed(Request $request)
+    public static function lockedMessage(): string
     {
-        return back()->withInput($request->only('username'))->with('error', 'Invalid username or password.');
+        return 'Your account is locked due to ' . User::MAX_LOGIN_ATTEMPTS . " failed login attempts. Click 'Forgot Password' to reset it, or contact the AWAS administrator.";
+    }
+
+    private function failed(Request $request, string $message = 'Invalid username or password.')
+    {
+        return back()->withInput($request->only('username'))->with('error', $message);
     }
 }

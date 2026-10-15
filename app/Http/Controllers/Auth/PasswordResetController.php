@@ -22,32 +22,37 @@ class PasswordResetController extends Controller
 
     public function sendCode(Request $request, CodeMailer $codes)
     {
-        $identifier = clean($request->input('identifier'));
-        if ($identifier === '') {
-            return back();
+        // Only a real Gmail address that belongs to an AWAS account.
+        $request->merge(['email' => mb_strtolower(clean($request->input('email')))]);
+        $request->validate([
+            'email' => ['required', 'email:rfc,dns', 'regex:/^[a-z0-9](\.?[a-z0-9]){5,29}@gmail\.com$/i', 'exists:users,email'],
+        ], [
+            'email.required' => 'Please enter your Gmail address.',
+            'email.email'    => 'Please enter a valid Gmail address (e.g. juan.delacruz@gmail.com).',
+            'email.regex'    => 'Please enter a valid Gmail address (e.g. juan.delacruz@gmail.com).',
+            'email.exists'   => 'No AWAS account is registered with this Gmail address.',
+        ]);
+
+        $user = User::where('status', 'active')->where('email', $request->input('email'))->first();
+
+        // The email exists, but not on an active account (e.g. deactivated).
+        if (!$user) {
+            return back()->withInput()->withErrors(['email' => 'This account is not active. Please contact the AWAS administrator.']);
         }
 
-        $user = User::where('status', 'active')
-            ->where(fn ($q) => $q->where('username', $identifier)->orWhere('email', $identifier))
-            ->first();
+        $result = $codes->sendPasswordCode($user->user_id, $user->email, $user->full_name,
+            'Your AWAS password reset code', 'Your AWAS password reset code is:');
 
-        if ($user && !empty($user->email)) {
-            $result = $codes->sendPasswordCode($user->user_id, $user->email, $user->full_name,
-                'Your AWAS password reset code', 'Your AWAS password reset code is:');
-
-            // Never claim a code was sent when the email actually failed.
-            if (in_array($result, ['failed', 'limit'], true)) {
-                return back()->withInput()->with('error', OtpService::resultMessage($result)[1]);
-            }
-            if ($result === 'sent') {
-                log_activity($user->user_id, 'password_reset_requested', 'Password reset code emailed');
-            }
-            $request->session()->put('pwd_reset_user_id', $user->user_id);
-            $request->session()->put('pwd_reset_started_at', time());
+        // Never claim a code was sent when the email actually failed.
+        if (in_array($result, ['failed', 'limit'], true)) {
+            return back()->withInput()->with('error', OtpService::resultMessage($result)[1]);
         }
+        if ($result === 'sent') {
+            log_activity($user->user_id, 'password_reset_requested', 'Password reset code emailed');
+        }
+        $request->session()->put('pwd_reset_user_id', $user->user_id);
+        $request->session()->put('pwd_reset_started_at', time());
 
-        // Otherwise the same outcome whether or not the account exists, so this
-        // form can't be used to discover registered usernames or emails.
         return redirect()->route('password.forgot')->with('sent', true);
     }
 
@@ -84,9 +89,10 @@ class PasswordResetController extends Controller
         $result = $otp->verify($userId, $code);
 
         if ($result === 'ok') {
-            User::whereKey($userId)->update(['password_hash' => Hash::make($newPassword)]);
+            // A new password also unlocks an account locked by failed logins.
+            User::whereKey($userId)->update(['password_hash' => Hash::make($newPassword), 'failed_login_attempts' => 0, 'locked_at' => null]);
             $otp->invalidate($userId);
-            log_activity($userId, 'password_reset', 'Password reset via emailed OTP');
+            log_activity($userId, 'password_reset', 'Password reset via emailed OTP (account unlocked)');
             $request->session()->forget(['pwd_reset_user_id', 'pwd_reset_started_at']);
             return view('auth.reset-password', ['success' => true]);
         }

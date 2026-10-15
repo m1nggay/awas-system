@@ -14,6 +14,24 @@ class User extends BaseModel implements AuthenticatableContract
 
     protected $hidden = ['password_hash'];
 
+    protected $casts = ['locked_at' => 'datetime'];
+
+    /** Wrong passwords in a row before the account is locked. */
+    public const MAX_LOGIN_ATTEMPTS = 5;
+
+    public function isLocked(): bool
+    {
+        return $this->locked_at !== null;
+    }
+
+    /** Clears a lockout (successful login, password reset, or an administrator's Unlock). */
+    public function clearLockout(): void
+    {
+        if ($this->failed_login_attempts || $this->locked_at) {
+            $this->forceFill(['failed_login_attempts' => 0, 'locked_at' => null])->save();
+        }
+    }
+
     /** The legacy column name; Laravel's auth reads the hash through this. */
     public function getAuthPassword(): string
     {

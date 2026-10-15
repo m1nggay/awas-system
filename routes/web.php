@@ -148,6 +148,7 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
             Route::post('/users', [Admin\UserController::class, 'store'])->name('users.store');
             Route::post('/users/{user}/toggle-status', [Admin\UserController::class, 'toggleStatus'])->name('users.toggle');
             Route::post('/users/{user}/reset-password', [Admin\UserController::class, 'resetPassword'])->name('users.reset-password');
+            Route::patch('/users/{user}/unlock', [Admin\UserController::class, 'unlock'])->name('users.unlock');
             Route::post('/users/{user}/puroks', [Admin\UserController::class, 'updatePuroks'])->name('users.puroks');
 
             Route::get('/chatbot-faqs', [Admin\ChatbotFaqController::class, 'index'])->name('faqs.index');

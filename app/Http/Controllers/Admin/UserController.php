@@ -173,9 +173,18 @@ class UserController extends Controller
             flash('danger', $policy);
             return back();
         }
-        $user->update(['password_hash' => Hash::make($newPassword)]);
+        $user->update(['password_hash' => Hash::make($newPassword), 'failed_login_attempts' => 0, 'locked_at' => null]);
         log_activity($request->user()->user_id, 'user_reset_password', "Reset the password of {$user->username} (" . roleLabel($user->role) . ')');
         flash('success', 'Password reset successfully.');
+        return back();
+    }
+
+    /** Unlocks an account locked after too many failed logins. */
+    public function unlock(Request $request, User $user)
+    {
+        $user->clearLockout();
+        log_activity($request->user()->user_id, 'account_unlock', "Unlocked the account of {$user->username} (" . roleLabel($user->role) . ')');
+        flash('success', "{$user->full_name}'s account is unlocked. They can sign in again with their password.");
         return back();
     }
 }

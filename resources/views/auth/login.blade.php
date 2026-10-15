@@ -35,6 +35,6 @@
     New resident? <a href="{{ route('register') }}">Create an account</a>
   </div>
   <div class="auth-footer-link">
-    <a href="{{ route('home') }}">&larr; Back to Dashboard</a>
+    <a href="{{ url('/') }}"><i class="ph ph-arrow-left" aria-hidden="true"></i> Back to Home</a>
   </div>
 @endsection
