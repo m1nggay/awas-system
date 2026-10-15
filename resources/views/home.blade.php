@@ -42,14 +42,11 @@
     position:fixed;inset:0;width:100%;height:100%;object-fit:cover;
     z-index:0;pointer-events:none;
     opacity:0;transition:opacity .6s ease;
-    /* A slight blur on the video itself (one layer, cheap to draw — no lag like blurred cards). Scaled a little so the blurred edges stay off-screen. */
-    filter:blur(2px);transform:scale(1.04);
   }
   .bg-video.loaded{opacity:1;}
   .bg-video-tint{
     position:fixed;inset:0;z-index:0;pointer-events:none;
-    /* The same soft white over the whole video, like its left side. */
-    background:rgba(246,251,253,0.55);
+    background:linear-gradient(180deg,rgba(246,251,253,0.55),rgba(246,251,253,0.68));
   }
 
   .site-nav{position:relative;z-index:2;border-bottom:1px solid var(--line);}
@@ -61,10 +58,10 @@
   .nav-cta{padding:10px 20px;font-size:13.5px;border-radius:8px;}
 
   .hero{position:relative;z-index:2;}
-  .hero .wrap{padding:64px 28px 22px;}
-  .eyebrow-line{font-size:13.5px;color:#062a4d;font-weight:600;margin-bottom:18px;}
+  .hero .wrap{padding:76px 28px 64px;}
+  .eyebrow-line{font-size:13.5px;color:var(--muted);margin-bottom:18px;}
   .hero h1{font-size:45px;line-height:1.12;font-weight:700;letter-spacing:-0.5px;margin:0 0 20px;}
-  .hero p.lede{font-size:16px;line-height:1.65;color:#04263f;font-weight:500;max-width:46ch;margin:0 0 30px;}
+  .hero p.lede{font-size:16px;line-height:1.65;color:#37536b;max-width:46ch;margin:0 0 30px;}
   .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px;}
   .btn{
     display:inline-flex;align-items:center;justify-content:center;padding:13px 26px;
@@ -72,46 +69,28 @@
   }
   .btn-solid{background:var(--primary-dark);color:#fff;}
   .btn-outline{border-color:var(--ink);color:var(--ink);}
-  .trust-line{font-size:12.5px;color:#062a4d;font-weight:600;}
+  .trust-line{font-size:12.5px;color:var(--muted);}
 
-  /* Information in soft frosted cards: easy to read, with the drone video showing around them. */
-  .features{position:relative;z-index:2;}
-  .features .wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:26px 28px;}
-  .feature{
-    padding:22px 22px 24px;border-radius:16px;
-    background:rgba(255,255,255,0.84);   /* no blur: blurring over a playing video makes the page lag */
-    border:1px solid rgba(255,255,255,0.7);
-    box-shadow:0 8px 24px rgba(4,38,63,0.08);
-    transition:transform .2s ease, box-shadow .2s ease;
-  }
-  .feature:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(4,38,63,0.13);}
-  .feature .glyph{width:42px;height:42px;border-radius:12px;background:#e1f1f8;color:var(--primary-dark);display:flex;align-items:center;justify-content:center;font-size:21px;margin-bottom:14px;}
-  .feature h3{font-size:15.5px;font-weight:600;margin:0 0 8px;color:var(--ink);}
-  .feature p{font-size:14px;line-height:1.65;color:#2e4659;margin:0;}
+  .features{position:relative;z-index:2;border-top:1px solid var(--line);}
+  .features .wrap{display:grid;grid-template-columns:repeat(3,1fr);padding:44px 28px;}
+  .feature{padding:0 26px;border-left:1px solid var(--line);}
+  .feature:first-child{border-left:none;padding-left:0;}
+  .feature .glyph{font-size:20px;margin-bottom:12px;}
+  .feature h3{font-size:15px;font-weight:600;margin:0 0 8px;}
+  .feature p{font-size:13.5px;line-height:1.6;color:var(--muted);margin:0;}
 
-  /* Section titles: a small white pill above each group of cards. */
-  .features .sec-title{
-    grid-column:1 / -1;justify-self:start;margin:14px 0 0;
-    padding:7px 16px;border-radius:999px;
-    background:rgba(255,255,255,0.9);
-    color:var(--primary-dark);font-size:13px;font-weight:600;letter-spacing:.3px;
-    box-shadow:0 4px 14px rgba(4,38,63,0.08);
-  }
+  .features .sec-title{grid-column:1 / -1;margin-bottom:22px;}
+  .features .sec-title + .feature{border-left:none;padding-left:0;}
 
-  /* Contact: plain text, no cards; dark, bold text stands out over the video. */
-  .features.plain .feature{background:none;border:0;box-shadow:none;padding:4px 2px;}
-  .features.plain .feature:hover{transform:none;box-shadow:none;}
-  .features.plain .feature h3{color:#021b33;font-weight:700;}
-  .features.plain .feature p{color:#021b33;font-weight:600;}
-  .features.plain .feature a{color:var(--primary-dark);font-weight:600;}
+  footer.site-foot{position:relative;z-index:2;padding:22px 28px 30px;font-size:12px;color:var(--muted);}
 
-  footer.site-foot{position:relative;z-index:2;padding:22px 28px 30px;font-size:12px;color:#062a4d;font-weight:500;}
-
-  @media (prefers-reduced-motion: reduce){ .feature, .feature:hover{transition:none;transform:none;} }
   @media (max-width: 880px){
     .hero .wrap{padding-top:48px;}
     .hero h1{font-size:34px;}
-    .features .wrap{grid-template-columns:1fr;gap:12px;}
+    .features .wrap{grid-template-columns:1fr;gap:26px;}
+    .feature{border-left:none;padding-left:0;border-top:1px solid var(--line);padding-top:22px;}
+    .feature:first-child, .features .sec-title + .feature{border-top:none;padding-top:0;}
+    .features .sec-title{margin-bottom:0;}
   }
   /* Phones: compact header, full-width buttons */
   @media (max-width: 560px){
@@ -122,12 +101,11 @@
     .brand .word{font-size:16px;}
     .brand .tagline{font-size:9.5px;line-height:1.25;}
     .btn.nav-cta{padding:8px 12px;font-size:12.5px;white-space:nowrap;flex:none;}
-    .hero .wrap{padding:32px 18px 16px;}
+    .hero .wrap{padding:36px 18px 44px;}
     .eyebrow-line{font-size:12.5px;margin-bottom:12px;}
     .hero h1{font-size:30px;margin-bottom:14px;}
     .hero p.lede{font-size:15px;margin-bottom:24px;}
-    .features .wrap{padding:18px 18px;}
-    .feature{padding:18px 18px 20px;}
+    .features .wrap{padding:32px 18px;}
     footer.site-foot{padding:18px 18px 26px;}
   }
 </style>
@@ -270,8 +248,30 @@
     </div>
   </section>
 
+  {{-- Common questions --}}
+  <section class="features" id="faq">
+    <div class="wrap">
+      <div class="eyebrow-line sec-title">Common questions</div>
+      <div class="feature">
+        <div class="glyph"><i class="ph ph-gauge" aria-hidden="true"></i></div>
+        <h3>How is my water use measured?</h3>
+        <p>Each month the meter reader records your meter. Your consumption is the present reading minus the previous reading, in cubic meters (m³).</p>
+      </div>
+      <div class="feature">
+        <div class="glyph"><i class="ph ph-lock-key-open" aria-hidden="true"></i></div>
+        <h3>Forgot your password?</h3>
+        <p>Tap <strong>Forgot your password?</strong> on the login page and enter your account's Gmail — we'll email a code to set a new one. This also unlocks a locked account.</p>
+      </div>
+      <div class="feature">
+        <div class="glyph"><i class="ph ph-shield-check" aria-hidden="true"></i></div>
+        <h3>Is my information safe?</h3>
+        <p>Your information is used only for the water service and is protected under the Data Privacy Act of 2012. Read our <a href="{{ route('privacy') }}" style="text-decoration:underline;">Privacy Policy</a>.</p>
+      </div>
+    </div>
+  </section>
+
   {{-- Contact --}}
-  <section class="features plain" id="contact">
+  <section class="features" id="contact">
     <div class="wrap">
       <div class="eyebrow-line sec-title">Contact the water office</div>
       <div class="feature">
