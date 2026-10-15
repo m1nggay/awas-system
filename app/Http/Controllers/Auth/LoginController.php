@@ -78,12 +78,18 @@ class LoginController extends Controller
             return $this->failed($request);
         }
 
+        return self::startSession($request, $user, 'User logged in');
+    }
+
+    /** Signs the (already checked) user in and opens their dashboard. Also used by Google / Facebook sign-in. */
+    public static function startSession(Request $request, User $user, string $logMessage)
+    {
         Auth::login($user);
         $request->session()->regenerate();
         $request->session()->put('last_activity', time());
 
         $user->forceFill(['last_login' => now()])->save();
-        log_activity($user->user_id, 'login_success', 'User logged in');
+        log_activity($user->user_id, 'login_success', $logMessage);
 
         flash('success', 'Welcome, ' . $user->welcomeName());
         return redirect()->route($user->dashboardRoute());

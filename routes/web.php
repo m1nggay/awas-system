@@ -44,6 +44,12 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [Auth\LoginController::class, 'logout'])->name('logout');
 
+// "Continue with Google / Facebook": sign in, or (from Profile, ?link=1) connect it to the signed-in account.
+Route::get('/auth/{provider}/redirect', [Auth\SocialLoginController::class, 'redirect'])->whereIn('provider', ['google', 'facebook'])->name('social.redirect');
+Route::get('/auth/{provider}/callback', [Auth\SocialLoginController::class, 'callback'])->whereIn('provider', ['google', 'facebook'])->name('social.callback');
+Route::post('/auth/{provider}/unlink', [Auth\SocialLoginController::class, 'unlink'])->whereIn('provider', ['google', 'facebook'])
+    ->middleware('auth')->name('social.unlink');
+
 /*
 |--------------------------------------------------------------------------
 | Signed-in pages

@@ -207,6 +207,7 @@
           @endif
         </div>
       @endif
+      @include('partials.social-connections', ['user' => $user])
     </div>
   </div>
 </div>
