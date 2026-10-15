@@ -46,7 +46,8 @@
   .bg-video.loaded{opacity:1;}
   .bg-video-tint{
     position:fixed;inset:0;z-index:0;pointer-events:none;
-    background:linear-gradient(180deg,rgba(246,251,253,0.55),rgba(246,251,253,0.68));
+    /* Light only where the headline is (left); the rest of the video stays clear. */
+    background:linear-gradient(90deg,rgba(246,251,253,0.62) 0%,rgba(246,251,253,0.5) 45%,rgba(246,251,253,0.12) 72%,rgba(246,251,253,0) 100%);
   }
 
   .site-nav{position:relative;z-index:2;border-bottom:1px solid var(--line);}
@@ -58,10 +59,11 @@
   .nav-cta{padding:10px 20px;font-size:13.5px;border-radius:8px;}
 
   .hero{position:relative;z-index:2;}
-  .hero .wrap{padding:76px 28px 64px;}
-  .eyebrow-line{font-size:13.5px;color:var(--muted);margin-bottom:18px;}
+  .hero .wrap{padding:64px 28px 22px;}
+  .hero h1, .hero p.lede, .eyebrow-line, .trust-line{text-shadow:0 0 12px rgba(246,251,253,0.9), 0 1px 2px rgba(246,251,253,0.9);}
+  .eyebrow-line{font-size:13.5px;color:#23405a;font-weight:500;margin-bottom:18px;}
   .hero h1{font-size:45px;line-height:1.12;font-weight:700;letter-spacing:-0.5px;margin:0 0 20px;}
-  .hero p.lede{font-size:16px;line-height:1.65;color:#37536b;max-width:46ch;margin:0 0 30px;}
+  .hero p.lede{font-size:16px;line-height:1.65;color:#17324a;font-weight:500;max-width:46ch;margin:0 0 30px;}
   .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px;}
   .btn{
     display:inline-flex;align-items:center;justify-content:center;padding:13px 26px;
@@ -69,7 +71,7 @@
   }
   .btn-solid{background:var(--primary-dark);color:#fff;}
   .btn-outline{border-color:var(--ink);color:var(--ink);}
-  .trust-line{font-size:12.5px;color:var(--muted);}
+  .trust-line{font-size:12.5px;color:#23405a;font-weight:500;}
 
   /* Information in soft frosted cards: easy to read, with the drone video showing around them. */
   .features{position:relative;z-index:2;}
@@ -103,6 +105,7 @@
     .hero .wrap{padding-top:48px;}
     .hero h1{font-size:34px;}
     .features .wrap{grid-template-columns:1fr;gap:12px;}
+    .bg-video-tint{background:linear-gradient(180deg,rgba(246,251,253,0.6) 0%,rgba(246,251,253,0.42) 45%,rgba(246,251,253,0.15) 100%);}
   }
   /* Phones: compact header, full-width buttons */
   @media (max-width: 560px){
@@ -113,7 +116,7 @@
     .brand .word{font-size:16px;}
     .brand .tagline{font-size:9.5px;line-height:1.25;}
     .btn.nav-cta{padding:8px 12px;font-size:12.5px;white-space:nowrap;flex:none;}
-    .hero .wrap{padding:36px 18px 44px;}
+    .hero .wrap{padding:32px 18px 16px;}
     .eyebrow-line{font-size:12.5px;margin-bottom:12px;}
     .hero h1{font-size:30px;margin-bottom:14px;}
     .hero p.lede{font-size:15px;margin-bottom:24px;}
