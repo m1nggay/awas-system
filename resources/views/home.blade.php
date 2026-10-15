@@ -60,10 +60,9 @@
 
   .hero{position:relative;z-index:2;}
   .hero .wrap{padding:64px 28px 22px;}
-  .hero h1, .hero p.lede, .eyebrow-line, .trust-line{text-shadow:0 0 12px rgba(246,251,253,0.9), 0 1px 2px rgba(246,251,253,0.9);}
-  .eyebrow-line{font-size:13.5px;color:#23405a;font-weight:500;margin-bottom:18px;}
+  .eyebrow-line{font-size:13.5px;color:#062a4d;font-weight:600;margin-bottom:18px;}
   .hero h1{font-size:45px;line-height:1.12;font-weight:700;letter-spacing:-0.5px;margin:0 0 20px;}
-  .hero p.lede{font-size:16px;line-height:1.65;color:#17324a;font-weight:500;max-width:46ch;margin:0 0 30px;}
+  .hero p.lede{font-size:16px;line-height:1.65;color:#04263f;font-weight:500;max-width:46ch;margin:0 0 30px;}
   .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px;}
   .btn{
     display:inline-flex;align-items:center;justify-content:center;padding:13px 26px;
@@ -71,7 +70,7 @@
   }
   .btn-solid{background:var(--primary-dark);color:#fff;}
   .btn-outline{border-color:var(--ink);color:var(--ink);}
-  .trust-line{font-size:12.5px;color:#23405a;font-weight:500;}
+  .trust-line{font-size:12.5px;color:#062a4d;font-weight:600;}
 
   /* Information in soft frosted cards: easy to read, with the drone video showing around them. */
   .features{position:relative;z-index:2;}
@@ -97,14 +96,14 @@
     box-shadow:0 4px 14px rgba(4,38,63,0.08);
   }
 
-  /* Contact: plain text, no cards; a soft light glow keeps it readable over the video. */
+  /* Contact: plain text, no cards; dark, bold text stands out over the video. */
   .features.plain .feature{background:none;border:0;box-shadow:none;padding:4px 2px;}
   .features.plain .feature:hover{transform:none;box-shadow:none;}
-  .features.plain .feature h3, .features.plain .feature p{text-shadow:0 0 10px rgba(246,251,253,0.95), 0 1px 2px rgba(246,251,253,0.95);}
-  .features.plain .feature p{color:#17324a;font-weight:500;}
+  .features.plain .feature h3{color:#021b33;font-weight:700;}
+  .features.plain .feature p{color:#021b33;font-weight:600;}
   .features.plain .feature a{color:var(--primary-dark);font-weight:600;}
 
-  footer.site-foot{position:relative;z-index:2;padding:22px 28px 30px;font-size:12px;color:var(--muted);}
+  footer.site-foot{position:relative;z-index:2;padding:22px 28px 30px;font-size:12px;color:#062a4d;font-weight:500;}
 
   @media (prefers-reduced-motion: reduce){ .feature, .feature:hover{transition:none;transform:none;} }
   @media (max-width: 880px){
