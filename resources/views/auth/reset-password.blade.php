@@ -1,4 +1,4 @@
-@extends('layouts.auth')
+@extends('layouts.auth', ['video' => true])
 
 @section('title', 'Reset Password')
 

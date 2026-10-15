@@ -24,6 +24,60 @@ const CARD_RATIO = 1.586;      // ID-1 card (85.6 × 54 mm)
 const MAX_WIDTH = 1400;        // px of the saved photo
 const SELFIE_FACE_WIDTH = 0.33; // a face wider than this share of the photo = a picture of a person, not a card
 
+// Back of an ID: no face, but printed text (and often a barcode / QR code).
+const TESSERACT_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.esm.min.js';
+const ID_WORDS = /\b(REPUBLIC|PHILIPPINES|PILIPINAS|PHILSYS|NATIONAL|IDENTIFICATION|ADDRESS|TIRAHAN|SIGNATURE|LAGDA|BIRTH|DATE|ISSUED?|EXPIR\w*|VALID\w*|LICENSE|LICENCE|RESTRICTIONS?|CONDITIONS?|BLOOD|HEIGHT|WEIGHT|EMERGENCY|CONTACT|SSS|GSIS|UMID|TIN|POSTAL|VOTER|PRECINCT|COMELEC|PASSPORT|CARD|HOLDER|AUTHORITY|OFFICE|SEX)\b/;
+const MIN_WORDS = 8;           // or this many clearly printed words
+
+let ocrPromise = null;
+function ocr() {
+  if (!ocrPromise) {
+    ocrPromise = import(TESSERACT_URL)
+      .then((m) => (m.default || m).createWorker('eng'))
+      .catch(() => null);   // offline / blocked: skip the text check
+  }
+  return ocrPromise;
+}
+
+/** Grayscale, contrast-stretched copy for OCR (about 1200 px wide). */
+function forOcr(canvas) {
+  const scale = Math.min(1, 1200 / canvas.width);
+  const c = document.createElement('canvas');
+  c.width = Math.round(canvas.width * scale); c.height = Math.round(canvas.height * scale);
+  const ctx = c.getContext('2d');
+  ctx.drawImage(canvas, 0, 0, c.width, c.height);
+  const img = ctx.getImageData(0, 0, c.width, c.height), px = img.data;
+  let lo = 255, hi = 0;
+  for (let i = 0; i < px.length; i += 4) {
+    const g = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+    px[i] = g; if (g < lo) lo = g; if (g > hi) hi = g;
+  }
+  const span = Math.max(1, hi - lo);
+  for (let i = 0; i < px.length; i += 4) { px[i] = px[i + 1] = px[i + 2] = (px[i] - lo) * 255 / span; }
+  ctx.putImageData(img, 0, 0);
+  return c;
+}
+
+/** Does this look like the back of an ID? true / false, or null when it couldn't be checked. */
+async function looksLikeIdBack(canvas) {
+  // A barcode or QR code (Chrome on Android has a built-in detector).
+  if ('BarcodeDetector' in window) {
+    try {
+      if ((await new window.BarcodeDetector().detect(canvas)).length > 0) return true;
+    } catch (e) { /* not supported for this image — use the text check */ }
+  }
+  const worker = await ocr();
+  if (!worker) return null;
+  try {
+    const { data } = await worker.recognize(forOcr(canvas));
+    const words = (data.words || []).filter((w) => w.confidence >= 60 && /[A-Za-z]{3,}|\d{4,}/.test(w.text));
+    const text = words.map((w) => w.text.toUpperCase()).join(' ');
+    return ID_WORDS.test(text) || words.length >= MIN_WORDS;
+  } catch (e) {
+    return null;
+  }
+}
+
 let detectorPromise = null;
 function detector() {
   if (!detectorPromise) {
@@ -97,6 +151,9 @@ async function inspect(canvas, side) {
       return { ok: true, level: 'warn', message: '⚠ We could not find the ID holder\'s photo. Please make sure this is the FRONT of a valid government ID, the whole card is inside the frame, and it is clear — or retake it.' };
     }
   }
+  if (side === 'back' && (await looksLikeIdBack(canvas)) === false) {
+    return { ok: true, level: 'warn', message: '⚠ We could not find the printed details or barcode of an ID. Please make sure this is the BACK of a valid government ID, the whole card is inside the frame, and the text is clear — or retake it.' };
+  }
   return { ok: true, level: 'good', message: '✓ ' + (side === 'back' ? 'Back' : 'Front') + ' of ID looks good.' };
 }
 
@@ -169,6 +226,7 @@ function initWidget(widget) {
     show(els.open, false); show(els.retake, false); show(els.snap, true); show(els.close, true);
     say('Place the ' + (side === 'back' ? 'BACK' : 'FRONT') + ' of your ID inside the frame, hold steady, then tap Capture.');
     detector();   // start loading the checker while the user lines up the card
+    if (side === 'back') ocr();
   }
 
   async function finish(canvas) {

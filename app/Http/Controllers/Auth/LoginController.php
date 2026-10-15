@@ -47,7 +47,7 @@ class LoginController extends Controller
         // Locked after too many wrong passwords: Forgot Password or the administrator unlocks it.
         if ($user->isLocked()) {
             log_activity($user->user_id, 'login_blocked', 'Login attempt on a locked account');
-            return $this->failed($request, self::lockedMessage());
+            return $this->failed($request, self::lockedMessage())->with('locked', true);
         }
 
         if (!Hash::check($password, $user->password_hash)) {
@@ -57,7 +57,7 @@ class LoginController extends Controller
 
             if ($locked) {
                 log_activity($user->user_id, 'account_locked', 'Account locked after ' . User::MAX_LOGIN_ATTEMPTS . ' failed login attempts');
-                return $this->failed($request, self::lockedMessage());
+                return $this->failed($request, self::lockedMessage())->with('locked', true);
             }
             log_activity($user->user_id, 'login_failed', "Incorrect password (attempt $attempts of " . User::MAX_LOGIN_ATTEMPTS . ')');
             $left = User::MAX_LOGIN_ATTEMPTS - $attempts;
