@@ -26,6 +26,13 @@
   .counter-steps{width:100%;max-width:440px;font-size:13.5px;}
   .counter-qr{text-align:center;border:2px solid #007dfe;border-radius:12px;padding:10px;background:#fff;}
   .counter-qr img{width:100%;max-width:260px;aspect-ratio:1/1;object-fit:contain;}
+  /* GCash / Maya QR: "How it works" as one neat panel with numbered steps */
+  #qrIntro .counter-steps{max-width:none;background:#f4fafc;border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
+  #qrIntro .counter-steps > strong{display:block;font-size:14px;margin-bottom:10px;color:var(--primary-dark);}
+  #qrIntro .counter-steps ol{list-style:none;counter-reset:qrstep;padding:0 !important;margin:0 0 14px !important;display:flex;flex-direction:column;gap:9px;}
+  #qrIntro .counter-steps li{counter-increment:qrstep;position:relative;padding-left:32px;line-height:1.55;min-height:22px;}
+  #qrIntro .counter-steps li::before{content:counter(qrstep);position:absolute;left:0;top:0;width:22px;height:22px;border-radius:50%;background:var(--primary);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  #qrStartBtn{width:100%;padding:11px;}
 </style>
 @endpush
 
