@@ -19,7 +19,7 @@
     --brass:#e0a327;
     --paper:#f6fbfd;
     --line:rgba(4,38,63,0.12);
-    --muted:#1b3346;   /* dark enough to read over the video */
+    --muted:#5c7488;
   }
   *{box-sizing:border-box;}
   body{margin:0;font-family:'Poppins',sans-serif;color:var(--ink);background:var(--paper);}
@@ -59,9 +59,9 @@
 
   .hero{position:relative;z-index:2;}
   .hero .wrap{padding:76px 28px 64px;}
-  .eyebrow-line{font-size:13.5px;color:var(--muted);margin-bottom:18px;font-weight:500;}
+  .eyebrow-line{font-size:13.5px;color:var(--muted);margin-bottom:18px;}
   .hero h1{font-size:45px;line-height:1.12;font-weight:700;letter-spacing:-0.5px;margin:0 0 20px;}
-  .hero p.lede{font-size:16px;line-height:1.65;color:#1d3549;font-weight:500;max-width:46ch;margin:0 0 30px;}
+  .hero p.lede{font-size:16px;line-height:1.65;color:#37536b;max-width:46ch;margin:0 0 30px;}
   .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px;}
   .btn{
     display:inline-flex;align-items:center;justify-content:center;padding:13px 26px;
@@ -71,17 +71,15 @@
   .btn-outline{border-color:var(--ink);color:var(--ink);}
   .trust-line{font-size:12.5px;color:var(--muted);}
 
-  /* A light, see-through panel: the text is easy to read and the drone video still shows behind it. */
-  .features{position:relative;z-index:2;border-top:1px solid var(--line);background:rgba(246,251,253,0.86);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
-  .hero h1, .hero p.lede, .eyebrow-line, .trust-line{text-shadow:0 1px 2px rgba(255,255,255,0.75);}
+  .features{position:relative;z-index:2;border-top:1px solid var(--line);}
   .features .wrap{display:grid;grid-template-columns:repeat(3,1fr);padding:44px 28px;}
   .feature{padding:0 26px;border-left:1px solid var(--line);}
   .feature:first-child{border-left:none;padding-left:0;}
   .feature .glyph{font-size:20px;margin-bottom:12px;}
-  .feature h3{font-size:16px;font-weight:700;margin:0 0 8px;}
-  .feature p{font-size:14.5px;line-height:1.65;color:var(--muted);margin:0;font-weight:500;}
+  .feature h3{font-size:15px;font-weight:600;margin:0 0 8px;}
+  .feature p{font-size:13.5px;line-height:1.6;color:var(--muted);margin:0;}
 
-  .features .sec-title{grid-column:1 / -1;margin-bottom:22px;font-size:15px;font-weight:700;color:var(--primary-dark);text-transform:uppercase;letter-spacing:0.8px;}
+  .features .sec-title{grid-column:1 / -1;margin-bottom:22px;}
   .features .sec-title + .feature{border-left:none;padding-left:0;}
 
   footer.site-foot{position:relative;z-index:2;padding:22px 28px 30px;font-size:12px;color:var(--muted);}
