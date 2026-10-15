@@ -83,6 +83,7 @@ class BillController extends ResidentController
             'amount'   => $payments->balance($row),
             'qr'       => $qr,
             'paymongo' => $paymongo->isConfigured(),
+            'wallets'  => $paymongo->enabledWallets(),
         ];
         // ?partial=1: only the panel, for the Pay Bill pop-up on Current Bills.
         return $request->boolean('partial')
@@ -97,12 +98,67 @@ class BillController extends ResidentController
         if (!$consumer) {
             return redirect()->route('resident.dashboard');
         }
-        [$checkoutUrl, $error] = $paymongo->startCheckout($consumer, $bill, $request->user()->user_id, clean($request->input('wallet')));
+        $wallet = clean($request->input('wallet'));
+        if (!isset($paymongo->enabledWallets()[$wallet])) {
+            flash('danger', 'That e-wallet is not available. Please pay with the QR code instead.');
+            return redirect()->route('resident.bill');
+        }
+        [$checkoutUrl, $error] = $paymongo->startCheckout($consumer, $bill, $request->user()->user_id, $wallet);
         if ($error) {
             flash('danger', $error);
             return redirect()->route('resident.bill');
         }
         return redirect()->away($checkoutUrl);
+    }
+
+    /** "Show QR code": a QR Ph code for this bill's balance, made by PayMongo (JSON for the Pay Bill pop-up). */
+    public function startQr(Request $request, int $bill, PayMongo $paymongo)
+    {
+        $consumer = $this->consumer($request);
+        if (!$consumer) {
+            return response()->json(['error' => 'Your login is not linked to a water account.'], 422);
+        }
+        [$qr, $error] = $paymongo->startOnlineQr((int)$consumer->consumer_id, $bill, $request->user()->user_id);
+        return $error ? response()->json(['error' => $error], 422) : response()->json($qr);
+    }
+
+    /** Asked every few seconds while the QR is on screen: paid, still waiting, or expired. */
+    public function qrStatus(Request $request, int $payment, PayMongo $paymongo)
+    {
+        $row = $this->ownQrPayment($request, $payment);
+        if (!$row) {
+            return response()->json(['status' => 'gone']);
+        }
+        if ($paymongo->verifyAndCredit($row)) {
+            flash('success', 'Payment successful! Your ' . formatCurrency($row->amount_paid) . ' QR payment was confirmed — your bill is now Paid.');
+            session()->flash('receipt_payment_id', $row->payment_id);
+            return response()->json(['status' => 'paid', 'redirect' => route('resident.bill')]);
+        }
+        if ($paymongo->walletPaymentFailed($row)) {
+            $paymongo->settleOrCancel($row);
+            return response()->json(['status' => 'expired']);
+        }
+        return response()->json(['status' => 'waiting']);
+    }
+
+    /** "Cancel" while the QR is on screen — unless it was paid in the meantime. */
+    public function cancelQr(Request $request, int $payment, PayMongo $paymongo)
+    {
+        $row = $this->ownQrPayment($request, $payment);
+        $paid = $row && $paymongo->settleOrCancel($row);
+        if ($paid) {
+            flash('success', 'Your payment was already received — your bill is now Paid.');
+            session()->flash('receipt_payment_id', $row->payment_id);
+        }
+        return response()->json(['paid' => $paid, 'redirect' => route('resident.bill')]);
+    }
+
+    /** One of this consumer's own online QR payments. */
+    private function ownQrPayment(Request $request, int $paymentId): ?object
+    {
+        $consumer = $this->consumer($request);
+        return $consumer ? DB::table('payments')->where('payment_id', $paymentId)->where('consumer_id', $consumer->consumer_id)
+            ->where('payment_method', 'paymongo')->where('wallet', 'qrph')->where('channel', 'online')->first() : null;
     }
 
     /** PayMongo sends the resident back here after paying (or cancelling). */

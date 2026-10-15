@@ -43,6 +43,10 @@
   .qr-frame{border:1px solid var(--border);border-radius:10px;padding:6px;background:#fff;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;}
   .qr-frame img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;}
   .qr-steps{padding-left:18px;margin:8px 0 0;font-size:13px;}
+  /* PayMongo QR: big enough to scan from another phone */
+  [data-qrph] .qr-row{grid-template-columns:1fr;gap:10px;}
+  [data-qrph] .qr-row > div:first-child{max-width:240px;width:100%;margin:0 auto;}
+  [data-qrph] .qr-wait{font-size:13.5px;}
   .qr-steps li{margin-bottom:3px;}
   .upload-box{background:#f4fafc;border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:14px;}
   .upload-box .form-label{font-size:12.5px;font-weight:600;margin-bottom:4px;}

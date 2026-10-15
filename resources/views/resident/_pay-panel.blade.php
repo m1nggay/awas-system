@@ -1,13 +1,16 @@
 {{-- The Online Payment panel: on the Pay Bill page, and loaded into the Current Bills pop-up ($inModal).
-     Needs $bill, $consumer, $amount, $qr, $paymongo. Its script is assets/js/pay-panel.js (initPayPanel). --}}
+     Needs $bill, $consumer, $amount, $qr, $paymongo, $wallets. Its script is assets/js/pay-panel.js (initPayPanel).
+     With PayMongo: a QR Ph code made for this bill (confirmed automatically), plus the e-wallets PayMongo
+     has enabled. Without PayMongo: the barangay's own QR and a receipt screenshot for the office to verify. --}}
 @php
   $inModal = $inModal ?? false;
-  $qrReady = $qr->isConfigured();
+  $wallets = $wallets ?? [];
+  $qrReady = !$paymongo && $qr->isConfigured();
   // Nothing is open until the resident picks a way to pay — except after a failed
   // screenshot upload (back on Scan QR), or when only one way to pay exists.
   $tab = match (true) {
       (bool)old('receipt_tab') => 'qr',
-      $paymongo && !$qrReady => 'wallet',
+      $paymongo && !$wallets => 'qrph',
       !$paymongo && $qrReady => 'qr',
       default => null,
   };
@@ -44,8 +47,56 @@
       {{-- Each way to pay is a dropdown: tap it to show its options right underneath. --}}
       <div class="method-list">
 
-      {{-- GCash / Maya through PayMongo: opens the wallet, confirmed automatically --}}
+      {{-- QR Ph from PayMongo for this bill's exact amount: any GCash, Maya or bank app, confirmed automatically --}}
       @if ($paymongo)
+        <div class="method-item">
+        <button type="button" class="method-tab" id="tab-qrph" aria-controls="panel-qrph" aria-expanded="{{ $tab === 'qrph' ? 'true' : 'false' }}">
+          <strong>Scan QR</strong><span class="method-arrow" aria-hidden="true">▾</span>
+        </button>
+        <div class="method-panel" role="region" id="panel-qrph" aria-labelledby="tab-qrph" @if ($tab !== 'qrph') hidden @endif
+             data-qrph data-start-url="{{ route('resident.bill.qr', $bill->bill_id) }}"
+             data-status-url="{{ route('resident.bill.qr.status', ['payment' => '__ID__']) }}"
+             data-cancel-url="{{ route('resident.bill.qr.cancel', ['payment' => '__ID__']) }}">
+          <div data-qr-intro>
+            <p class="small mb-2">Pay with <strong>GCash, Maya</strong> or any bank app that scans <strong>QR Ph</strong>. The QR is made for this bill's exact amount, and your bill turns <strong>Paid</strong> by itself — no screenshot needed.</p>
+            <div class="d-flex justify-content-end gap-2">
+              @if ($inModal)
+                <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
+              @else
+                <a href="{{ route('resident.bill') }}" class="btn btn-outline">Cancel</a>
+              @endif
+              <button type="button" class="btn btn-primary" data-qr-start><i class="ph ph-qr-code" aria-hidden="true"></i> Show QR code</button>
+            </div>
+          </div>
+          <div data-qr-show hidden>
+            <div class="qr-row">
+              <div>
+                <div class="qr-frame"><img data-qr-img alt="QR code to pay this bill — scan with GCash, Maya or a bank app"></div>
+                <a data-qr-save download="awas-bill-qr.png" class="btn btn-outline btn-sm w-100 mt-2"><i class="ph ph-download-simple" aria-hidden="true"></i> Save QR image</a>
+              </div>
+              <div>
+                <strong style="font-size:15px;" data-qr-amount></strong>
+                <ol class="qr-steps">
+                  <li><strong>On another phone:</strong> open GCash or Maya, tap <strong>Scan QR</strong>, and scan this code.</li>
+                  <li><strong>On this phone:</strong> tap <strong>Save QR image</strong>, then in GCash or Maya tap <strong>Scan QR → Upload QR</strong> and pick the saved image.</li>
+                  <li>Pay. Keep this page open — it shows <strong>Paid</strong> by itself.</li>
+                </ol>
+              </div>
+            </div>
+            <div class="qr-wait mt-2" data-qr-state><span class="spinner-border spinner-border-sm text-primary me-1" aria-hidden="true"></span> Waiting for your payment…</div>
+            <div class="text-muted small" data-qr-countdown></div>
+            <a data-qr-test href="#" target="_blank" rel="noopener" class="small d-block mt-1" hidden>Test mode: simulate paying</a>
+            <div class="d-flex justify-content-end mt-3">
+              <button type="button" class="btn btn-outline" data-qr-cancel>Cancel</button>
+            </div>
+          </div>
+          <div class="alert alert-danger py-2 small mt-2 mb-0" data-qr-error hidden></div>
+        </div>
+        </div>
+      @endif
+
+      {{-- GCash / Maya through PayMongo: opens the wallet, confirmed automatically (only the ones PayMongo enabled) --}}
+      @if ($paymongo && $wallets)
         <div class="method-item">
         <button type="button" class="method-tab" id="tab-wallet" aria-controls="panel-wallet" aria-expanded="{{ $tab === 'wallet' ? 'true' : 'false' }}">
           <strong>E-wallet</strong><span class="method-arrow" aria-hidden="true">▾</span>
@@ -53,7 +104,7 @@
         <div class="method-panel" role="region" id="panel-wallet" aria-labelledby="tab-wallet" @if ($tab !== 'wallet') hidden @endif>
           <form method="POST" action="{{ route('resident.bill.paymongo', $bill->bill_id) }}" class="wallet-choices" data-paymongo-form>
             @csrf
-            @foreach (['gcash' => ['GCash', '#007dfe', 'G'], 'paymaya' => ['Maya', '#00b464', 'M']] as $code => [$name, $color, $letter])
+            @foreach (array_intersect_key(['gcash' => ['GCash', '#007dfe', 'G'], 'paymaya' => ['Maya', '#00b464', 'M']], $wallets) as $code => [$name, $color, $letter])
               <button type="submit" name="wallet" value="{{ $code }}" class="wallet-btn" style="--wallet:{{ $color }};" aria-label="Pay with {{ $name }}">
                 <span class="dot" aria-hidden="true">{{ $letter }}</span>{{ $name }}
               </button>

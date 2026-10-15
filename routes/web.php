@@ -171,6 +171,10 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
         Route::post('/bill/{bill}/pay', [Resident\BillController::class, 'submitPayment'])->whereNumber('bill')->name('bill.pay.submit');
         Route::post('/bill/{bill}/paymongo', [Resident\BillController::class, 'payWithPayMongo'])->whereNumber('bill')->name('bill.paymongo');
         Route::get('/bill/{bill}/paymongo/return', [Resident\BillController::class, 'payMongoReturn'])->whereNumber('bill')->name('bill.paymongo.return');
+        // QR Ph made by PayMongo for the bill's exact balance — scanned with GCash, Maya or a bank app, confirmed automatically.
+        Route::post('/bill/{bill}/qr', [Resident\BillController::class, 'startQr'])->whereNumber('bill')->name('bill.qr');
+        Route::get('/bill/qr/{payment}/status', [Resident\BillController::class, 'qrStatus'])->whereNumber('payment')->name('bill.qr.status');
+        Route::post('/bill/qr/{payment}/cancel', [Resident\BillController::class, 'cancelQr'])->whereNumber('payment')->name('bill.qr.cancel');
         Route::get('/billing-history', [Resident\HistoryController::class, 'bills'])->name('billing-history');
         Route::get('/payment-history', [Resident\HistoryController::class, 'payments'])->name('payment-history');
 

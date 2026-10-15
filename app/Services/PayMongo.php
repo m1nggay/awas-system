@@ -34,6 +34,13 @@ class PayMongo
         return (string)config('agas.paymongo.secret_key') !== '';
     }
 
+    /** E-wallets PayMongo has enabled for this account (PAYMONGO_WALLETS), e.g. ['gcash' => 'GCash']. */
+    public function enabledWallets(): array
+    {
+        $codes = array_filter(array_map('trim', explode(',', strtolower((string)config('agas.paymongo.wallets')))));
+        return array_intersect_key(self::WALLETS, array_flip($codes));
+    }
+
     /** Authenticated call; returns the decoded body plus 'http_code', or null on hard failure. */
     private function request(string $method, string $path, ?array $jsonBody = null): ?array
     {
@@ -287,7 +294,23 @@ class PayMongo
      */
     public function startCounterQr(int $billId, int $staffId): array
     {
-        [$bill, $paymentId, $ref, $balance, $error] = $this->reservePayment($billId, null, 'qrph', 'counter', $staffId);
+        return $this->startQr($billId, null, 'counter', $staffId, $staffId);
+    }
+
+    /**
+     * Online: the same QR Ph code on the consumer's own Pay Bill pop-up. They scan
+     * it with GCash, Maya or a bank app (or save it and upload it there); the
+     * bill turns Paid automatically once PayMongo confirms.
+     */
+    public function startOnlineQr(int $consumerId, int $billId, int $userId): array
+    {
+        return $this->startQr($billId, $consumerId, 'online', null, $userId);
+    }
+
+    /** @return array{0: ?array{payment_id: int, image: string, expires_at: ?string, test_url: ?string, amount: float}, 1: ?string} */
+    private function startQr(int $billId, ?int $consumerId, string $channel, ?int $staffId, int $userId): array
+    {
+        [$bill, $paymentId, $ref, $balance, $error] = $this->reservePayment($billId, $consumerId, 'qrph', $channel, $staffId);
         if ($error) {
             return [null, $error];
         }
@@ -314,11 +337,14 @@ class PayMongo
                 $this->cancelPaymentIntent($intentId);
             }
             DB::table('payments')->where('payment_id', $paymentId)->delete();
-            return [null, 'The QR code could not be created right now. Please try again, or record a Cash payment.'];
+            return [null, $channel === 'counter'
+                ? 'The QR code could not be created right now. Please try again, or record a Cash payment.'
+                : 'The QR code could not be created right now. Please try again in a moment, or pay at the water office.'];
         }
 
         DB::table('payments')->where('payment_id', $paymentId)->update(['payment_gateway_txn_id' => $intentId]);
-        log_activity($staffId, 'payment_qr_start', "Showed a GCash/Maya QR for payment $ref (" . formatCurrency($balance) . ") — meter $meter, $period");
+        log_activity($userId, 'payment_qr_start', ($channel === 'counter' ? 'Showed' : 'Opened') . " a GCash/Maya QR for payment $ref ("
+            . formatCurrency($balance) . ") — meter $meter, $period" . ($channel === 'online' ? ' (online)' : ''));
         return [[
             'payment_id' => $paymentId,
             'image'      => $code['image_url'],
