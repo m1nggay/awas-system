@@ -77,4 +77,7 @@
   <div class="auth-footer-link">
     <a href="{{ url('/') }}"><i class="ph ph-arrow-left" aria-hidden="true"></i> Back to Home</a>
   </div>
+  <div class="auth-footer-link" style="font-size:12px;margin-top:10px;">
+    <a href="{{ route('privacy') }}" style="font-weight:500;">Privacy Policy</a> · <a href="{{ route('terms') }}" style="font-weight:500;">Terms of Service</a>
+  </div>
 @endsection

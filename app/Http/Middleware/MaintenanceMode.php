@@ -28,7 +28,7 @@ class MaintenanceMode
         if ($user && $user->isAdmin()) {
             return $next($request);
         }
-        if (!$user && $request->routeIs('login', 'login.attempt', 'logout', 'password.*')) {
+        if (!$user && $request->routeIs('login', 'login.attempt', 'logout', 'password.*', 'privacy', 'terms', 'social.*')) {
             return $next($request);
         }
         if ($user) {

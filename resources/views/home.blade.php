@@ -165,7 +165,7 @@
 
   <footer class="site-foot">
     <div class="wrap">
-      &copy; {{ date('Y') }} AWAS — Adlay Water Augmentation System
+      &copy; {{ date('Y') }} AWAS — Adlay Water Augmentation System · <a href="{{ route('privacy') }}" style="color:inherit;">Privacy Policy</a> · <a href="{{ route('terms') }}" style="color:inherit;">Terms</a>
     </div>
   </footer>
 

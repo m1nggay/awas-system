@@ -11,6 +11,7 @@ use App\Http\Controllers\GcashQrController;
 use App\Http\Controllers\PaymentReceiptController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\MembershipApplicationController;
 use App\Http\Controllers\Resident;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +44,10 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', [Auth\LoginController::class, 'logout'])->name('logout');
+
+// Public Privacy Policy and Terms of Service (also linked on Google's sign-in consent screen).
+Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');
+Route::get('/terms', [LegalController::class, 'terms'])->name('terms');
 
 // "Continue with Google / Facebook": sign in, or (from Profile, ?link=1) connect it to the signed-in account.
 Route::get('/auth/{provider}/redirect', [Auth\SocialLoginController::class, 'redirect'])->whereIn('provider', ['google', 'facebook'])->name('social.redirect');

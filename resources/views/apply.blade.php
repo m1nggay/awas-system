@@ -235,7 +235,8 @@
       </div>
     </div>
 
-    <button type="submit" class="btn btn-primary w-100" style="margin-top:18px;">Submit &amp; Verify Email</button>
+    <p class="text-muted text-center mb-0" style="font-size:12px;margin-top:14px;">By submitting, you agree to the AWAS <a href="{{ route('terms') }}" target="_blank" rel="noopener">Terms of Service</a> and <a href="{{ route('privacy') }}" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+    <button type="submit" class="btn btn-primary w-100" style="margin-top:10px;">Submit &amp; Verify Email</button>
   </form>
 
   <div class="auth-footer-link">
