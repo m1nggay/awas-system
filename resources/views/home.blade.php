@@ -71,26 +71,38 @@
   .btn-outline{border-color:var(--ink);color:var(--ink);}
   .trust-line{font-size:12.5px;color:var(--muted);}
 
-  .features{position:relative;z-index:2;border-top:1px solid var(--line);}
-  .features .wrap{display:grid;grid-template-columns:repeat(3,1fr);padding:44px 28px;}
-  .feature{padding:0 26px;border-left:1px solid var(--line);}
-  .feature:first-child{border-left:none;padding-left:0;}
-  .feature .glyph{font-size:20px;margin-bottom:12px;}
-  .feature h3{font-size:15px;font-weight:600;margin:0 0 8px;}
-  .feature p{font-size:13.5px;line-height:1.6;color:var(--muted);margin:0;}
+  /* Information in soft frosted cards: easy to read, with the drone video showing around them. */
+  .features{position:relative;z-index:2;}
+  .features .wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:26px 28px;}
+  .feature{
+    padding:22px 22px 24px;border-radius:16px;
+    background:rgba(255,255,255,0.78);
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,0.7);
+    box-shadow:0 8px 24px rgba(4,38,63,0.08);
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .feature:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(4,38,63,0.13);}
+  .feature .glyph{width:42px;height:42px;border-radius:12px;background:#e1f1f8;color:var(--primary-dark);display:flex;align-items:center;justify-content:center;font-size:21px;margin-bottom:14px;}
+  .feature h3{font-size:15.5px;font-weight:600;margin:0 0 8px;color:var(--ink);}
+  .feature p{font-size:14px;line-height:1.65;color:#2e4659;margin:0;}
 
-  .features .sec-title{grid-column:1 / -1;margin-bottom:22px;}
-  .features .sec-title + .feature{border-left:none;padding-left:0;}
+  /* Section titles: a small white pill above each group of cards. */
+  .features .sec-title{
+    grid-column:1 / -1;justify-self:start;margin:14px 0 0;
+    padding:7px 16px;border-radius:999px;
+    background:rgba(255,255,255,0.85);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+    color:var(--primary-dark);font-size:13px;font-weight:600;letter-spacing:.3px;
+    box-shadow:0 4px 14px rgba(4,38,63,0.08);
+  }
 
   footer.site-foot{position:relative;z-index:2;padding:22px 28px 30px;font-size:12px;color:var(--muted);}
 
+  @media (prefers-reduced-motion: reduce){ .feature, .feature:hover{transition:none;transform:none;} }
   @media (max-width: 880px){
     .hero .wrap{padding-top:48px;}
     .hero h1{font-size:34px;}
-    .features .wrap{grid-template-columns:1fr;gap:26px;}
-    .feature{border-left:none;padding-left:0;border-top:1px solid var(--line);padding-top:22px;}
-    .feature:first-child, .features .sec-title + .feature{border-top:none;padding-top:0;}
-    .features .sec-title{margin-bottom:0;}
+    .features .wrap{grid-template-columns:1fr;gap:12px;}
   }
   /* Phones: compact header, full-width buttons */
   @media (max-width: 560px){
@@ -105,7 +117,8 @@
     .eyebrow-line{font-size:12.5px;margin-bottom:12px;}
     .hero h1{font-size:30px;margin-bottom:14px;}
     .hero p.lede{font-size:15px;margin-bottom:24px;}
-    .features .wrap{padding:32px 18px;}
+    .features .wrap{padding:18px 18px;}
+    .feature{padding:18px 18px 20px;}
     footer.site-foot{padding:18px 18px 26px;}
   }
 </style>
