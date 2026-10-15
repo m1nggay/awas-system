@@ -63,7 +63,7 @@
     <div class="social-or"><span>or</span></div>
     <div class="social-btns">
       @isset($socials['google'])
-        <a href="{{ route('social.redirect', 'google') }}" class="social-btn google"><i class="ph ph-google-logo" aria-hidden="true"></i> Continue with Google</a>
+        <a href="{{ route('social.redirect', 'google') }}" class="social-btn google">@include('partials.google-logo') Continue with Google</a>
       @endisset
       @isset($socials['facebook'])
         <a href="{{ route('social.redirect', 'facebook') }}" class="social-btn facebook"><i class="ph-fill ph-facebook-logo" aria-hidden="true"></i> Continue with Facebook</a>

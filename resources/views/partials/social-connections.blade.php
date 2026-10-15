@@ -7,7 +7,11 @@
       @php $linked = !empty($user->{$key . '_id'}); @endphp
       <div class="social-link-row">
         <span class="d-flex align-items-center gap-2">
-          <i class="{{ $key === 'facebook' ? 'ph-fill ph-facebook-logo' : 'ph ph-google-logo' }}" style="font-size:20px;color:{{ $key === 'facebook' ? '#1877f2' : '#4285f4' }};" aria-hidden="true"></i>
+          @if ($key === 'google')
+            @include('partials.google-logo')
+          @else
+            <i class="ph-fill ph-facebook-logo" style="font-size:20px;color:#1877f2;" aria-hidden="true"></i>
+          @endif
           <strong>{{ $name }}</strong>
           @if ($linked)<span class="pf-pill">Connected</span>@endif
         </span>
