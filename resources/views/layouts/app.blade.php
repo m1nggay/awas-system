@@ -8,7 +8,7 @@
             'Water Management' => [
                 ['admin.consumers.index', 'admin.consumers.*', 'ph-users-three', 'Consumers'],
                 ['admin.applications.index', 'admin.applications.*', 'ph-clipboard-text', 'Applications', $pendingApplicationCount ?? 0],
-                ['admin.readings.index', 'admin.readings.*', 'ph-gauge', 'Meter Readings'],
+                ['admin.readings.index', 'admin.readings.*', 'ph-gauge', 'Recorded Readings'],
                 ['admin.bills.index', 'admin.bills.*', 'ph-invoice', 'Water Bills'],
                 ['admin.payments.index', 'admin.payments.*', 'ph-hand-coins', 'Payments'],
             ],
@@ -32,7 +32,7 @@
                 ['admin.dashboard', 'admin.dashboard', 'ph-squares-four', 'Dashboard'],
                 ['admin.consumers.index', 'admin.consumers.*', 'ph-users-three', 'Consumer List'],
                 ['admin.readings.index', 'admin.readings.index', 'ph-gauge', 'Meter Readings'],
-                ['admin.readings.history', 'admin.readings.history', 'ph-clock-counter-clockwise', 'Reading History'],
+                ['admin.readings.history', 'admin.readings.history', 'ph-clock-counter-clockwise', 'Recorded Readings'],
                 ['admin.reports.index', 'admin.reports.*', 'ph-chart-bar', 'Reports'],
                 ['admin.users.logs', 'admin.users.logs', 'ph-scroll', 'Activity Logs'],
             ],

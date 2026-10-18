@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Reading History')
+@section('title', 'Recorded Readings')
 
 @section('content')
 @php $latest = $summary->first(); @endphp

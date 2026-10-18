@@ -53,7 +53,7 @@ class MeterReadingController extends Controller
         ]);
     }
 
-    /** Reading History: the readings this Meter Reader recorded, with a summary per billing period. */
+    /** Recorded Readings: the readings this Meter Reader recorded, with a summary per billing period. */
     public function history(Request $request)
     {
         $search = clean($request->query('q'));

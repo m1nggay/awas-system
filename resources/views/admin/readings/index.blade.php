@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Meter Readings')
+@section('title', auth()->user()->isAdmin() ? 'Recorded Readings' : 'Meter Readings')
 
 @section('content')
 @php $isReader = auth()->user()->isMeterReader(); $isAdmin = auth()->user()->isAdmin(); $canManage = $isReader; @endphp
