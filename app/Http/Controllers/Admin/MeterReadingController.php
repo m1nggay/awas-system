@@ -53,6 +53,37 @@ class MeterReadingController extends Controller
         ]);
     }
 
+    /** Reading History: the readings this Meter Reader recorded, with a summary per billing period. */
+    public function history(Request $request)
+    {
+        $search = clean($request->query('q'));
+        $periodFil = clean($request->query('period'));
+        $mine = DB::table('meter_readings as mr')->where('mr.recorded_by', $request->user()->user_id);
+
+        $readings = (clone $mine)
+            ->join('consumers as c', 'c.consumer_id', '=', 'mr.consumer_id')
+            ->leftJoin('puroks as p', 'p.purok_id', '=', 'c.purok_id')
+            ->leftJoin('water_bills as b', 'b.reading_id', '=', 'mr.reading_id')
+            ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w
+                ->where('c.full_name', like_operator(), "%$search%")
+                ->orWhere('c.meter_number', like_operator(), "%$search%")))
+            ->when($periodFil !== '', fn ($q) => $q->where('mr.billing_period', $periodFil))
+            ->orderByDesc('mr.reading_date')->orderByDesc('mr.reading_id')
+            ->select('mr.*', 'c.full_name', 'c.meter_number', 'p.purok_name', 'b.total_amount as bill_total', 'b.status as bill_status')
+            ->paginate(15)->appends($request->query());
+
+        return view('admin.readings.history', [
+            'readings'  => $readings,
+            // Meters read and water used per billing period (latest 6).
+            'summary'   => (clone $mine)->groupBy('mr.billing_period')->orderByDesc('mr.billing_period')->limit(6)
+                ->selectRaw('mr.billing_period, COUNT(*) as total, SUM(mr.consumption) as consumption')->get(),
+            'totalAll'  => (clone $mine)->count(),
+            'today'     => (clone $mine)->where('mr.created_at', '>=', now()->startOfDay())->count(),
+            'periods'   => (clone $mine)->distinct()->orderByDesc('mr.billing_period')->pluck('mr.billing_period'),
+            'search'    => $search,
+            'periodFil' => $periodFil,
+        ]);
+    }
 
     /** Suggestions while typing in Record Reading: by name or meter number, only in the reader's puroks. */
     public function search(Request $request)

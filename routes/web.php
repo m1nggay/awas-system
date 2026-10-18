@@ -97,6 +97,8 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
         Route::get('/meter-readings', [Admin\MeterReadingController::class, 'index'])->name('readings.index');
         Route::get('/meter-readings/lookup', [Admin\MeterReadingController::class, 'lookup'])->name('readings.lookup');
         Route::get('/meter-readings/search', [Admin\MeterReadingController::class, 'search'])->name('readings.search');
+        // The Meter Reader's own readings (Reading History).
+        Route::get('/meter-readings/history', [Admin\MeterReadingController::class, 'history'])->middleware('role:staff')->name('readings.history');
         // Only the Meter Reader records readings; the bill is generated automatically.
         Route::post('/meter-readings', [Admin\MeterReadingController::class, 'store'])->middleware('role:staff')->name('readings.store');
         Route::put('/meter-readings/{reading}', [Admin\MeterReadingController::class, 'update'])->middleware('role:staff')->name('readings.update');

@@ -31,7 +31,8 @@
             'Main' => [
                 ['admin.dashboard', 'admin.dashboard', 'ph-squares-four', 'Dashboard'],
                 ['admin.consumers.index', 'admin.consumers.*', 'ph-users-three', 'Consumer List'],
-                ['admin.readings.index', 'admin.readings.*', 'ph-gauge', 'Meter Readings'],
+                ['admin.readings.index', 'admin.readings.index', 'ph-gauge', 'Meter Readings'],
+                ['admin.readings.history', 'admin.readings.history', 'ph-clock-counter-clockwise', 'Reading History'],
                 ['admin.reports.index', 'admin.reports.*', 'ph-chart-bar', 'Reports'],
                 ['admin.users.logs', 'admin.users.logs', 'ph-scroll', 'Activity Logs'],
             ],

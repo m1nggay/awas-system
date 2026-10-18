@@ -51,7 +51,7 @@
   </div>
   <div class="col-lg-7">
     <div class="card h-100">
-      <div class="card-header"><h3>My Recent Readings</h3><a href="{{ route('admin.readings.index') }}" class="btn btn-outline btn-sm">View All</a></div>
+      <div class="card-header"><h3>My Recent Readings</h3><a href="{{ route('admin.readings.history') }}" class="btn btn-outline btn-sm">View All</a></div>
       <div class="card-body no-pad">
         <div class="table-responsive">
           <table class="table table-hover align-middle mb-0 data-table table-stack">
