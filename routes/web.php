@@ -102,6 +102,7 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
         // Only the Meter Reader records readings; the bill is generated automatically.
         Route::post('/meter-readings', [Admin\MeterReadingController::class, 'store'])->middleware('role:staff')->name('readings.store');
         Route::put('/meter-readings/{reading}', [Admin\MeterReadingController::class, 'update'])->middleware('role:staff')->name('readings.update');
+        Route::delete('/meter-readings/{reading}', [Admin\MeterReadingController::class, 'destroy'])->middleware('role:staff')->name('readings.destroy');
 
         Route::get('/reports', [Admin\ReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/export', [Admin\ReportController::class, 'export'])->name('reports.export');

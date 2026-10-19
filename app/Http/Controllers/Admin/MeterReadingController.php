@@ -243,6 +243,44 @@ class MeterReadingController extends Controller
         return back();
     }
 
+    /**
+     * Deletes a wrong reading together with its bill. Only the consumer's latest reading,
+     * and only while its bill has no payments, so payment records and the reading chain stay intact.
+     */
+    public function destroy(Request $request, MeterReading $reading)
+    {
+        if (!$this->canManage($request, $reading)) {
+            flash('danger', 'This reading is not in a purok assigned to you.');
+            return back();
+        }
+
+        $meter = DB::table('consumers')->where('consumer_id', $reading->consumer_id)->value('meter_number');
+        $label = billingPeriodLabel($reading->billing_period);
+        $isLatest = !DB::table('meter_readings')->where('consumer_id', $reading->consumer_id)
+            ->where('billing_period', '>', $reading->billing_period)->exists();
+        $bill = DB::table('water_bills')->where('reading_id', $reading->reading_id)->first(['bill_id', 'amount_paid']);
+        $hasPayments = $bill && ((float)$bill->amount_paid > 0 || DB::table('payments')->where('bill_id', $bill->bill_id)->exists());
+
+        if (!$isLatest) {
+            flash('danger', "Only the latest reading of meter $meter can be deleted. Correct this one with Edit instead.");
+            return back();
+        }
+        if ($hasPayments) {
+            flash('danger', "The $label bill of meter $meter already has payments, so its reading cannot be deleted. Use Edit to correct it.");
+            return back();
+        }
+
+        DB::transaction(function () use ($reading, $bill) {
+            if ($bill) {
+                DB::table('water_bills')->where('bill_id', $bill->bill_id)->delete();
+            }
+            $reading->delete();
+        });
+        log_activity($request->user()->user_id, 'meter_reading_delete', "Deleted the $label reading of meter $meter and its bill");
+        flash('success', "Deleted the $label reading of meter $meter and its bill.");
+        return back();
+    }
+
     private function canManage(Request $request, MeterReading $reading): bool
     {
         $purokId = DB::table('consumers')->where('consumer_id', $reading->consumer_id)->value('purok_id');

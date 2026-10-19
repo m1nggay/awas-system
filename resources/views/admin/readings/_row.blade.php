@@ -17,6 +17,11 @@
   @if ($canManage)
     <td class="actions">
       <button class="btn btn-outline btn-sm" onclick="openEditReading({{ json_encode($r) }}, '{{ route('admin.readings.update', $r->reading_id) }}')">Edit</button>
+      <form method="POST" action="{{ route('admin.readings.destroy', $r->reading_id) }}" class="d-inline"
+            data-confirm="Delete the {{ billingPeriodLabel($r->billing_period) }} reading of meter {{ $r->meter_number }} ({{ $r->full_name }})?&#10;&#10;Its bill is deleted too. This cannot be undone.">
+        @csrf @method('DELETE')
+        <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+      </form>
     </td>
   @endif
 </tr>
