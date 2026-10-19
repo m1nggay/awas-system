@@ -146,7 +146,103 @@ class MeterReadingController extends Controller
         ]);
     }
 
+    /** The form without the phone outbox (e.g. browser storage blocked): save now, then reload the page. */
     public function store(Request $request, BillingService $billing)
+    {
+        $result = $this->saveReading($request, $billing);
+        flash($result['ok'] ? 'success' : 'danger', $result['message']);
+        if (!$result['ok'] && !$result['duplicate']) {
+            return back();
+        }
+        // Back to the Consumer List when it was opened from there; otherwise the readings list
+        // (not back(), which would reopen the form for the meter just read).
+        $to = (string)$request->input('back');
+        return str_starts_with($to, url('/') . '/') ? redirect()->to($to) : redirect()->route('admin.readings.index');
+    }
+
+    /**
+     * One reading sent from the phone's outbox (Pending list). Safe to repeat: a reading whose
+     * client_ref is already saved is reported as saved again, so a resend after a dropped
+     * connection never makes a second reading or bill.
+     */
+    public function sync(Request $request, BillingService $billing)
+    {
+        $ref = (string)$request->input('client_ref');
+        if (!preg_match('/^[A-Za-z0-9-]{8,40}$/', $ref)) {
+            return response()->json(['status' => 'error', 'message' => 'This reading has no valid reference. Please record it again.'], 422);
+        }
+        if ($saved = $this->savedByRef($ref)) {
+            return response()->json($saved);
+        }
+        $result = $this->saveReading($request, $billing, $ref);
+        if (!$result['ok'] && ($saved = $this->savedByRef($ref))) {
+            return response()->json($saved);   // the same reading arrived twice at once; the other one won
+        }
+        return response()->json([
+            'status'  => $result['ok'] ? 'saved' : 'error',
+            'message' => $result['message'],
+            'total'   => $result['total'] ?? null,
+        ]);
+    }
+
+    /**
+     * Everything the Record Reading form needs for the meter reader's puroks, so meters can be
+     * looked up on the phone with slow or no internet (Download my puroks).
+     */
+    public function offlineData(Request $request, BillingService $billing)
+    {
+        $billing->refreshOverdueBills();
+        $allowed = $request->user()->assignedPurokIds() ?: [0];
+
+        $consumers = DB::table('consumers as c')->join('puroks as p', 'p.purok_id', '=', 'c.purok_id')
+            ->whereIn('c.purok_id', $allowed)->whereNotNull('c.meter_number')
+            ->orderBy('c.full_name')
+            ->get(['c.consumer_id', 'c.meter_number', 'c.full_name', 'c.status', 'c.is_senior', 'c.consumer_type',
+                'c.initial_meter_reading', 'p.purok_name']);
+        $ids = $consumers->pluck('consumer_id');
+
+        $readings = DB::table('meter_readings')->whereIn('consumer_id', $ids)
+            ->orderByDesc('billing_period')
+            ->get(['consumer_id', 'billing_period', 'current_reading', 'consumption'])->groupBy('consumer_id');
+        $balances = DB::table('water_bills')->whereIn('consumer_id', $ids)->where('status', '!=', 'paid')
+            ->groupBy('consumer_id')->selectRaw('consumer_id, SUM(total_amount - amount_paid) as balance')
+            ->pluck('balance', 'consumer_id');
+
+        return response()->json([
+            'downloaded_at' => now()->toIso8601String(),
+            'consumers'     => $consumers->map(function ($c) use ($readings, $balances) {
+                $mine = $readings->get($c->consumer_id, collect());
+                $last = $mine->first();
+                return [
+                    'meter'             => $c->meter_number,
+                    'name'              => $c->full_name,
+                    'purok'             => $c->purok_name,
+                    'consumer_type'     => consumerTypeLabel($c->consumer_type),
+                    'is_senior'         => (bool)$c->is_senior,
+                    'active'            => $c->status === 'active',
+                    'previous_reading'  => (float)($last->current_reading ?? $c->initial_meter_reading ?? 0),
+                    'last_period'       => $last ? billingPeriodLabel($last->billing_period) : null,
+                    'read_periods'      => $mine->pluck('billing_period')->values(),
+                    'usual_consumption' => round((float)$mine->take(3)->pluck('consumption')->avg(), 2),
+                    'balance'           => round((float)($balances[$c->consumer_id] ?? 0), 2),
+                ];
+            })->values(),
+        ]);
+    }
+
+    /** The answer for a reading the server already has (by the phone's client_ref), or null. */
+    private function savedByRef(string $ref): ?array
+    {
+        $row = DB::table('meter_readings as mr')->leftJoin('water_bills as b', 'b.reading_id', '=', 'mr.reading_id')
+            ->where('mr.client_ref', $ref)->first(['mr.reading_id', 'b.total_amount']);
+        return $row ? ['status' => 'saved', 'message' => 'Saved.', 'total' => (float)$row->total_amount] : null;
+    }
+
+    /**
+     * Validates and saves one reading and generates its bill.
+     * Returns ['ok' => bool, 'duplicate' => bool, 'message' => string, 'total' => ?float].
+     */
+    private function saveReading(Request $request, BillingService $billing, ?string $clientRef = null): array
     {
         $meter = clean($request->input('meter_number'));
         $period = clean($request->input('billing_period'));
@@ -171,39 +267,37 @@ class MeterReadingController extends Controller
             default => null,
         };
         if ($error) {
-            flash('danger', $error);
-            return back();
+            return ['ok' => false, 'duplicate' => false, 'message' => $error];
         }
 
         $previous = (float)$previousRaw;
         $current = (float)$currentRaw;
         $userId = $request->user()->user_id;
         try {
-
-            $bill = DB::transaction(function () use ($consumer, $period, $previous, $current, $readingDate, $remarks, $userId, $billing) {
+            $bill = DB::transaction(function () use ($consumer, $period, $previous, $current, $readingDate, $remarks, $userId, $billing, $clientRef) {
                 $reading = MeterReading::create([
                     'consumer_id' => $consumer->consumer_id, 'billing_period' => $period, 'previous_reading' => $previous,
                     'current_reading' => $current, 'reading_date' => $readingDate,
-                    'recorded_by' => $userId, 'remarks' => $remarks ?: null,
+                    'recorded_by' => $userId, 'remarks' => $remarks ?: null, 'client_ref' => $clientRef,
                 ]);
 
                 $row = DB::table('meter_readings')->where('reading_id', $reading->reading_id)->first();
                 return $billing->generateBillForReading($row, $userId);
             });
-            $previousBalance = $billing->unpaidBalance($consumer->consumer_id, $bill->bill_id);
-            log_activity($userId, 'meter_reading_add', "Recorded reading for meter $meter ({$consumer->full_name}), " . billingPeriodLabel($period)
-                . ': ' . number_format($previous, 2) . ' → ' . number_format($current, 2));
-            flash('success', "Saved for meter $meter ({$consumer->full_name}). Consumption: " . number_format($current - $previous, 2)
+        } catch (QueryException) {
+            return ['ok' => false, 'duplicate' => true, 'message' => "Meter $meter already has a reading for " . billingPeriodLabel($period) . '.'];
+        }
+
+        $previousBalance = $billing->unpaidBalance($consumer->consumer_id, $bill->bill_id);
+        log_activity($userId, 'meter_reading_add', "Recorded reading for meter $meter ({$consumer->full_name}), " . billingPeriodLabel($period)
+            . ': ' . number_format($previous, 2) . ' → ' . number_format($current, 2));
+        return [
+            'ok' => true, 'duplicate' => false, 'total' => (float)$bill->total_amount,
+            'message' => "Saved for meter $meter ({$consumer->full_name}). Consumption: " . number_format($current - $previous, 2)
                 . ' m³, Total: ' . formatCurrency($bill->total_amount)
                 . ($previousBalance > 0 ? ', unpaid balance: ' . formatCurrency($previousBalance) : '')
-                . '. The bill was sent to the administrator.');
-        } catch (QueryException $e) {
-            flash('danger', "Meter $meter already has a reading for " . billingPeriodLabel($period) . '.');
-        }
-        // Back to the Consumer List when it was opened from there; otherwise the readings list
-        // (not back(), which would reopen the form for the meter just read).
-        $to = (string)$request->input('back');
-        return str_starts_with($to, url('/') . '/') ? redirect()->to($to) : redirect()->route('admin.readings.index');
+                . '. The bill was sent to the administrator.',
+        ];
     }
 
     public function update(Request $request, MeterReading $reading, BillingService $billing)

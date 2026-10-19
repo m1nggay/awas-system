@@ -113,7 +113,7 @@
         @endforeach
         <form method="POST" action="{{ route('logout') }}" id="logoutForm">
           @csrf
-          <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logoutForm').submit();"><i class="ic ph ph-sign-out" aria-hidden="true"></i>Logout</a>
+          <a href="{{ route('logout') }}" onclick="event.preventDefault(); if (!window.awasOutboxCanLeave || awasOutboxCanLeave()) document.getElementById('logoutForm').submit();"><i class="ic ph ph-sign-out" aria-hidden="true"></i>Logout</a>
         </form>
       </nav>
     </div>
@@ -126,6 +126,10 @@
         <div class="topbar-title">{{ $pageTitle }}</div>
       </div>
       <div class="topbar-right">
+        @if ($user->isMeterReader())
+          {{-- Readings saved on the phone, not sent yet (reading-outbox.js). --}}
+          <a href="{{ route('admin.readings.index') }}#outboxPanel" id="outboxBadge" class="outbox-badge" hidden><i class="ph ph-cloud-arrow-up" aria-hidden="true"></i><span></span></a>
+        @endif
         <div class="dropdown">
           <button class="notif-btn" id="notifBtn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications" data-read-url="{{ route('notifications.read') }}">
             <i class="ph ph-bell-simple" aria-hidden="true"></i>
@@ -174,6 +178,15 @@
 <script src="{{ asset('assets/js/main.js') }}?v={{ @filemtime(public_path('assets/js/main.js')) ?: '1' }}"></script>
 <script src="{{ asset('assets/js/forms.js') }}?v={{ @filemtime(public_path('assets/js/forms.js')) ?: '1' }}"></script>
 <script src="{{ asset('assets/js/transitions.js') }}"></script>
+@if ($user->isMeterReader())
+  <script>
+    window.AWAS_OUTBOX = {{ Js::from([
+        'userId' => $user->user_id, 'csrf' => csrf_token(), 'loginUrl' => route('login'),
+        'syncUrl' => route('admin.readings.sync'), 'offlineUrl' => route('admin.readings.offline-data'),
+    ]) }};
+  </script>
+  <script src="{{ asset('assets/js/reading-outbox.js') }}?v={{ @filemtime(public_path('assets/js/reading-outbox.js')) ?: '1' }}"></script>
+@endif
 @if (!empty($liveStart))
 <script src="{{ asset('assets/js/live.js') }}?v={{ @filemtime(public_path('assets/js/live.js')) ?: '1' }}"></script>
 @endif

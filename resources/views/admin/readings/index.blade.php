@@ -4,6 +4,8 @@
 
 @section('content')
 @php $isReader = auth()->user()->isMeterReader(); $isAdmin = auth()->user()->isAdmin(); $canManage = $isReader; @endphp
+{{-- Readings saved on this phone and their sending status (reading-outbox.js). --}}
+@if ($isReader)<div id="outboxPanel"></div>@endif
 <div class="card">
   @if ($isReader)
     <div class="card-header justify-content-end">
@@ -71,6 +73,7 @@
         <div class="modal-header"><h3 class="h6 mb-0">Record Meter Reading</h3><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         @csrf
         <div class="modal-body">
+          <div id="savedNote" class="alert alert-success py-2 small" role="status" hidden></div>
           <div class="mb-3">
             <label for="meter_number" class="form-label">Meter Number or Name *</label>
             <div class="position-relative">
@@ -120,7 +123,7 @@
             <label for="remarks" class="form-label">Remarks</label>
             <input type="text" id="remarks" name="remarks" class="form-control" placeholder="Optional notes (e.g. high usage, meter issue)">
           </div>
-          <p class="text-muted mt-3 mb-0" style="font-size:12px;">Saving sends the reading and the calculated bill to the administrator automatically.</p>
+          <p class="text-muted mt-3 mb-0" style="font-size:12px;">Saving keeps the reading on this phone right away and sends it in the background — even with slow or no internet. The bill is made once it is sent.</p>
         </div>
         {{-- Opened from the Consumer List: go back there after saving. --}}
         <input type="hidden" name="back" value="{{ request('back') }}">
@@ -213,33 +216,53 @@ function openEditReading(r, action) {
     $('saveReadingBtn').disabled = !ready;
   }
 
+  // Readings are saved on the phone and sent in the background (reading-outbox.js);
+  // without browser storage the form is posted the old way.
+  const outbox = window.AwasOutbox && window.AwasOutbox.available ? window.AwasOutbox : null;
+
+  function showConsumer(d) {
+    consumer = d;
+    hideSuggest();
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    let html = '<strong>' + esc(d.name) + '</strong> · ' + esc(d.purok) + ' · ' + esc(d.consumer_type)
+      + (d.is_senior ? ' · <span class="badge badge-info">Senior</span>' : '');
+    if (!d.active) html += '<div class="text-danger">This account is not active.</div>';
+    if (d.already_read) html += '<div class="text-danger">This meter already has a reading for the selected billing period.</div>';
+    if (d.last_period) html += '<div class="text-muted">Last reading: ' + esc(d.last_period) + '</div>';
+    $('meterInfo').innerHTML = html;
+    $('previous_reading').value = d.previous_reading.toFixed(2);
+    $('calcBalance').textContent = d.balance > 0 ? peso(d.balance) : '₱0.00 (no unpaid bills)';
+    $('calcBalance').style.color = d.balance > 0 ? '#e5533d' : '';
+    recalc();
+    $('current_reading').focus();
+  }
+
   function lookup() {
     const meter = $('meter_number').value.trim();
     consumer = null;
     $('calcBalance').textContent = '—';
     if (!/^\d+$/.test(meter)) { $('meterInfo').innerHTML = ''; recalc(); return; }
+
+    // Downloaded meters: found at once, no internet needed.
+    const local = outbox ? outbox.findMeter(meter) : null;
+    if (local) {
+      showConsumer(Object.assign({ found: true }, local, { already_read: local.read_periods.includes($('billing_period').value) }));
+      return;
+    }
+
     $('meterInfo').innerHTML = '<span class="text-muted">Looking up…</span>';
     fetch(lookupUrl + '?meter=' + encodeURIComponent(meter) + '&period=' + encodeURIComponent($('billing_period').value), { headers: { 'Accept': 'application/json' } })
       .then(r => r.json())
       .then(d => {
         if (meter !== $('meter_number').value.trim()) return; // typed on meanwhile
         if (!d.found) { $('meterInfo').innerHTML = '<span class="text-danger">' + d.message + '</span>'; recalc(); return; }
-        consumer = d;
-        hideSuggest();
-        const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-        let html = '<strong>' + esc(d.name) + '</strong> · ' + esc(d.purok) + ' · ' + esc(d.consumer_type)
-          + (d.is_senior ? ' · <span class="badge badge-info">Senior</span>' : '');
-        if (!d.active) html += '<div class="text-danger">This account is not active.</div>';
-        if (d.already_read) html += '<div class="text-danger">This meter already has a reading for the selected billing period.</div>';
-        if (d.last_period) html += '<div class="text-muted">Last reading: ' + esc(d.last_period) + '</div>';
-        $('meterInfo').innerHTML = html;
-        $('previous_reading').value = d.previous_reading.toFixed(2);
-        $('calcBalance').textContent = d.balance > 0 ? peso(d.balance) : '₱0.00 (no unpaid bills)';
-        $('calcBalance').style.color = d.balance > 0 ? '#e5533d' : '';
-        recalc();
-        $('current_reading').focus();
+        showConsumer(d);
       })
-      .catch(() => { $('meterInfo').innerHTML = '<span class="text-danger">Could not look up the meter. Please try again.</span>'; });
+      .catch(() => {
+        $('meterInfo').innerHTML = '<span class="text-danger">' + (outbox && !outbox.meterData()
+          ? 'No internet, and your meters are not downloaded yet. Tap "Download my puroks" when you have signal.'
+          : 'Could not look up meter ' + meter + '. Check the number, or try again when the internet is better.') + '</span>';
+      });
   }
 
   // ---- Suggestions: type a name or part of a meter number, then pick the consumer ----
@@ -254,24 +277,28 @@ function openEditReading(r, action) {
     hideSuggest();
     lookup();
   }
+  function showSuggest(q, list) {
+    if (q !== field.value.trim()) return;               // typed on meanwhile
+    if (consumer && consumer.found && /^\d+$/.test(q)) { hideSuggest(); return; }   // exact meter already found
+    if (!list.length) {
+      box.innerHTML = /^\d+$/.test(q) ? '' : '<div class="list-group-item text-muted small">No consumer in your puroks matches "' + escHtml(q) + '".</div>';
+      box.hidden = !box.innerHTML; field.setAttribute('aria-expanded', String(!box.hidden));
+      return;
+    }
+    box.innerHTML = list.map(c => '<button type="button" class="list-group-item list-group-item-action" role="option" data-meter="' + escHtml(c.meter) + '">'
+      + '<strong>' + escHtml(c.name) + '</strong> <span class="text-muted small">· Meter ' + escHtml(c.meter) + ' · ' + escHtml(c.purok)
+      + (c.active ? '' : ' · <span class="text-danger">not active</span>') + '</span></button>').join('');
+    box.hidden = false; active = -1; field.setAttribute('aria-expanded', 'true');
+  }
+
   function suggest() {
     const q = field.value.trim();
     if (q.length < 2) { hideSuggest(); return; }
+    const local = outbox ? outbox.searchMeters(q) : null;   // downloaded meters: no internet needed
+    if (local) { showSuggest(q, local); return; }
     fetch(searchUrl + '?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } })
       .then(r => r.json())
-      .then(list => {
-        if (q !== field.value.trim()) return;               // typed on meanwhile
-        if (consumer && consumer.found && /^\d+$/.test(q)) { hideSuggest(); return; }   // exact meter already found
-        if (!list.length) {
-          box.innerHTML = /^\d+$/.test(q) ? '' : '<div class="list-group-item text-muted small">No consumer in your puroks matches "' + escHtml(q) + '".</div>';
-          box.hidden = !box.innerHTML; field.setAttribute('aria-expanded', String(!box.hidden));
-          return;
-        }
-        box.innerHTML = list.map(c => '<button type="button" class="list-group-item list-group-item-action" role="option" data-meter="' + escHtml(c.meter) + '">'
-          + '<strong>' + escHtml(c.name) + '</strong> <span class="text-muted small">· Meter ' + escHtml(c.meter) + ' · ' + escHtml(c.purok)
-          + (c.active ? '' : ' · <span class="text-danger">not active</span>') + '</span></button>').join('');
-        box.hidden = false; active = -1; field.setAttribute('aria-expanded', 'true');
-      })
+      .then(list => showSuggest(q, list))
       .catch(() => hideSuggest());
   }
 
@@ -323,10 +350,34 @@ function openEditReading(r, action) {
       ask = 'This reading shows ' + used.toFixed(2) + ' m³ used — much more than usual (about ' + usual.toFixed(2) + ' m³ a month).';
     }
     if (ask && !confirm(ask + '\n\nPlease double-check the meter. Save this reading anyway?')) { e.preventDefault(); return; }
+
+    // Save on the phone at once; it is sent in the background.
+    const item = outbox && outbox.add({
+      meter: $('meter_number').value.trim(), name: consumer ? consumer.name : '',
+      period: $('billing_period').value, prev: parseFloat($('previous_reading').value), curr: parseFloat($('current_reading').value),
+      date: $('reading_date').value, remarks: $('remarks').value.trim(),
+    });
+    if (item) {
+      e.preventDefault();
+      if (back && back.indexOf(location.origin + '/') === 0) { saving = true; location.href = back; return; }
+      $('savedNote').innerHTML = '<i class="ph ph-check-circle" aria-hidden="true"></i> Saved on this phone: <strong>Meter ' + escHtml(item.meter) + '</strong>'
+        + (item.name ? ' (' + escHtml(item.name) + ')' : '') + ', ' + (item.curr - item.prev).toFixed(2) + ' m³. Sending in the background — record the next meter.';
+      $('savedNote').hidden = false;
+      ['meter_number', 'previous_reading', 'current_reading', 'remarks'].forEach(id => { $(id).value = ''; });
+      $('meterInfo').innerHTML = '';
+      consumer = null;
+      $('calcBalance').textContent = '—';
+      $('calcBalance').style.color = '';
+      recalc();
+      $('meter_number').focus();
+      return;
+    }
+
     saving = true;
     $('saveReadingBtn').disabled = true;
     $('saveReadingBtn').textContent = 'Saving…';
   });
+  $('addReadingModal').addEventListener('hidden.bs.modal', () => { $('savedNote').hidden = true; });
 
   // Opened from the Consumer List: closing the form goes back there.
   const back = params.get('back');

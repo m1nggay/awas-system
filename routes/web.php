@@ -101,6 +101,9 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
         Route::get('/meter-readings/history', [Admin\MeterReadingController::class, 'history'])->middleware('role:staff')->name('readings.history');
         // Only the Meter Reader records readings; the bill is generated automatically.
         Route::post('/meter-readings', [Admin\MeterReadingController::class, 'store'])->middleware('role:staff')->name('readings.store');
+        // Offline recording: the phone downloads its puroks, then sends saved readings one by one.
+        Route::get('/meter-readings/offline-data', [Admin\MeterReadingController::class, 'offlineData'])->middleware('role:staff')->name('readings.offline-data');
+        Route::post('/meter-readings/sync', [Admin\MeterReadingController::class, 'sync'])->middleware('role:staff')->name('readings.sync');
         Route::put('/meter-readings/{reading}', [Admin\MeterReadingController::class, 'update'])->middleware('role:staff')->name('readings.update');
         Route::delete('/meter-readings/{reading}', [Admin\MeterReadingController::class, 'destroy'])->middleware('role:staff')->name('readings.destroy');
 
