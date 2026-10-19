@@ -301,6 +301,7 @@ table.data-table td.actions > form .btn{margin:0;}
 .badge-info{background:#e4f0ff;color:#2158a8;}
 .badge-danger{background:#fde5e2;color:#b8382a;}
 .badge-secondary{background:#d5dbdf;color:#34424a;}
+.badge-inactive{background:#c0392b;color:#fff;}
 
 /* ---------------------------------------------------------------
    Modal (styling for Bootstrap's own .modal component)

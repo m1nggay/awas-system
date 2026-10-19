@@ -51,7 +51,7 @@
                   <button type="submit" class="btn btn-outline btn-sm">Unlock</button>
                 </form>
               @else
-                <span class="badge {{ $u->status === 'active' ? 'badge-success' : ($u->status === 'pending' ? 'badge-warning' : 'badge-secondary') }}">{{ ucfirst($u->status) }}</span>
+                <span class="badge {{ $u->status === 'active' ? 'badge-success' : ($u->status === 'pending' ? 'badge-warning' : 'badge-inactive') }}">{{ ucfirst($u->status) }}</span>
               @endif
             </td>
             <td class="text-nowrap small">

@@ -7,7 +7,7 @@
       <div class="col-lg-4 col-md-6"><div class="text-muted small">Purok</div><strong>{{ $consumer->purok_name }}</strong></div>
       <div class="col-lg-4 col-md-6"><div class="text-muted small">Address</div><strong>{{ $consumer->address }}</strong></div>
       <div class="col-lg-4 col-md-6"><div class="text-muted small">Type of Consumer</div><strong>{{ consumerTypeLabel($consumer->consumer_type) }}</strong></div>
-      <div class="col-lg-4 col-md-6"><div class="text-muted small">Status</div><span class="badge {{ $consumer->status === 'active' ? 'badge-success' : 'badge-secondary' }}">{{ $consumer->status }}</span></div>
+      <div class="col-lg-4 col-md-6"><div class="text-muted small">Status</div><span class="badge {{ $consumer->status === 'active' ? 'badge-success' : ($consumer->status === 'disconnected' ? 'badge-danger' : 'badge-inactive') }}">{{ $consumer->status }}</span></div>
       <div class="col-lg-4 col-md-6"><div class="text-muted small">Unpaid Balance</div><strong class="{{ $balance > 0 ? 'text-danger' : '' }}">{{ formatCurrency($balance) }}</strong></div>
     </div>
   </div>

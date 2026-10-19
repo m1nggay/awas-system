@@ -57,7 +57,7 @@
             <td class="consumer-name">{{ $c->display_name }}<div class="text-muted small consumer-addr">{{ $c->address }}</div></td>
             <td>{{ $c->purok_name }}</td>
             <td>{{ consumerTypeLabel($c->consumer_type) }}</td>
-            <td><span class="badge {{ $c->status === 'active' ? 'badge-success' : ($c->status === 'disconnected' ? 'badge-danger' : 'badge-secondary') }}">{{ $c->status }}</span></td>
+            <td><span class="badge {{ $c->status === 'active' ? 'badge-success' : ($c->status === 'disconnected' ? 'badge-danger' : 'badge-inactive') }}">{{ $c->status }}</span></td>
             @unless ($isReader)
               <td>@if ((float)$c->unpaid_balance > 0)<span class="text-danger fw-semibold">{{ formatCurrency($c->unpaid_balance) }}</span>@if ($c->status === 'disconnected')<div class="text-muted" style="font-size:11px;">unpaid before disconnection</div>@endif @else<span class="text-muted">₱0.00</span>@endif</td>
             @endunless
