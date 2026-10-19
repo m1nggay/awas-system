@@ -116,15 +116,12 @@ class ConsumerController extends Controller
         return back();
     }
 
-    public function destroy(Request $request, Consumer $consumer)
+    /** Consumers are deactivated, never deleted, so their readings, bills and payments are kept. Edit sets them Active again. */
+    public function deactivate(Request $request, Consumer $consumer)
     {
-        try {
-            $consumer->delete();
-            log_activity($request->user()->user_id, 'consumer_delete', "Deleted consumer {$consumer->full_name} (meter {$consumer->meter_number})");
-            flash('success', 'Consumer record deleted.');
-        } catch (QueryException $e) {
-            flash('danger', 'Cannot delete: this consumer has existing meter readings or bills. Set the status to Inactive instead.');
-        }
+        $consumer->update(['status' => 'inactive']);
+        log_activity($request->user()->user_id, 'consumer_deactivate', "Deactivated consumer {$consumer->full_name} (meter {$consumer->meter_number})");
+        flash('success', "{$consumer->full_name} was deactivated. Their records are kept; use Edit to make the account Active again.");
         return back();
     }
 

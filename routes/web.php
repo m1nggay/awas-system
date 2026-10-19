@@ -120,7 +120,7 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
         Route::middleware('role:admin')->group(function () {
             Route::post('/consumers', [Admin\ConsumerController::class, 'store'])->name('consumers.store');
             Route::put('/consumers/{consumer}', [Admin\ConsumerController::class, 'update'])->name('consumers.update');
-            Route::delete('/consumers/{consumer}', [Admin\ConsumerController::class, 'destroy'])->name('consumers.destroy');
+            Route::post('/consumers/{consumer}/deactivate', [Admin\ConsumerController::class, 'deactivate'])->name('consumers.deactivate');
             Route::get('/consumers/{consumer}/history', [Admin\ConsumerController::class, 'history'])->name('consumers.history');
 
             Route::get('/bills', [Admin\WaterBillController::class, 'index'])->name('bills.index');
@@ -164,6 +164,7 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
             Route::get('/users', [Admin\UserController::class, 'index'])->name('users.index');
             Route::post('/users', [Admin\UserController::class, 'store'])->name('users.store');
             Route::post('/users/{user}/toggle-status', [Admin\UserController::class, 'toggleStatus'])->name('users.toggle');
+            Route::delete('/users/{user}', [Admin\UserController::class, 'destroy'])->name('users.destroy');
             Route::post('/users/{user}/reset-password', [Admin\UserController::class, 'resetPassword'])->name('users.reset-password');
             Route::patch('/users/{user}/unlock', [Admin\UserController::class, 'unlock'])->name('users.unlock');
             Route::post('/users/{user}/puroks', [Admin\UserController::class, 'updatePuroks'])->name('users.puroks');

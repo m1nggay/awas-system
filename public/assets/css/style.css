@@ -470,7 +470,7 @@ tr.live-new > td{animation:liveRow 4s ease;}
 }
 
 /* Manage Users: Puroks | Deactivate in fixed slots so rows line up. */
-.user-actions{display:grid;grid-template-columns:76px 100px;gap:8px;align-items:center;}
+.user-actions{display:grid;grid-template-columns:76px 100px 70px;gap:8px;align-items:center;}
 .user-actions .btn{width:100%;text-align:center;}
 .user-actions form{margin:0;}
 .btn-outline-danger{background:transparent;border:1px solid var(--danger);color:var(--danger);}

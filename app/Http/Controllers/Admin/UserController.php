@@ -166,6 +166,41 @@ class UserController extends Controller
         return back();
     }
 
+    /**
+     * Deletes a Consumer's login and water account — only while the water account has no
+     * readings, bills or payments (e.g. added by mistake or a duplicate). Anyone with
+     * records is deactivated instead, so billing and payment history is never lost.
+     */
+    public function destroy(Request $request, User $user)
+    {
+        if ($user->role !== 'resident') {
+            flash('danger', 'Only Consumer accounts can be deleted. Deactivate administrators and meter readers instead.');
+            return back();
+        }
+
+        $consumer = DB::table('consumers')->where('user_id', $user->user_id)->first(['consumer_id', 'meter_number']);
+        $hasRecords = $consumer && (
+            DB::table('meter_readings')->where('consumer_id', $consumer->consumer_id)->exists()
+            || DB::table('water_bills')->where('consumer_id', $consumer->consumer_id)->exists()
+            || DB::table('payments')->where('consumer_id', $consumer->consumer_id)->exists());
+        if ($hasRecords) {
+            flash('danger', "{$user->full_name} already has meter readings, bills or payments, so the account cannot be deleted — that history must be kept. Use Deactivate instead.");
+            return back();
+        }
+
+        DB::transaction(function () use ($user, $consumer) {
+            if ($consumer) {
+                DB::table('membership_applications')->where('consumer_id', $consumer->consumer_id)->update(['consumer_id' => null]);
+                DB::table('consumers')->where('consumer_id', $consumer->consumer_id)->delete();
+            }
+            $user->delete();
+        });
+        log_activity($request->user()->user_id, 'user_delete', "Deleted consumer account {$user->username} ({$user->full_name}"
+            . ($consumer && $consumer->meter_number ? ", meter {$consumer->meter_number}" : '') . ')');
+        flash('success', "{$user->full_name}'s account was deleted.");
+        return back();
+    }
+
     public function resetPassword(Request $request, User $user)
     {
         $newPassword = (string)$request->input('new_password', '');

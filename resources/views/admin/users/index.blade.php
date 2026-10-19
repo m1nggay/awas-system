@@ -72,6 +72,16 @@
                     @csrf
                     <button class="btn {{ $u->status === 'active' ? 'btn-outline-danger' : 'btn-outline-success' }} btn-sm w-100" type="submit">{{ $u->status === 'active' ? 'Deactivate' : 'Activate' }}</button>
                   </form>
+                @else
+                  <span></span>
+                @endif
+                {{-- Consumers only; refused when they already have readings, bills or payments. --}}
+                @if ($u->role === 'resident')
+                  <form method="POST" action="{{ route('admin.users.destroy', $u) }}"
+                        data-confirm="Delete {{ $u->full_name }}'s account?&#10;&#10;Their login and water account are removed. This only works if they have no meter readings, bills or payments yet. This cannot be undone.">
+                    @csrf @method('DELETE')
+                    <button class="btn btn-danger btn-sm w-100" type="submit">Delete</button>
+                  </form>
                 @endif
               </div>
             </td>
