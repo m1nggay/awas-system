@@ -76,13 +76,6 @@
               @else
               <a class="btn btn-outline btn-sm" href="{{ route('admin.consumers.history', $c) }}" title="View History" data-history="{{ route('admin.consumers.history', [$c, 'partial' => 1]) }}" data-history-name="{{ $c->display_name }}">History</a>
               <button class="btn btn-secondary btn-sm" onclick="openEditModal({{ json_encode($c) }}, '{{ route('admin.consumers.update', $c) }}')">Edit</button>
-              @if ($c->status !== 'inactive')
-                <form method="POST" action="{{ route('admin.consumers.deactivate', $c) }}" class="d-inline"
-                      data-confirm="Deactivate {{ $c->full_name }} (meter {{ $c->meter_number ?: '—' }})?&#10;&#10;No more readings or bills will be recorded for this account. Their records are kept, and you can make the account Active again with Edit.">
-                  @csrf
-                  <button class="btn btn-danger btn-sm" type="submit">Deactivate</button>
-                </form>
-              @endif
               @endif
             </td>
           </tr>
