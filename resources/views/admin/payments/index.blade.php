@@ -33,6 +33,14 @@
   #qrIntro .counter-steps li{counter-increment:qrstep;position:relative;padding-left:32px;line-height:1.55;min-height:22px;}
   #qrIntro .counter-steps li::before{content:counter(qrstep);position:absolute;left:0;top:0;width:22px;height:22px;border-radius:50%;background:var(--primary);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;}
   #qrStartBtn{width:100%;padding:11px;}
+  /* Receipt screenshots: shown on the page (View screenshot pop-up and Verify), click to zoom. */
+  .shot-box{display:block;min-height:120px;max-height:75vh;overflow:auto;background:#f3f6f8;border:1px solid var(--border);border-radius:10px;padding:8px;}
+  .shot-box .spinner-border{display:block;margin:40px auto;}
+  .shot-img{display:block;margin:0 auto;max-width:100%;max-height:calc(75vh - 18px);border-radius:8px;cursor:zoom-in;}
+  .shot-img.zoomed{max-width:none;max-height:none;cursor:zoom-out;}
+  #verifyModal .shot-box{max-height:440px;}
+  #verifyModal .shot-img{max-height:420px;}
+  #verifyModal .shot-img.zoomed{max-height:none;}
 </style>
 @endpush
 
@@ -87,7 +95,7 @@
             <td>{{ paymentMethodLabel($p->payment_method, $p->wallet ?? null) }}<div class="text-muted" style="font-size:11px;">{{ paymentChannelLabel($p->channel) }}</div></td>
             <td>{{ formatDateTime($p->payment_date) }}</td>
             <td>
-              @if ($p->receipt_file)<a href="{{ route('admin.payments.receipt', $p->payment_id) }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm"><i class="ph ph-paperclip" aria-hidden="true"></i> View screenshot</a>@endif
+              @if ($p->receipt_file)<button type="button" class="btn btn-outline btn-sm" data-shot="{{ route('admin.payments.receipt', $p->payment_id) }}" data-shot-title="{{ $p->full_name }} — {{ formatCurrency($p->amount_paid) }}"><i class="ph ph-paperclip" aria-hidden="true"></i> View screenshot</button>@endif
               @if ($p->payment_gateway_txn_id)<div class="text-muted" style="font-size:11.5px;">{{ $p->payment_method === 'paymongo' ? 'PayMongo' : 'Ref.' }} {{ $p->payment_gateway_txn_id }}</div>@endif
               @if (!$p->receipt_file && !$p->payment_gateway_txn_id)—@endif
             </td>
@@ -272,10 +280,10 @@
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-md-6 text-center">
-              <a id="verifyShotLink" href="#" target="_blank" rel="noopener">
-                <img id="verifyShot" alt="Consumer's GCash receipt screenshot" style="max-width:100%;max-height:420px;border:1px solid var(--border);border-radius:10px;">
-              </a>
-              <div class="text-muted small mt-1">Click the screenshot to open it full size.</div>
+              <div class="shot-box">
+                <img id="verifyShot" class="shot-img" alt="Consumer's GCash receipt screenshot" title="Click to zoom in or out">
+              </div>
+              <div class="text-muted small mt-1">Click the screenshot to zoom in or out.</div>
             </div>
             <div class="col-md-6">
               <p class="mb-1 small text-muted" id="verifyWho"></p>
@@ -326,6 +334,41 @@
   </div>
 </div>
 
+{{-- "View screenshot": the consumer's receipt in a pop-up on this page (click it to zoom). --}}
+<div class="modal fade" id="shotModal" tabindex="-1" aria-labelledby="shotTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <div class="modal-header"><h3 class="h6 mb-0" id="shotTitle">GCash screenshot</h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body shot-viewer">
+        <div class="shot-box">
+          <div class="spinner-border text-primary" role="status" id="shotLoading"><span class="visually-hidden">Loading…</span></div>
+          <img id="shotImg" class="shot-img" alt="Consumer's GCash receipt screenshot" title="Click to zoom in or out" hidden>
+        </div>
+        <div class="text-muted small text-center mt-2">Click the screenshot to zoom in or out.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Screenshots open in a pop-up here (no new tab); clicking one zooms it.
+document.addEventListener('click', e => {
+  const btn = e.target.closest('[data-shot]');
+  if (btn) {
+    const img = document.getElementById('shotImg'), loading = document.getElementById('shotLoading');
+    document.getElementById('shotTitle').textContent = 'GCash screenshot — ' + (btn.dataset.shotTitle || '');
+    img.hidden = true; loading.hidden = false; img.classList.remove('zoomed');
+    img.onload = () => { loading.hidden = true; img.hidden = false; };
+    img.onerror = () => { loading.hidden = true; img.hidden = true; document.getElementById('shotTitle').textContent = 'The screenshot could not be loaded.'; };
+    img.src = btn.dataset.shot;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('shotModal')).show();
+    return;
+  }
+  const shot = e.target.closest('.shot-img');
+  if (shot) shot.classList.toggle('zoomed');
+});
+</script>
+
 <script>
 function openVerify(p) {
   const form = document.getElementById('verifyForm');
@@ -333,8 +376,8 @@ function openVerify(p) {
   form.reset();
   document.getElementById('verifyWho').textContent = p.who;
   document.getElementById('verifyAmount').textContent = p.amount;
-  const img = document.getElementById('verifyShot'), link = document.getElementById('verifyShotLink');
-  img.hidden = !p.shot; link.href = p.shot || '#';
+  const img = document.getElementById('verifyShot');
+  img.hidden = !p.shot; img.classList.remove('zoomed');
   if (p.shot) img.src = p.shot;
   bootstrap.Modal.getOrCreateInstance(document.getElementById('verifyModal')).show();
 }
