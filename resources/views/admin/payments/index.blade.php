@@ -41,6 +41,15 @@
   #verifyModal .shot-box{max-height:440px;}
   #verifyModal .shot-img{max-height:420px;}
   #verifyModal .shot-img.zoomed{max-height:none;}
+
+  /* Payments table: compact so it fits without a sideways scroll bar. */
+  .pay-table .pay-sub{font-size:11.5px;color:var(--text-muted);}
+  .pay-table .pay-ref{word-break:break-all;max-width:190px;}
+  .pay-table td.actions{white-space:normal;min-width:150px;}
+  .pay-table td.actions > .btn, .pay-table td.actions > form{margin:2px 0;}
+  @media (min-width:577px){
+    .pay-table td, .pay-table th{padding-left:10px;padding-right:10px;}
+  }
 </style>
 @endpush
 
@@ -79,26 +88,27 @@
       @endif
     </form>
 
+    {{-- Fits a laptop screen without sideways scrolling (related details share a column); cards on phones. --}}
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0 data-table">
+      <table class="table table-hover align-middle mb-0 data-table table-stack pay-table">
         <thead>
-          <tr><th>Reference</th><th>Meter Number</th><th>Name</th><th>Bill</th><th>Amount Paid</th><th>Method</th><th>Payment Date</th><th>Proof</th><th>Status</th><th>Actions</th></tr>
+          <tr><th>Consumer</th><th>Bill</th><th>Amount Paid</th><th>Method &amp; Proof</th><th>Payment Date</th><th>Status</th><th>Actions</th></tr>
         </thead>
         <tbody>
         @forelse ($payments as $p)
           <tr>
-            <td>{{ $p->payment_reference }}</td>
-            <td><strong>{{ $p->meter_number }}</strong></td>
-            <td>{{ $p->full_name }}</td>
-            <td>{{ billingPeriodLabel($p->billing_period) }}<div class="text-muted" style="font-size:11px;">Bill total {{ formatCurrency($p->bill_total) }}</div></td>
-            <td><strong>{{ formatCurrency($p->amount_paid) }}</strong></td>
-            <td>{{ paymentMethodLabel($p->payment_method, $p->wallet ?? null) }}<div class="text-muted" style="font-size:11px;">{{ paymentChannelLabel($p->channel) }}</div></td>
-            <td>{{ formatDateTime($p->payment_date) }}</td>
-            <td>
-              @if ($p->receipt_file)<button type="button" class="btn btn-outline btn-sm" data-shot="{{ route('admin.payments.receipt', $p->payment_id) }}" data-shot-title="{{ $p->full_name }} — {{ formatCurrency($p->amount_paid) }}"><i class="ph ph-paperclip" aria-hidden="true"></i> View screenshot</button>@endif
-              @if ($p->payment_gateway_txn_id)<div class="text-muted" style="font-size:11.5px;">{{ $p->payment_method === 'paymongo' ? 'PayMongo' : 'Ref.' }} {{ $p->payment_gateway_txn_id }}</div>@endif
-              @if (!$p->receipt_file && !$p->payment_gateway_txn_id)—@endif
+            <td class="stack-title">
+              <strong>{{ $p->full_name }}</strong>
+              <div class="pay-sub">Meter {{ $p->meter_number }} · {{ $p->payment_reference }}</div>
             </td>
+            <td>{{ billingPeriodLabel($p->billing_period) }}<div class="pay-sub">Bill total {{ formatCurrency($p->bill_total) }}</div></td>
+            <td><strong>{{ formatCurrency($p->amount_paid) }}</strong></td>
+            <td>
+              {{ paymentMethodLabel($p->payment_method, $p->wallet ?? null) }} <span class="pay-sub d-inline">· {{ paymentChannelLabel($p->channel) }}</span>
+              @if ($p->payment_gateway_txn_id)<div class="pay-sub pay-ref">{{ $p->payment_method === 'paymongo' ? 'PayMongo' : 'Ref.' }} {{ $p->payment_gateway_txn_id }}</div>@endif
+              @if ($p->receipt_file)<button type="button" class="btn btn-outline btn-sm mt-1" data-shot="{{ route('admin.payments.receipt', $p->payment_id) }}" data-shot-title="{{ $p->full_name }} — {{ formatCurrency($p->amount_paid) }}"><i class="ph ph-paperclip" aria-hidden="true"></i> Screenshot</button>@endif
+            </td>
+            <td>{{ formatDateTime($p->payment_date, 'M j, Y') }}<div class="pay-sub">{{ formatDateTime($p->payment_date, 'g:i A') }}</div></td>
             <td>
               <span class="badge {{ paymentStatusBadgeClass($p->status) }}">{{ $p->status === 'pending' && $p->payment_method === 'paymongo' ? 'Waiting for PayMongo' : paymentStatusLabel($p->status) }}</span>
               @if ($p->status === 'verified' && $p->payment_method === 'paymongo')<div class="text-muted" style="font-size:11px;">by PayMongo{{ $p->verified_at ? ' · ' . formatDateTime($p->verified_at) : '' }}</div>@endif
@@ -132,13 +142,11 @@
                 </form>
                 <button class="btn btn-danger btn-sm" type="button"
                         onclick="openReject('{{ route('admin.payments.reject', $p->payment_id) }}', {{ json_encode($p->full_name . ' — ' . formatCurrency($p->amount_paid)) }})">Reject</button>
-              @else
-                <span class="text-muted" style="font-size:12px;">—</span>
               @endif
             </td>
           </tr>
         @empty
-          <tr class="empty-row"><td colspan="10">{{ $tab === 'pending' ? 'No payments waiting for verification.' : 'No payments found.' }}</td></tr>
+          <tr class="empty-row"><td colspan="7">{{ $tab === 'pending' ? 'No payments waiting for verification.' : 'No payments found.' }}</td></tr>
         @endforelse
         </tbody>
       </table>
