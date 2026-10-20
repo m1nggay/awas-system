@@ -5,13 +5,17 @@
 @php
   $inModal = $inModal ?? false;
   $wallets = $wallets ?? [];
-  $qrReady = !$paymongo && $qr->isConfigured();
+  // Scan QR: PayMongo's QR Ph (PAYMONGO_QRPH=true), otherwise the barangay's own GCash QR.
+  // The "Pay with GCash" button goes through PayMongo whenever PayMongo is set up.
+  $paymongoQr = $paymongoQr ?? $paymongo;
+  $qrReady = !$paymongoQr && $qr->isConfigured();
   // Nothing is open until the resident picks a way to pay — except after a failed
   // screenshot upload (back on Scan QR), or when only one way to pay exists.
   $tab = match (true) {
       (bool)old('receipt_tab') => 'qr',
-      $paymongo && !$wallets => 'qrph',
-      !$paymongo && $qrReady => 'qr',
+      $paymongoQr && !$wallets => 'qrph',
+      $qrReady && !$wallets => 'qr',
+      !$paymongoQr && !$qrReady && (bool)$wallets => 'wallet',
       default => null,
   };
 @endphp
@@ -40,7 +44,7 @@
             data-src="{{ route('bills.print', [$bill->bill_id, 'embed' => 1]) }}" aria-expanded="false">View bill details</button>
     <iframe class="bill-details-frame" title="Water bill details" hidden></iframe>
 
-    @if (!$paymongo && !$qrReady)
+    @if (!$paymongoQr && !$qrReady && !$wallets)
       <div class="alert alert-warning mt-3 mb-0">Online payment is not available yet. Please pay in person at the barangay water office (Cash or GCash QR).</div>
     @else
       <div class="pay-q">How do you want to pay?</div>
@@ -48,7 +52,7 @@
       <div class="method-list">
 
       {{-- QR Ph from PayMongo for this bill's exact amount: any GCash, Maya or bank app, confirmed automatically --}}
-      @if ($paymongo)
+      @if ($paymongoQr)
         <div class="method-item">
         <button type="button" class="method-tab" id="tab-qrph" aria-controls="panel-qrph" aria-expanded="{{ $tab === 'qrph' ? 'true' : 'false' }}">
           <strong>Scan QR</strong><span class="method-arrow" aria-hidden="true">▾</span>
@@ -99,7 +103,7 @@
       @if ($paymongo && $wallets)
         <div class="method-item">
         <button type="button" class="method-tab" id="tab-wallet" aria-controls="panel-wallet" aria-expanded="{{ $tab === 'wallet' ? 'true' : 'false' }}">
-          <strong>E-wallet</strong><span class="method-arrow" aria-hidden="true">▾</span>
+          <strong>{{ count($wallets) === 1 ? 'Open ' . reset($wallets) . ' app' : 'E-wallet' }}</strong><span class="method-arrow" aria-hidden="true">▾</span>
         </button>
         <div class="method-panel" role="region" id="panel-wallet" aria-labelledby="tab-wallet" @if ($tab !== 'wallet') hidden @endif>
           <form method="POST" action="{{ route('resident.bill.paymongo', $bill->bill_id) }}" class="wallet-choices" data-paymongo-form>

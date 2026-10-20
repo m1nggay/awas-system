@@ -29,7 +29,10 @@ return [
         'webhook_secret' => env('PAYMONGO_WEBHOOK_SECRET', ''),
         // E-wallet buttons on the consumer's Pay Bill, next to Scan QR (comma list: gcash,paymaya).
         // Set PAYMONGO_WALLETS= (empty) to show Scan QR only.
-        'wallets'        => env('PAYMONGO_WALLETS', 'gcash,paymaya'),
+        'wallets'        => env('PAYMONGO_WALLETS', 'gcash'),
+        // QR codes: false = the barangay's own GCash QR (receipt verified by the office) while PayMongo
+        // handles only the "Pay with GCash" button; true = a PayMongo QR Ph per bill (confirmed automatically).
+        'qrph'           => filter_var(env('PAYMONGO_QRPH', false), FILTER_VALIDATE_BOOLEAN),
     ],
 
     /* Optional AI fallback for the AWAS Assistant chatbot (Claude API). */

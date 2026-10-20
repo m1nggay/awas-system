@@ -28,8 +28,10 @@ By creating an account or using AWAS, you agree to them and to our <a href="{{ r
 <ul>
   <li>Pay on or before the due date. Late payments may get a penalty, and accounts with unpaid bills may be disconnected,
     as announced by the water office.</li>
-  <li>Online payments through GCash, Maya or QR Ph are processed by PayMongo and are confirmed automatically. A payment is
-    final once confirmed; for a payment made by mistake, contact the water office.</li>
+  <li>Online payments are made with GCash. Payments through the "Open GCash app" button are processed by PayMongo and are
+    confirmed automatically. Payments made by scanning the barangay's GCash QR are confirmed by the water office after it checks
+    the receipt you upload; the bill shows Pending until then. A payment is final once confirmed; for a payment made by mistake,
+    contact the water office.</li>
   <li>A receipt screenshot you upload must be your own, real receipt. Fake or edited receipts will be rejected and may be
     reported.</li>
 </ul>

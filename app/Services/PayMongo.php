@@ -35,6 +35,12 @@ class PayMongo
     }
 
     /** E-wallets PayMongo has enabled for this account (PAYMONGO_WALLETS), e.g. ['gcash' => 'GCash']. */
+    /** QR codes come from PayMongo (QR Ph per bill) instead of the barangay's own GCash QR. */
+    public function usesQrPh(): bool
+    {
+        return $this->isConfigured() && (bool)config('agas.paymongo.qrph');
+    }
+
     public function enabledWallets(): array
     {
         $codes = array_filter(array_map('trim', explode(',', strtolower((string)config('agas.paymongo.wallets')))));

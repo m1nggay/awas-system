@@ -17,8 +17,8 @@ in line with the <strong>Data Privacy Act of 2012 (Republic Act No. 10173)</stro
   <li><strong>Identity check:</strong> photos of the front and back of a valid government ID, and a selfie taken during the
     application to confirm that the applicant is a real person.</li>
   <li><strong>Water account:</strong> meter number, meter readings, bills, payments, receipts and notices.</li>
-  <li><strong>Payments:</strong> the amount, date, reference number and method (GCash, Maya, QR Ph or cash). Online payments are
-    processed by PayMongo; AWAS never receives or stores your e-wallet PIN or card details. If you pay by scanning the barangay's
+  <li><strong>Payments:</strong> the amount, date, reference number and method (GCash or cash). Payments made with the
+    "Open GCash app" button are processed by PayMongo; AWAS never receives or stores your e-wallet PIN or card details. If you pay by scanning the barangay's
     QR code, the screenshot of your receipt that you upload is kept as proof of payment.</li>
   <li><strong>Your account:</strong> username, a securely hashed password (never stored as plain text), profile picture if you add one,
     and — if you choose "Continue with Google" — your Google account ID and email.</li>
@@ -40,7 +40,7 @@ in line with the <strong>Data Privacy Act of 2012 (Republic Act No. 10173)</stro
 <p>Only the barangay's authorized AWAS administrators and meter readers can see your records, and only what their work needs
 (a meter reader sees the consumers in their assigned puroks). Some services help run AWAS and receive only what they need:</p>
 <ul>
-  <li><strong>PayMongo</strong> — to process GCash, Maya and QR Ph payments.</li>
+  <li><strong>PayMongo</strong> — to process GCash payments made with the "Open GCash app" button.</li>
   <li><strong>Brevo</strong> — to deliver emails such as codes, notices and receipts.</li>
   <li><strong>Google</strong> — only if you use "Continue with Google", to confirm your sign-in.</li>
   <li><strong>Anthropic (Claude)</strong> — to answer questions in the AWAS Assistant, and to read the reference number and amount

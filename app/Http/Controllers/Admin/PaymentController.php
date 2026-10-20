@@ -79,7 +79,8 @@ class PaymentController extends Controller
             'methodFil'       => $methodFil,
             'channelFil'      => $channelFil,
             'qr'              => $qr,
-            'paymongo'        => $paymongo->isConfigured(),
+            // Counter GCash: PayMongo QR Ph (automatic), or the barangay's own QR with a screenshot.
+            'paymongo'        => $paymongo->usesQrPh(),
         ]);
     }
 

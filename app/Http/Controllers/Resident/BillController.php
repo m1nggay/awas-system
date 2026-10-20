@@ -83,7 +83,8 @@ class BillController extends ResidentController
             'amount'   => $payments->balance($row),
             'qr'       => $qr,
             'paymongo' => $paymongo->isConfigured(),
-            'wallets'  => $paymongo->enabledWallets(),
+            'paymongoQr' => $paymongo->usesQrPh(),
+            'wallets'  => $paymongo->isConfigured() ? $paymongo->enabledWallets() : [],
         ];
         // ?partial=1: only the panel, for the Pay Bill pop-up on Current Bills.
         return $request->boolean('partial')

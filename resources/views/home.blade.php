@@ -233,7 +233,7 @@
       <div class="feature">
         <div class="glyph"><i class="ph ph-qr-code" aria-hidden="true"></i></div>
         <h3>Online, with a QR code</h3>
-        <p>Sign in, open <strong>Current Bills</strong> and tap <strong>Pay Bill</strong>. Scan the QR code with GCash, Maya or any bank app that supports QR Ph — your bill turns Paid by itself.</p>
+        <p>Sign in, open <strong>Current Bills</strong> and tap <strong>Pay Bill</strong>. Tap <strong>Open GCash app</strong> to pay in GCash — your bill turns Paid by itself — or scan the barangay's GCash QR and upload your receipt for the water office to confirm.</p>
       </div>
       <div class="feature">
         <div class="glyph"><i class="ph ph-storefront" aria-hidden="true"></i></div>

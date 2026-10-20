@@ -49,7 +49,7 @@ class AnnouncementController extends Controller
         'Billing & Payments' => [
             'Bills are ready' => [
                 'title'   => 'Your [month] Water Bill Is Ready',
-                'message' => 'Your water bill for [month] is now available in AWAS. You can view it under Current Bills and pay online with GCash or Maya, or at the water office. Please pay on or before the due date to avoid a penalty.',
+                'message' => 'Your water bill for [month] is now available in AWAS. You can view it under Current Bills and pay online with GCash, or at the water office. Please pay on or before the due date to avoid a penalty.',
             ],
             'Payment due reminder' => [
                 'title'   => 'Payment Reminder: Due on [due date]',
@@ -75,7 +75,7 @@ class AnnouncementController extends Controller
             ],
             'Online payment available' => [
                 'title'   => 'Pay Your Water Bill Online',
-                'message' => 'You can now pay your water bill online through AWAS using GCash or Maya — no need to visit the office. Open Current Bills, tap Pay Bill, and choose your e-wallet. Your bill is marked Paid right after you pay.',
+                'message' => 'You can now pay your water bill online through AWAS using GCash — no need to visit the office. Open Current Bills, tap Pay Bill, then tap Open GCash app (your bill is marked Paid right after you pay) or scan the barangay GCash QR and upload your receipt.',
             ],
         ],
     ];
