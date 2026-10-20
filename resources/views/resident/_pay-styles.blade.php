@@ -39,6 +39,12 @@
   .wallet-btn:hover:not(:disabled){border-color:var(--wallet);background:#fafdff;transform:translateY(-1px);}
   .wallet-btn .dot{flex:none;width:36px;height:36px;border-radius:50%;background:var(--wallet);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;}
   .wallet-btn:disabled{opacity:.6;}
+  /* Only one e-wallet (GCash): one wide button in its color, centered with its note. */
+  .wallet-choices.single{grid-template-columns:1fr;max-width:380px;margin:4px auto 0;}
+  .wallet-btn.solid{width:100%;min-height:56px;background:var(--wallet);border-color:var(--wallet);color:#fff;font-size:17px;box-shadow:0 4px 12px rgba(0,125,254,.25);}
+  .wallet-btn.solid:hover:not(:disabled){background:var(--wallet);filter:brightness(.94);}
+  .wallet-btn.solid .dot{background:#fff;color:var(--wallet);width:32px;height:32px;}
+  .wallet-note{text-align:center;max-width:380px;margin-left:auto;margin-right:auto;}
   .qr-row{display:grid;grid-template-columns:130px 1fr;gap:16px;align-items:start;}
   .qr-frame{border:1px solid var(--border);border-radius:10px;padding:6px;background:#fff;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;}
   .qr-frame img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;}

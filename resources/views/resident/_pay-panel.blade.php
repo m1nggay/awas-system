@@ -106,16 +106,24 @@
           <strong>{{ count($wallets) === 1 ? 'Open ' . reset($wallets) . ' app' : 'E-wallet' }}</strong><span class="method-arrow" aria-hidden="true">▾</span>
         </button>
         <div class="method-panel" role="region" id="panel-wallet" aria-labelledby="tab-wallet" @if ($tab !== 'wallet') hidden @endif>
-          <form method="POST" action="{{ route('resident.bill.paymongo', $bill->bill_id) }}" class="wallet-choices" data-paymongo-form>
+          @php $single = count($wallets) === 1; @endphp
+          {{-- One e-wallet: a single, centered button in its color that shows the amount. --}}
+          <form method="POST" action="{{ route('resident.bill.paymongo', $bill->bill_id) }}" class="wallet-choices {{ $single ? 'single' : '' }}" data-paymongo-form>
             @csrf
             @foreach (array_intersect_key(['gcash' => ['GCash', '#007dfe', 'G'], 'paymaya' => ['Maya', '#00b464', 'M']], $wallets) as $code => [$name, $color, $letter])
-              <button type="submit" name="wallet" value="{{ $code }}" class="wallet-btn" style="--wallet:{{ $color }};" aria-label="Pay with {{ $name }}">
-                <span class="dot" aria-hidden="true">{{ $letter }}</span>{{ $name }}
+              <button type="submit" name="wallet" value="{{ $code }}" class="wallet-btn {{ $single ? 'solid' : '' }}" style="--wallet:{{ $color }};" aria-label="Pay {{ formatCurrency($amount) }} with {{ $name }}">
+                <span class="dot" aria-hidden="true">{{ $letter }}</span>{{ $single ? 'Pay ' . formatCurrency($amount) . ' with ' . $name : $name }}
               </button>
             @endforeach
           </form>
-          <p class="text-muted small mt-3 mb-0">Tap your e-wallet — it opens straight to its payment screen. Your bill turns <strong>Paid</strong> as soon as you finish paying.</p>
-          <div class="d-flex justify-content-end mt-3">
+          <p class="text-muted small mt-3 mb-0 {{ $single ? 'wallet-note' : '' }}">
+            @if ($single)
+              {{ reset($wallets) }} opens straight to its payment screen. Your bill turns <strong>Paid</strong> as soon as you finish paying.
+            @else
+              Tap your e-wallet — it opens straight to its payment screen. Your bill turns <strong>Paid</strong> as soon as you finish paying.
+            @endif
+          </p>
+          <div class="d-flex {{ $single ? 'justify-content-center' : 'justify-content-end' }} mt-3">
             @if ($inModal)
               <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
             @else
