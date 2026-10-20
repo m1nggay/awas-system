@@ -17,7 +17,8 @@
 
 @push('styles')
 <style>
-  .rd{--rd-ink:#0f2d3d;--rd-sub:#3d5563;--rd-line:#d7e4ea;max-width:860px;}
+  /* Full width: one column of cards on phones, two on tablets, three or four on laptops/desktops. */
+  .rd{--rd-ink:#0f2d3d;--rd-sub:#3d5563;--rd-line:#d7e4ea;max-width:1500px;}
   .rd-progress{background:#fff;border:1px solid var(--rd-line);border-radius:14px;padding:14px 16px;margin-bottom:10px;}
   .rd-progress .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;color:var(--rd-ink);font-size:14px;}
   .rd-progress .top strong{font-size:15px;}
@@ -39,12 +40,16 @@
   .rd-tabs a{flex:1;min-height:42px;display:flex;align-items:center;justify-content:center;border-radius:9px;font-size:14px;font-weight:600;color:var(--rd-sub);text-decoration:none;}
   .rd-tabs a.active{background:#fff;color:var(--rd-ink);box-shadow:0 1px 3px rgba(0,0,0,.12);}
 
-  .rd-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;}
+  /* min(): never wider than a small phone's screen. */
+  .rd-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:10px;}
   .rd-card{display:block;background:#fff;border:1px solid var(--rd-line);border-radius:12px;padding:11px 14px;color:var(--rd-ink);text-decoration:none;min-height:48px;}
   a.rd-card:hover,a.rd-card:focus-visible{border-color:var(--primary);color:var(--rd-ink);}
   a.rd-card:active{background:#f0f8fc;}
   .rd-card .r1{display:flex;justify-content:space-between;align-items:center;gap:10px;}
-  .rd-card .name{font-weight:700;font-size:15.5px;line-height:1.3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  /* Long joint names wrap to a second line instead of being cut off. */
+  .rd-card .name{font-weight:700;font-size:15.5px;line-height:1.3;min-width:0;overflow:hidden;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .rd-card .r1{align-items:flex-start;}
+  .rd-card .r1 .rd-state{margin-top:2px;}
   .rd-card .r2{font-size:13px;color:var(--rd-sub);margin-top:1px;}
   .rd-card .r3{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;color:var(--rd-ink);margin-top:4px;}
   .rd-card .r3 i{font-size:18px;color:var(--rd-sub);}
@@ -61,6 +66,18 @@
   #rdFilters{height:auto;max-height:85vh;border-radius:18px 18px 0 0;}
   #rdFilters .form-select{height:48px;font-size:15px;}
   #rdFilters .btn{min-height:48px;flex:1;}
+
+  /* Laptops/desktops: tabs a comfortable width, and the filter sheet a centered panel instead of full-screen width. */
+  @media (min-width: 992px) {
+    .rd-tabs{max-width:560px;}
+    #rdFilters{left:50%;right:auto;width:520px;margin-left:-260px;}
+  }
+  /* Small phones: slightly smaller text so the tabs and progress line fit. */
+  @media (max-width: 380px) {
+    .rd-progress .top{font-size:13px;}
+    .rd-tabs a{font-size:13px;}
+    .rd-card{padding:10px 12px;}
+  }
 </style>
 @endpush
 

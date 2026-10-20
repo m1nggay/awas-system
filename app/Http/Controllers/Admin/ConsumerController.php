@@ -14,6 +14,20 @@ class ConsumerController extends Controller
 {
     private const STATUSES = ['active', 'disconnected', 'inactive'];
 
+    /**
+     * Surname of the first person on the account, the same way Consumer::display_name finds it:
+     * without a trailing "(note)" or suffix (Jr., II…), and with the words before it that belong
+     * to it (Del Valle, Delos Arcos, De Oro). Businesses and institutions sort as written.
+     */
+    private const SURNAME_SORT_PGSQL = <<<'SQL'
+        CASE WHEN COALESCE(consumers.consumer_type, 'residential') <> 'residential' THEN lower(consumers.full_name)
+        ELSE COALESCE(
+            substring(lower(regexp_replace(regexp_replace(split_part(trim(consumers.full_name), ' / ', 1), '\s*\([^)]*\)$', ''), '\s+(jr\.?|sr\.?|i{1,3}|iv|#\d+)$', '', 'i'))
+                from '\s((?:(?:del|dela|de|delos|los|la|san|santa|sta\.?)\s+)*\S+)$'),
+            lower(consumers.full_name))
+        END ASC, lower(consumers.full_name) ASC
+        SQL;
+
     public function index(Request $request)
     {
         $search = clean($request->query('q'));
@@ -44,9 +58,9 @@ class ConsumerController extends Controller
             // "Not yet read" lists only active accounts — the ones that can be read.
             ->when($readTab === 'todo', fn ($q) => $q->where('consumers.status', 'active')->whereNotExists($readThisPeriod))
             ->when($readTab === 'done', fn ($q) => $q->whereExists($readThisPeriod))
-            // Surname (last word of the name) first, as the list displays "Surname, Given".
+            // By surname, as the list displays "Surname, Given" (Consumer::display_name).
             ->orderByRaw(DB::getDriverName() === 'pgsql'
-                ? "reverse(split_part(reverse(regexp_replace(regexp_replace(split_part(consumers.full_name, ' / ', 1), '\\s*\\([^)]*\\)\$', ''), '\\s+(jr\\.?|sr\\.?|i{1,3}|iv|#\\d+)\$', '', 'i')), ' ', 1)) ASC, consumers.full_name ASC"
+                ? self::SURNAME_SORT_PGSQL
                 : "SUBSTRING_INDEX(consumers.full_name, ' ', -1) ASC, consumers.full_name ASC")
             ->paginate(12)->withQueryString();
 
