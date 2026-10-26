@@ -33,16 +33,24 @@ class BillingService
 
     public function generateApplicationReference(): string
     {
-        $year = date('Y');
-        $count = DB::table('membership_applications')->where('reference_code', 'like', "APP-$year-%")->count() + 1;
-        return sprintf('APP-%s-%04d', $year, $count);
+        return $this->nextReference('membership_applications', 'reference_code', 'APP', 4);
     }
 
     public function generatePaymentReference(): string
     {
-        $year = date('Y');
-        $count = DB::table('payments')->where('payment_reference', 'like', "PMT-$year-%")->count() + 1;
-        return sprintf('PMT-%s-%06d', $year, $count);
+        return $this->nextReference('payments', 'payment_reference', 'PMT', 6);
+    }
+
+    /**
+     * The year's next reference, after the highest one used — not the row count,
+     * since cancelled payments are deleted and a count would reuse a number.
+     */
+    private function nextReference(string $table, string $column, string $prefix, int $digits): string
+    {
+        $start = "$prefix-" . date('Y') . '-';
+        $last = DB::table($table)->where($column, 'like', "$start%")->pluck($column)
+            ->map(fn ($ref) => (int)substr($ref, strlen($start)))->max() ?? 0;
+        return $start . str_pad((string)($last + 1), $digits, '0', STR_PAD_LEFT);
     }
 
     /** Tariff values the browser needs to preview a bill exactly like computeBillAmount(). */

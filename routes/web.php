@@ -133,8 +133,8 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
             Route::post('/payments/{payment}/paymongo-check', [Admin\PaymentController::class, 'checkPayMongo'])->name('payments.paymongo-check');
             // GCash QR at the barangay (QR Ph via PayMongo), confirmed automatically.
             Route::post('/payments/qr', [Admin\PaymentController::class, 'startQr'])->name('payments.qr');
-            Route::get('/payments/{payment}/qr-status', [Admin\PaymentController::class, 'qrStatus'])->name('payments.qr-status');
-            Route::post('/payments/{payment}/qr-cancel', [Admin\PaymentController::class, 'cancelQr'])->name('payments.qr-cancel');
+            Route::get('/payments/{payment}/qr-status', [Admin\PaymentController::class, 'qrStatus'])->whereNumber('payment')->name('payments.qr-status');
+            Route::post('/payments/{payment}/qr-cancel', [Admin\PaymentController::class, 'cancelQr'])->whereNumber('payment')->name('payments.qr-cancel');
             Route::get('/payments/{payment}/receipt', [Admin\PaymentController::class, 'receipt'])->name('payments.receipt');
 
             Route::get('/applications', [Admin\MembershipReviewController::class, 'index'])->name('applications.index');

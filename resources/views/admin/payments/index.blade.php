@@ -471,9 +471,9 @@ function openReject(action, who) {
       if (!bill) { reset('Search for the consumer and choose the bill first.'); return; }
       $('qrStartBtn').disabled = true; $('qrStartBtn').textContent = 'Creating QR code…'; $('qrError').hidden = true;
       post({{ Js::from(route('admin.payments.qr')) }}, { bill_id: bill.value })
-        .then(r => r.json())
-        .then(d => {
-          if (d.error) { reset(d.error); return; }
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => {
+          if (!ok || !d.image) { reset(d.error || 'The QR code could not be created. Please try again.'); return; }
           current = d;
           // The bill and method can't change while its QR is on screen.
           document.querySelectorAll('#payModal input[name="bill_id"], #payModal input[name="payment_method"]').forEach(i => { i.disabled = true; });
