@@ -92,7 +92,7 @@ class BillController extends ResidentController
             : view('resident.pay', $data);
     }
 
-    /** Resident picked an e-wallet (GCash, Maya, …) — sends them to PayMongo's checkout page. */
+    /** Resident picked an e-wallet (GCash) — sends them to PayMongo's checkout page. */
     public function payWithPayMongo(Request $request, int $bill, PayMongo $paymongo)
     {
         $consumer = $this->consumer($request);

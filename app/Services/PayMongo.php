@@ -22,16 +22,16 @@ class PayMongo
     /** E-wallets residents can choose, as PayMongo names them => as shown on screen. */
     public const WALLETS = [
         'gcash'      => 'GCash',
-        'paymaya'    => 'Maya',
     ];
 
     public function __construct(private BillingService $billing)
     {
     }
 
+    /** Sandbox only: a live key (sk_live_…) is refused, so no real money can be taken. */
     public function isConfigured(): bool
     {
-        return (string)config('agas.paymongo.secret_key') !== '';
+        return str_starts_with((string)config('agas.paymongo.secret_key'), 'sk_test_');
     }
 
     /** E-wallets PayMongo has enabled for this account (PAYMONGO_WALLETS), e.g. ['gcash' => 'GCash']. */
@@ -53,6 +53,10 @@ class PayMongo
         $secretKey = (string)config('agas.paymongo.secret_key');
         if ($secretKey === '') {
             Log::error('PayMongo: PAYMONGO_SECRET_KEY is not configured.');
+            return null;
+        }
+        if (!str_starts_with($secretKey, 'sk_test_')) {
+            Log::error('PayMongo: only test keys (sk_test_…) are allowed — this system uses the PayMongo sandbox.');
             return null;
         }
 
@@ -148,7 +152,7 @@ class PayMongo
 
     /**
      * Direct-to-wallet payment (PayMongo Payment Intent): returns the intent ID
-     * and the URL of the wallet's own payment screen (GCash, Maya, …), so the
+     * and the URL of the wallet's own payment screen (GCash), so the
      * resident skips PayMongo's checkout page.
      * @return array{id: string, url: string}|null
      */
@@ -252,6 +256,28 @@ class PayMongo
     }
 
     /**
+     * Records PayMongo payments that were completed but never came back to the
+     * app (the resident closed the tab, and no webhook reaches a local server).
+     * Runs when the administrator opens Payments, at most once a minute.
+     * Returns how many were recorded as Paid.
+     */
+    public function recordCompletedPayments(int $limit = 10): int
+    {
+        if (!$this->isConfigured() || !Cache::add('paymongo:sync', true, now()->addMinute())) {
+            return 0;
+        }
+        $recorded = 0;
+        $pending = DB::table('payments')->where('payment_method', 'paymongo')->where('status', 'pending')
+            ->whereNotNull('payment_gateway_txn_id')->orderBy('payment_date')->limit($limit)->get();
+        foreach ($pending as $payment) {
+            if ($this->verifyAndCredit($payment)) {
+                $recorded++;
+            }
+        }
+        return $recorded;
+    }
+
+    /**
      * Saves a PayMongo payment as waiting, for the bill's full balance. The bill
      * row is locked so a double click can't start two payments for it.
      * @return array{0: ?object, 1: ?int, 2: ?string, 3: float, 4: ?string} [bill, payment ID, reference, balance, error]
@@ -289,12 +315,12 @@ class PayMongo
     /** Display name of a PayMongo payment method (payments.wallet). */
     public static function walletName(?string $wallet): string
     {
-        return self::WALLETS[$wallet] ?? ($wallet === 'qrph' ? 'GCash/Maya QR' : 'E-wallet');
+        return self::WALLETS[$wallet] ?? ($wallet === 'qrph' ? 'GCash QR' : 'E-wallet');
     }
 
     /**
      * At the barangay: a QR Ph code for one bill's balance, shown on the
-     * administrator's screen. The consumer scans it with GCash, Maya or any
+     * administrator's screen. The consumer scans it with GCash or any
      * bank app; the bill turns Paid automatically once PayMongo confirms.
      * @return array{0: ?array{payment_id: int, image: string, expires_at: ?string, test_url: ?string, amount: float}, 1: ?string}
      */
@@ -305,7 +331,7 @@ class PayMongo
 
     /**
      * Online: the same QR Ph code on the consumer's own Pay Bill pop-up. They scan
-     * it with GCash, Maya or a bank app (or save it and upload it there); the
+     * it with GCash or a bank app (or save it and upload it there); the
      * bill turns Paid automatically once PayMongo confirms.
      */
     public function startOnlineQr(int $consumerId, int $billId, int $userId): array
@@ -349,7 +375,7 @@ class PayMongo
         }
 
         DB::table('payments')->where('payment_id', $paymentId)->update(['payment_gateway_txn_id' => $intentId]);
-        log_activity($userId, 'payment_qr_start', ($channel === 'counter' ? 'Showed' : 'Opened') . " a GCash/Maya QR for payment $ref ("
+        log_activity($userId, 'payment_qr_start', ($channel === 'counter' ? 'Showed' : 'Opened') . " a GCash QR for payment $ref ("
             . formatCurrency($balance) . ") — meter $meter, $period" . ($channel === 'online' ? ' (online)' : ''));
         return [[
             'payment_id' => $paymentId,
@@ -369,7 +395,7 @@ class PayMongo
 
     /**
      * Resident chose an e-wallet: saves the payment as waiting for PayMongo and
-     * returns the wallet's own payment screen (GCash, Maya, …). The bill turns
+     * returns the wallet's own payment screen (GCash). The bill turns
      * Paid automatically once PayMongo confirms (return from the wallet,
      * webhook, or a later check).
      * @return array{0: ?string, 1: ?string} [wallet URL, error]

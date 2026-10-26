@@ -51,7 +51,7 @@
       {{-- Each way to pay is a dropdown: tap it to show its options right underneath. --}}
       <div class="method-list">
 
-      {{-- QR Ph from PayMongo for this bill's exact amount: any GCash, Maya or bank app, confirmed automatically --}}
+      {{-- QR Ph from PayMongo for this bill's exact amount: any GCash or bank app, confirmed automatically --}}
       @if ($paymongoQr)
         <div class="method-item">
         <button type="button" class="method-tab" id="tab-qrph" aria-controls="panel-qrph" aria-expanded="{{ $tab === 'qrph' ? 'true' : 'false' }}">
@@ -62,7 +62,7 @@
              data-status-url="{{ route('resident.bill.qr.status', ['payment' => '__ID__']) }}"
              data-cancel-url="{{ route('resident.bill.qr.cancel', ['payment' => '__ID__']) }}">
           <div data-qr-intro>
-            <p class="small mb-2">Pay with <strong>GCash, Maya</strong> or any bank app that scans <strong>QR Ph</strong>. The QR is made for this bill's exact amount, and your bill turns <strong>Paid</strong> by itself — no screenshot needed.</p>
+            <p class="small mb-2">Pay with <strong>GCash</strong> or any bank app that scans <strong>QR Ph</strong>. The QR is made for this bill's exact amount, and your bill turns <strong>Paid</strong> by itself — no screenshot needed.</p>
             <div class="d-flex justify-content-end gap-2">
               @if ($inModal)
                 <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
@@ -75,14 +75,14 @@
           <div data-qr-show hidden>
             <div class="qr-row">
               <div>
-                <div class="qr-frame"><img data-qr-img alt="QR code to pay this bill — scan with GCash, Maya or a bank app"></div>
+                <div class="qr-frame"><img data-qr-img alt="QR code to pay this bill — scan with GCash or a bank app"></div>
                 <a data-qr-save download="awas-bill-qr.png" class="btn btn-outline btn-sm w-100 mt-2"><i class="ph ph-download-simple" aria-hidden="true"></i> Save QR image</a>
               </div>
               <div>
                 <strong style="font-size:15px;" data-qr-amount></strong>
                 <ol class="qr-steps">
-                  <li><strong>On another phone:</strong> open GCash or Maya, tap <strong>Scan QR</strong>, and scan this code.</li>
-                  <li><strong>On this phone:</strong> tap <strong>Save QR image</strong>, then in GCash or Maya tap <strong>Scan QR → Upload QR</strong> and pick the saved image.</li>
+                  <li><strong>On another phone:</strong> open GCash, tap <strong>Scan QR</strong>, and scan this code.</li>
+                  <li><strong>On this phone:</strong> tap <strong>Save QR image</strong>, then in GCash tap <strong>Scan QR → Upload QR</strong> and pick the saved image.</li>
                   <li>Pay. Keep this page open — it shows <strong>Paid</strong> by itself.</li>
                 </ol>
               </div>
@@ -99,7 +99,7 @@
         </div>
       @endif
 
-      {{-- GCash / Maya through PayMongo: opens the wallet, confirmed automatically (only the ones PayMongo enabled) --}}
+      {{-- GCash through PayMongo: opens the wallet, confirmed automatically (only the ones PayMongo enabled) --}}
       @if ($paymongo && $wallets)
         <div class="method-item">
         <button type="button" class="method-tab" id="tab-wallet" aria-controls="panel-wallet" aria-expanded="{{ $tab === 'wallet' ? 'true' : 'false' }}">
@@ -110,7 +110,7 @@
           {{-- One e-wallet: a single, centered button in its color that shows the amount. --}}
           <form method="POST" action="{{ route('resident.bill.paymongo', $bill->bill_id) }}" class="wallet-choices {{ $single ? 'single' : '' }}" data-paymongo-form>
             @csrf
-            @foreach (array_intersect_key(['gcash' => ['GCash', '#007dfe', 'G'], 'paymaya' => ['Maya', '#00b464', 'M']], $wallets) as $code => [$name, $color, $letter])
+            @foreach (array_intersect_key(['gcash' => ['GCash', '#007dfe', 'G']], $wallets) as $code => [$name, $color, $letter])
               <button type="submit" name="wallet" value="{{ $code }}" class="wallet-btn {{ $single ? 'solid' : '' }}" style="--wallet:{{ $color }};" aria-label="Pay {{ formatCurrency($amount) }} with {{ $name }}">
                 <span class="dot" aria-hidden="true">{{ $letter }}</span>{{ $single ? 'Pay ' . formatCurrency($amount) . ' with ' . $name : $name }}
               </button>

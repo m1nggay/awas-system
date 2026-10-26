@@ -131,7 +131,7 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
             Route::post('/payments/{payment}/verify', [Admin\PaymentController::class, 'verify'])->name('payments.verify');
             Route::post('/payments/{payment}/reject', [Admin\PaymentController::class, 'reject'])->name('payments.reject');
             Route::post('/payments/{payment}/paymongo-check', [Admin\PaymentController::class, 'checkPayMongo'])->name('payments.paymongo-check');
-            // GCash / Maya QR at the barangay (QR Ph via PayMongo), confirmed automatically.
+            // GCash QR at the barangay (QR Ph via PayMongo), confirmed automatically.
             Route::post('/payments/qr', [Admin\PaymentController::class, 'startQr'])->name('payments.qr');
             Route::get('/payments/{payment}/qr-status', [Admin\PaymentController::class, 'qrStatus'])->name('payments.qr-status');
             Route::post('/payments/{payment}/qr-cancel', [Admin\PaymentController::class, 'cancelQr'])->name('payments.qr-cancel');
@@ -190,7 +190,7 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
         Route::post('/bill/{bill}/pay', [Resident\BillController::class, 'submitPayment'])->whereNumber('bill')->name('bill.pay.submit');
         Route::post('/bill/{bill}/paymongo', [Resident\BillController::class, 'payWithPayMongo'])->whereNumber('bill')->name('bill.paymongo');
         Route::get('/bill/{bill}/paymongo/return', [Resident\BillController::class, 'payMongoReturn'])->whereNumber('bill')->name('bill.paymongo.return');
-        // QR Ph made by PayMongo for the bill's exact balance — scanned with GCash, Maya or a bank app, confirmed automatically.
+        // QR Ph made by PayMongo for the bill's exact balance — scanned with GCash or a bank app, confirmed automatically.
         Route::post('/bill/{bill}/qr', [Resident\BillController::class, 'startQr'])->whereNumber('bill')->name('bill.qr');
         Route::get('/bill/qr/{payment}/status', [Resident\BillController::class, 'qrStatus'])->whereNumber('payment')->name('bill.qr.status');
         Route::post('/bill/qr/{payment}/cancel', [Resident\BillController::class, 'cancelQr'])->whereNumber('payment')->name('bill.qr.cancel');

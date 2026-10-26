@@ -53,7 +53,7 @@ class AnnouncementController extends Controller
             ],
             'Payment due reminder' => [
                 'title'   => 'Payment Reminder: Due on [due date]',
-                'message' => 'This is a reminder that water bills for [month] are due on [due date]. Bills not paid by then will get a late penalty. Pay online with GCash or Maya in AWAS, or at the water office. Please ignore this if you have already paid.',
+                'message' => 'This is a reminder that water bills for [month] are due on [due date]. Bills not paid by then will get a late penalty. Pay online with GCash in AWAS, or at the water office. Please ignore this if you have already paid.',
             ],
             'Disconnection notice' => [
                 'title'   => 'Notice of Disconnection for Unpaid Bills',
@@ -71,7 +71,7 @@ class AnnouncementController extends Controller
             ],
             'Office closed' => [
                 'title'   => 'Water Office Closed on [date]',
-                'message' => 'The water office will be closed on [date] for [reason, e.g. a holiday]. Office hours resume on [date]. You can still view and pay your bills online in AWAS with GCash or Maya.',
+                'message' => 'The water office will be closed on [date] for [reason, e.g. a holiday]. Office hours resume on [date]. You can still view and pay your bills online in AWAS with GCash.',
             ],
             'Online payment available' => [
                 'title'   => 'Pay Your Water Bill Online',

@@ -26,7 +26,7 @@
   .counter-steps{width:100%;max-width:440px;font-size:13.5px;}
   .counter-qr{text-align:center;border:2px solid #007dfe;border-radius:12px;padding:10px;background:#fff;}
   .counter-qr img{width:100%;max-width:260px;aspect-ratio:1/1;object-fit:contain;}
-  /* GCash / Maya QR: "How it works" as one neat panel with numbered steps */
+  /* GCash QR: "How it works" as one neat panel with numbered steps */
   #qrIntro .counter-steps{max-width:none;background:#f4fafc;border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
   #qrIntro .counter-steps > strong{display:block;font-size:14px;margin-bottom:10px;color:var(--primary-dark);}
   #qrIntro .counter-steps ol{list-style:none;counter-reset:qrstep;padding:0 !important;margin:0 0 14px !important;display:flex;flex-direction:column;gap:9px;}
@@ -55,9 +55,9 @@
 
 @section('content')
 <div class="card">
-  <div class="card-header">
-    <h3>Payments</h3>
-    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#payModal">+ Record Payment</button>
+  {{-- The page title (top bar) already says Payments. --}}
+  <div class="card-header justify-content-end">
+    <button class="btn btn-primary btn-sm btn-phone-block" data-bs-toggle="modal" data-bs-target="#payModal">+ Record Payment</button>
   </div>
   <div class="card-body">
     <ul class="nav nav-tabs pay-tabs mb-3">
@@ -195,7 +195,7 @@
           <label class="form-label">Payment Method *</label>
           <div class="method-choice mb-3">
             <label><input type="radio" name="payment_method" value="cash" @checked(old('payment_method', 'cash') === 'cash')><span><i class="ph ph-money" aria-hidden="true"></i> Cash</span></label>
-            <label><input type="radio" name="payment_method" value="gcash" @checked(old('payment_method') === 'gcash')><span><i class="ph ph-device-mobile" aria-hidden="true"></i> {{ $paymongo ? 'GCash / Maya QR' : 'GCash QR' }}</span></label>
+            <label><input type="radio" name="payment_method" value="gcash" @checked(old('payment_method') === 'gcash')><span><i class="ph ph-device-mobile" aria-hidden="true"></i> {{ $paymongo ? 'GCash QR' : 'GCash QR' }}</span></label>
           </div>
 
           @if ($paymongo)
@@ -206,7 +206,7 @@
                 <strong>How it works</strong>
                 <ol class="mb-2 ps-3">
                   <li>Click <strong>Show QR Code</strong> — it is made for this bill's exact amount.</li>
-                  <li>The consumer scans it with <strong>GCash, Maya</strong> or any bank app and pays.</li>
+                  <li>The consumer scans it with <strong>GCash</strong> or any bank app and pays.</li>
                   <li>This screen shows <strong>Paid</strong> by itself — no screenshot, no checking.</li>
                 </ol>
                 <button type="button" class="btn btn-primary" id="qrStartBtn">Show QR Code</button>
@@ -214,7 +214,7 @@
             </div>
             <div id="qrShow" class="text-center mb-3" hidden>
               <div class="counter-qr d-inline-block">
-                <img id="qrImg" alt="QR code to pay this bill with GCash or Maya" style="width:240px;height:240px;image-rendering:pixelated;">
+                <img id="qrImg" alt="QR code to pay this bill with GCash" style="width:240px;height:240px;image-rendering:pixelated;">
                 <div class="fw-bold mt-1" id="qrAmount"></div>
               </div>
               <div class="mt-2" id="qrState"><span class="spinner-border spinner-border-sm text-primary me-1"></span> Waiting for the consumer to pay…</div>
@@ -444,13 +444,13 @@ function openReject(action, who) {
     // GCash: the amount comes from the QR / screenshot, so the field is not needed.
     document.getElementById('amountField').hidden = gcash;
     amount.disabled = gcash;
-    // GCash / Maya QR is confirmed by PayMongo itself — there is nothing to submit.
+    // GCash QR is confirmed by PayMongo itself — there is nothing to submit.
     submit.hidden = gcash && qrMode;
 
     submit.textContent = gcash ? 'Confirm GCash Payment Received' : 'Confirm Cash Received';
   }
 
-  // ---- GCash / Maya QR (PayMongo): show the code, then wait until it is paid ----
+  // ---- GCash QR (PayMongo): show the code, then wait until it is paid ----
   if (qrMode) {
     const $ = id => document.getElementById(id);
     const token = document.querySelector('meta[name="csrf-token"]').content;

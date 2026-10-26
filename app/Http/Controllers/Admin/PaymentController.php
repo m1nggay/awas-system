@@ -33,6 +33,12 @@ class PaymentController extends Controller
         $methodFil = clean($request->query('method'));
         $channelFil = clean($request->query('channel'));
 
+        // Completed PayMongo payments that never returned to the app are recorded as Paid here.
+        $recorded = $paymongo->recordCompletedPayments();
+        if ($recorded > 0) {
+            session()->now('flash', ['type' => 'success', 'message' => "$recorded completed PayMongo payment(s) were recorded automatically — the bills are now Paid."]);
+        }
+
         $counts = DB::table('payments')->groupBy('status')->selectRaw('status, COUNT(*) cnt')->pluck('cnt', 'status');
         $tabCounts = [
             'pending'  => (int)($counts['pending'] ?? 0),
@@ -147,7 +153,7 @@ class PaymentController extends Controller
         return back();
     }
 
-    /** At the barangay: a GCash / Maya QR code (QR Ph via PayMongo) for the chosen bill. */
+    /** At the barangay: a GCash QR code (QR Ph via PayMongo) for the chosen bill. */
     public function startQr(Request $request, PayMongo $paymongo)
     {
         [$qr, $error] = $paymongo->startCounterQr((int)$request->input('bill_id', 0), $request->user()->user_id);
@@ -162,7 +168,7 @@ class PaymentController extends Controller
             return response()->json(['status' => 'gone']);
         }
         if ($paymongo->verifyAndCredit($row)) {
-            session()->flash('success', 'GCash/Maya QR payment of ' . formatCurrency($row->amount_paid)
+            session()->flash('success', 'GCash QR payment of ' . formatCurrency($row->amount_paid)
                 . " received — confirmed by PayMongo, the bill is now Paid. Reference: {$row->payment_reference}");
             return response()->json(['status' => 'paid', 'redirect' => route('admin.payments.index', ['tab' => 'paid'])]);
         }

@@ -88,7 +88,7 @@ PayMongo webhooks are created through its API. Run this on the server. It regist
 cd /var/www/awas && SK=$(grep '^PAYMONGO_SECRET_KEY=' .env | cut -d= -f2- | tr -d '"') && RESP=$(curl -s https://api.paymongo.com/v1/webhooks -u "$SK:" -H 'Content-Type: application/json' -d '{"data":{"attributes":{"url":"https://awas-system.online/api/paymongo/webhook","events":["checkout_session.payment.paid","payment.paid"]}}}') && WH=$(echo "$RESP" | php -r '$j=json_decode(stream_get_contents(STDIN),true); echo $j["data"]["attributes"]["secret_key"] ?? "";') && if [ -n "$WH" ]; then sed -i "s|^PAYMONGO_WEBHOOK_SECRET=.*|PAYMONGO_WEBHOOK_SECRET=$WH|" .env && sudo -u www-data php artisan config:cache && echo "Webhook created and saved"; else echo "$RESP"; fi
 ```
 
-If you switch to live keys, create a new webhook the same way using the `sk_live_` key.
+AWAS uses the PayMongo sandbox only: use the `sk_test_` / `pk_test_` keys. A live key (`sk_live_`) is refused and turns online payments off.
 
 ## Updating later
 
