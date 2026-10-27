@@ -39,6 +39,7 @@
 {{-- One tab per area; the URL's #… opens a tab (e.g. #maintenance, #backup), so saves land back on the same tab. --}}
 <nav class="settings-tabs" role="tablist" aria-label="System Settings">
   <a href="#billing" role="tab" data-tab="billing"><i class="ph ph-receipt" aria-hidden="true"></i> Billing &amp; Rates</a>
+  <a href="#puroks" role="tab" data-tab="puroks"><i class="ph ph-map-pin" aria-hidden="true"></i> Puroks</a>
   <a href="#chatbot-faqs" role="tab" data-tab="chatbot-faqs"><i class="ph ph-robot" aria-hidden="true"></i> Chatbot FAQs
     @if (count($unanswered ?? []) > 0)<span class="tab-count">{{ count($unanswered) }}</span>@endif</a>
   <a href="#maintenance" role="tab" data-tab="maintenance"><i class="ph ph-wrench" aria-hidden="true"></i> Maintenance
@@ -251,6 +252,10 @@
   refreshTimeline();
 })();
 </script>
+
+<div class="settings-pane" data-pane="puroks" role="tabpanel">
+@include('admin.puroks._section')
+</div>
 
 <div class="settings-pane" data-pane="chatbot-faqs" role="tabpanel">
 @include('admin.faqs._section')

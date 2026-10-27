@@ -32,7 +32,7 @@ class SettingController extends Controller
         return view('admin.settings', [
             'values' => $values,
             'tiers'  => $billing->tariff()['tiers'],
-        ] + ChatbotFaqController::sectionData($settings) + BackupController::sectionData($backups));
+        ] + PurokController::sectionData() + ChatbotFaqController::sectionData($settings) + BackupController::sectionData($backups));
     }
 
     public function update(Request $request, Settings $settings)

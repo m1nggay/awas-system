@@ -1,11 +1,7 @@
-@extends('layouts.app')
-
-@section('title', 'Puroks')
-
-@section('content')
-<div class="card">
+{{-- System Settings → Puroks tab. Needs $puroks (PurokController::sectionData). --}}
+<div class="card" id="puroks" style="scroll-margin-top:80px;">
   <div class="card-header">
-    <h3>Puroks</h3>
+    <h3><i class="ph ph-map-pin" aria-hidden="true"></i> Puroks ({{ count($puroks) }})</h3>
     <button class="btn btn-primary btn-sm" id="addPurokBtn" data-bs-toggle="modal" data-bs-target="#purokModal">+ Add Purok</button>
   </div>
   <div class="card-body no-pad">
@@ -72,4 +68,3 @@ document.getElementById('addPurokBtn').addEventListener('click', () => {
   document.getElementById('purokModalTitle').textContent = 'Add Purok';
 });
 </script>
-@endsection
