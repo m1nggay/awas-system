@@ -94,20 +94,26 @@
           <div class="meter-photo-msg" data-photo-msg="record" role="status"></div>
 
           {{-- Everything below is filled in from the photo and cannot be typed over. --}}
-          <div class="meter-result" id="meterResult" hidden>
-            <div class="meter-consumer">
-              <div class="label">Consumer</div>
-              <div class="name" id="consumerName"></div>
-              <div class="meta" id="consumerMeta"></div>
+          <div class="meter-result" id="meterResult">
+            <div class="row g-3 mb-3">
+              <div class="col-6">
+                <label for="meterShown" class="form-label">Meter Number</label>
+                <input type="text" id="meterShown" class="form-control" readonly tabindex="-1" placeholder="From photo">
+              </div>
+              <div class="col-6">
+                <label for="consumerName" class="form-label">Consumer Name</label>
+                <input type="text" id="consumerName" class="form-control fw-bold" readonly tabindex="-1" placeholder="From photo">
+              </div>
+              <div class="col-12 small text-muted mt-1" id="consumerMeta"></div>
             </div>
             <div class="row g-3 mb-3">
               <div class="col-6">
                 <label for="previous_reading" class="form-label">Previous Reading</label>
-                <input type="text" id="previous_reading" class="form-control" readonly tabindex="-1">
+                <input type="text" id="previous_reading" class="form-control" readonly tabindex="-1" placeholder="From photo">
               </div>
               <div class="col-6">
                 <label for="current_reading" class="form-label">Present Reading <i class="ph ph-camera text-muted" title="Read from the photo" aria-label="read from the photo"></i></label>
-                <input type="text" id="current_reading" class="form-control fw-bold" readonly tabindex="-1">
+                <input type="text" id="current_reading" class="form-control fw-bold" readonly tabindex="-1" placeholder="From photo">
               </div>
             </div>
             <div class="p-3 mb-3" style="background:#f0fbff;border:1px solid var(--border);border-radius:10px;">
@@ -138,7 +144,7 @@
             <label for="remarks" class="form-label">Remarks</label>
             <input type="text" id="remarks" name="remarks" class="form-control" maxlength="255" placeholder="Optional notes (e.g. meter leaking, gate locked)">
           </div>
-          <p class="text-muted mt-3 mb-0" style="font-size:12px;">Saving keeps the reading on this phone right away and sends it in the background — even with slow or no internet. Without internet, the photo is read once it is sent.</p>
+          <p class="text-muted mt-3 mb-0" style="font-size:12px;">All fields are filled in automatically from the photo and cannot be typed. To change them, retake the photo.</p>
         </div>
         {{-- Opened from the Consumer List: go back there after saving. --}}
         <input type="hidden" name="back" value="{{ request('back') }}">
@@ -233,8 +239,7 @@
   }
 
   /**
-   * One "take a photo → read it on the server" box. onRead(data) gets what was read;
-   * onOffline(dataUrl) is called when there is no internet (or the reader is busy).
+   * One "take a photo → read it on the server" box. onRead(data) gets what was read.
    */
   function photoBox(key, opts) {
     const box = document.querySelector('[data-photo="' + key + '"]');
@@ -265,7 +270,7 @@
       preview.src = dataUrl; preview.hidden = false; empty.hidden = true;
       btn.querySelector('span').textContent = 'Retake Photo';
 
-      if (navigator.onLine === false) { opts.onOffline && opts.onOffline(dataUrl); return; }
+      if (navigator.onLine === false) { opts.onFail && opts.onFail(); say('No internet connection. Connect to the internet, then take the photo again.', 'error'); return; }
       busy.hidden = false; btn.disabled = true;
       let res = null;
       try {
@@ -282,8 +287,7 @@
       if (res && res.status === 200 && res.data && res.data.ok) { opts.onRead(res.data); return; }
       if (res && (res.status === 401 || res.status === 419)) { say('Your session ended. Please log in again.', 'error'); return; }
       if (!res || res.status === 503 || res.status >= 500) {
-        // No internet or the reader is busy: keep the photo on the phone and read it when it is sent.
-        if (opts.onOffline) { opts.onOffline(dataUrl); return; }
+        opts.onFail && opts.onFail();
         say('The photo could not be read right now. Check your internet and take the photo again.', 'error');
         return;
       }
@@ -298,7 +302,7 @@
   const params = new URLSearchParams(location.search);
   const back = params.get('back');
   const expectMeter = (params.get('meter') || '').replace(/\D/g, '');
-  let scanned = null, offlinePhoto = null, saving = false;
+  let scanned = null, saving = false;
 
   function showExpected() {
     if (!expectMeter) return;
@@ -313,9 +317,14 @@
   }
 
   function clearResult() {
-    scanned = null; offlinePhoto = null;
+    scanned = null;
     $('photo').value = '';
-    $('meterResult').hidden = true;
+    ['meterShown', 'consumerName', 'previous_reading', 'current_reading'].forEach(id => { $(id).value = ''; });
+    $('consumerMeta').innerHTML = '';
+    $('calcConsumption').textContent = '0.00 m³';
+    $('calcTotal').textContent = '₱0.00';
+    $('calcBalance').textContent = '—';
+    $('calcBalance').style.color = '';
     $('saveReadingBtn').disabled = true;
     $('saveReadingBtn').textContent = 'Save Reading';
   }
@@ -328,8 +337,9 @@
     onRead(d) {
       scanned = d;
       $('photo').value = d.photo;
-      $('consumerName').textContent = d.name;
-      $('consumerMeta').innerHTML = 'Meter <strong>' + esc(d.meter) + '</strong> · ' + esc(d.purok) + ' · ' + esc(d.consumer_type)
+      $('meterShown').value = d.meter;
+      $('consumerName').value = d.name;
+      $('consumerMeta').innerHTML = esc(d.purok) + ' · ' + esc(d.consumer_type)
         + (d.is_senior ? ' · <span class="badge badge-info">Senior</span>' : '')
         + (d.last_period ? '<div class="text-muted">Last reading: ' + esc(d.last_period) + '</div>' : '');
       const used = d.present_reading - d.previous_reading;
@@ -339,57 +349,37 @@
       $('calcTotal').textContent = peso(billTotal(used, d.is_senior));
       $('calcBalance').textContent = d.balance > 0 ? peso(d.balance) : '₱0.00 (no unpaid bills)';
       $('calcBalance').style.color = d.balance > 0 ? '#e5533d' : '';
-      $('meterResult').hidden = false;
       $('saveReadingBtn').disabled = false;
       record.say('<i class="ph ph-check-circle" aria-hidden="true"></i> Read from the photo. Check that this is <strong>' + esc(d.name) + '</strong>\'s meter, then save.', 'ok');
-    },
-    onOffline(dataUrl) {
-      if (!outbox) { record.say('No internet, and this phone cannot keep readings. Take the photo again when you have signal.', 'error'); return; }
-      offlinePhoto = dataUrl;
-      $('saveReadingBtn').disabled = false;
-      $('saveReadingBtn').textContent = 'Save Photo on Phone';
-      record.say('<i class="ph ph-wifi-slash" aria-hidden="true"></i> No internet right now. Save the photo on this phone — the meter is read automatically when it is sent. '
-        + 'If it cannot be read then, it shows under <strong>Readings on this phone</strong> and you will need to retake it.', 'warn');
     },
   });
 
   $('readingForm').addEventListener('submit', e => {
-    if (!scanned && !offlinePhoto) { e.preventDefault(); return; }
+    if (!scanned) { e.preventDefault(); return; }
 
     // Unusual reading? Ask before saving: no water used at all, or far more than usual.
-    if (scanned) {
-      const used = scanned.present_reading - scanned.previous_reading, usual = scanned.usual_consumption || 0;
-      let ask = '';
-      if (used === 0) ask = 'This reading shows 0 m³ used (same as last time).';
-      else if (usual > 0 && used > Math.max(usual * 2, usual + 10)) {
-        ask = 'This reading shows ' + used.toFixed(2) + ' m³ used — much more than usual (about ' + usual.toFixed(2) + ' m³ a month).';
-      }
-      if (ask && !confirm(ask + '\n\nCheck the meter (and for leaks). Save this reading anyway?')) { e.preventDefault(); return; }
+    const used = scanned.present_reading - scanned.previous_reading, usual = scanned.usual_consumption || 0;
+    let ask = '';
+    if (used === 0) ask = 'This reading shows 0 m³ used (same as last time).';
+    else if (usual > 0 && used > Math.max(usual * 2, usual + 10)) {
+      ask = 'This reading shows ' + used.toFixed(2) + ' m³ used — much more than usual (about ' + usual.toFixed(2) + ' m³ a month).';
     }
+    if (ask && !confirm(ask + '\n\nCheck the meter (and for leaks). Save this reading anyway?')) { e.preventDefault(); return; }
 
     // Save on the phone at once; it is sent in the background.
-    const item = outbox && outbox.add(scanned ? {
+    const item = outbox && outbox.add({
       meter: scanned.meter, name: scanned.name, period: $('billing_period').value, prev: scanned.previous_reading, curr: scanned.present_reading,
       date: $('reading_date').value, remarks: $('remarks').value.trim(), photo: scanned.photo,
-    } : {
-      meter: expectMeter, name: '', period: $('billing_period').value, prev: null, curr: null,
-      date: $('reading_date').value, remarks: $('remarks').value.trim(), photoData: offlinePhoto, expectMeter,
     });
     if (item) {
       e.preventDefault();
       if (back && back.indexOf(location.origin + '/') === 0) { saving = true; location.href = back; return; }
-      $('savedNote').innerHTML = '<i class="ph ph-check-circle" aria-hidden="true"></i> Saved on this phone: '
-        + (item.curr != null ? '<strong>Meter ' + esc(item.meter) + '</strong> (' + esc(item.name) + '), ' + (item.curr - item.prev).toFixed(2) + ' m³.'
-          : 'meter photo — it is read when sent.') + ' Take the next meter\'s photo.';
+      $('savedNote').innerHTML = '<i class="ph ph-check-circle" aria-hidden="true"></i> Saved: <strong>Meter ' + esc(item.meter) + '</strong> ('
+        + esc(item.name) + '), ' + (item.curr - item.prev).toFixed(2) + ' m³. Take the next meter\'s photo.';
       $('savedNote').hidden = false;
       $('remarks').value = '';
       record.reset();
       clearResult();
-      return;
-    }
-    if (offlinePhoto) {
-      e.preventDefault();
-      record.say('This phone\'s storage is full. Connect to the internet so the readings on this phone are sent, then try again.', 'error');
       return;
     }
     saving = true;
