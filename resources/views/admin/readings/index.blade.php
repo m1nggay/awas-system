@@ -66,64 +66,79 @@
 </div>
 
 @if ($isReader)
+{{-- Record Meter Reading: one photo of the meter fills in everything. Nothing is typed. --}}
 <div class="modal fade" id="addReadingModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-fullscreen-sm-down">
     <div class="modal-content">
       <form method="POST" action="{{ route('admin.readings.store') }}" id="readingForm">
-        <div class="modal-header"><h3 class="h6 mb-0">Record Meter Reading</h3><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-header"><h3 class="h6 mb-0">Record Meter Reading</h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
         @csrf
+        <input type="hidden" name="photo" id="photo">
+        <input type="hidden" name="expect_meter" id="expect_meter">
+        <input type="hidden" name="billing_period" id="billing_period" value="{{ currentBillingPeriod() }}">
+        <input type="hidden" name="reading_date" id="reading_date" value="{{ date('Y-m-d') }}">
         <div class="modal-body">
           <div id="savedNote" class="alert alert-success py-2 small" role="status" hidden></div>
-          <div class="mb-3">
-            <label for="meter_number" class="form-label">Meter Number or Name *</label>
-            <div class="position-relative">
-              <input type="text" id="meter_number" name="meter_number" class="form-control form-control-lg" required
-                     maxlength="100" autocomplete="off" placeholder="Type a meter number or name"
-                     role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="meterSuggest">
-              <div id="meterSuggest" class="list-group position-absolute w-100 shadow-sm" role="listbox" hidden
-                   style="z-index:1060;top:100%;max-height:260px;overflow-y:auto;"></div>
+          <div id="expectNote" class="alert alert-info py-2 small" hidden></div>
+
+          <div class="meter-photo" data-photo="record">
+            <img alt="Photo of the meter" data-photo-preview hidden>
+            <div class="meter-photo-empty" data-photo-empty>
+              <i class="ph ph-camera" aria-hidden="true"></i>
+              <span>Take a clear photo of the meter dial. The <strong>black numbers</strong> and the <strong>meter number</strong> must both show.</span>
             </div>
-            <div id="meterInfo" class="mt-2" style="font-size:13px;"></div>
+            <div class="meter-photo-busy" data-photo-busy hidden><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Reading the meter…</div>
           </div>
-          <div class="row g-3 mb-3">
-            <div class="col-6">
-              <label for="previous_reading" class="form-label">Previous Reading *</label>
-              <input type="number" step="0.01" min="0" inputmode="decimal" id="previous_reading" name="previous_reading" class="form-control" required>
+          <input type="file" accept="image/*" capture="environment" hidden data-photo-input="record">
+          <button type="button" class="btn btn-primary btn-lg w-100 mt-2" data-photo-take="record"><i class="ph ph-camera" aria-hidden="true"></i> <span>Take Photo of Meter</span></button>
+          <div class="meter-photo-msg" data-photo-msg="record" role="status"></div>
+
+          {{-- Everything below is filled in from the photo and cannot be typed over. --}}
+          <div class="meter-result" id="meterResult" hidden>
+            <div class="meter-consumer">
+              <div class="label">Consumer</div>
+              <div class="name" id="consumerName"></div>
+              <div class="meta" id="consumerMeta"></div>
             </div>
-            <div class="col-6">
-              <label for="current_reading" class="form-label">Present Reading *</label>
-              <input type="number" step="0.01" min="0" inputmode="decimal" id="current_reading" name="current_reading" class="form-control" required>
+            <div class="row g-3 mb-3">
+              <div class="col-6">
+                <label for="previous_reading" class="form-label">Previous Reading</label>
+                <input type="text" id="previous_reading" class="form-control" readonly tabindex="-1">
+              </div>
+              <div class="col-6">
+                <label for="current_reading" class="form-label">Present Reading <i class="ph ph-camera text-muted" title="Read from the photo" aria-label="read from the photo"></i></label>
+                <input type="text" id="current_reading" class="form-control fw-bold" readonly tabindex="-1">
+              </div>
+            </div>
+            <div class="p-3 mb-3" style="background:#f0fbff;border:1px solid var(--border);border-radius:10px;">
+              <div class="d-flex justify-content-between mb-1"><span class="text-muted">Consumption</span><strong id="calcConsumption">0.00 m³</strong></div>
+              <div class="d-flex justify-content-between mb-1"><span class="text-muted">Total</span><strong id="calcTotal" style="font-size:18px;color:var(--primary-dark);">₱0.00</strong></div>
+              <div class="d-flex justify-content-between"><span class="text-muted">Unpaid Balance</span><strong id="calcBalance">—</strong></div>
+              <div class="text-muted mt-2" style="font-size:11.5px;">
+                Calculated automatically with the official water rate: {{ formatCurrency($tariff['minimumCharge']) }} minimum for the first
+                {{ rtrim(rtrim(number_format($tariff['includedCum'], 2), '0'), '.') }} m³, then
+                {{ collect($tariff['tiers'])->map(fn ($t) => formatCurrency($t['rate']) . '/m³ ' . ($t['to'] !== null
+                      ? 'up to ' . rtrim(rtrim(number_format($t['to'], 2), '0'), '.') . ' m³' : 'beyond'))->join(', ') }}
+                (senior citizens get {{ rtrim(rtrim(number_format($tariff['seniorPct'], 2), '0'), '.') }}% off).
+              </div>
             </div>
           </div>
 
-          <div class="p-3 mb-3" style="background:#f0fbff;border:1px solid var(--border);border-radius:10px;">
-            <div class="d-flex justify-content-between mb-1"><span class="text-muted">Consumption</span><strong id="calcConsumption">0.00 m³</strong></div>
-            <div class="d-flex justify-content-between mb-1"><span class="text-muted">Total</span><strong id="calcTotal" style="font-size:18px;color:var(--primary-dark);">₱0.00</strong></div>
-            <div class="d-flex justify-content-between"><span class="text-muted">Unpaid Balance</span><strong id="calcBalance">—</strong></div>
-            <div class="text-muted mt-2" style="font-size:11.5px;">
-              Calculated automatically with the official water rate: {{ formatCurrency($tariff['minimumCharge']) }} minimum for the first
-              {{ rtrim(rtrim(number_format($tariff['includedCum'], 2), '0'), '.') }} m³, then
-              {{ collect($tariff['tiers'])->map(fn ($t) => formatCurrency($t['rate']) . '/m³ ' . ($t['to'] !== null
-                    ? 'up to ' . rtrim(rtrim(number_format($t['to'], 2), '0'), '.') . ' m³' : 'beyond'))->join(', ') }}
-              (senior citizens get {{ rtrim(rtrim(number_format($tariff['seniorPct'], 2), '0'), '.') }}% off).
+          <div class="row g-3 mt-1">
+            <div class="col-6">
+              <label class="form-label" for="periodShown">Billing Period</label>
+              <input type="text" id="periodShown" class="form-control" value="{{ billingPeriodLabel(currentBillingPeriod()) }}" readonly tabindex="-1">
             </div>
-          </div>
-
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label for="billing_period" class="form-label">Billing Period *</label>
-              <input type="month" id="billing_period" name="billing_period" class="form-control" required value="{{ date('Y-m') }}" pattern="\d{4}-\d{2}" placeholder="YYYY-MM">
-            </div>
-            <div class="col-md-6">
-              <label for="reading_date" class="form-label">Reading Date *</label>
-              <input type="date" id="reading_date" name="reading_date" class="form-control" required value="{{ date('Y-m-d') }}">
+            <div class="col-6">
+              <label class="form-label" for="dateShown">Reading Date</label>
+              <input type="text" id="dateShown" class="form-control" value="{{ formatDate(date('Y-m-d')) }}" readonly tabindex="-1">
             </div>
           </div>
           <div class="mt-3">
             <label for="remarks" class="form-label">Remarks</label>
-            <input type="text" id="remarks" name="remarks" class="form-control" placeholder="Optional notes (e.g. high usage, meter issue)">
+            <input type="text" id="remarks" name="remarks" class="form-control" maxlength="255" placeholder="Optional notes (e.g. meter leaking, gate locked)">
           </div>
-          <p class="text-muted mt-3 mb-0" style="font-size:12px;">Saving keeps the reading on this phone right away and sends it in the background — even with slow or no internet. The bill is made once it is sent.</p>
+          <p class="text-muted mt-3 mb-0" style="font-size:12px;">Saving keeps the reading on this phone right away and sends it in the background — even with slow or no internet. Without internet, the photo is read once it is sent.</p>
         </div>
         {{-- Opened from the Consumer List: go back there after saving. --}}
         <input type="hidden" name="back" value="{{ request('back') }}">
@@ -135,43 +150,39 @@
     </div>
   </div>
 </div>
-@endif
 
-@if ($canManage)
+{{-- Correct a reading: a new photo of the same meter replaces the present reading. --}}
 <div class="modal fade" id="editReadingModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-fullscreen-sm-down">
     <div class="modal-content">
       <form method="POST" action="" id="editReadingForm">
-        <div class="modal-header"><h3 class="h6 mb-0">Edit Meter Reading —<span id="er_meter"></span></h3><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-header"><h3 class="h6 mb-0">Correct Reading — <span id="er_meter"></span></h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
         @csrf @method('PUT')
+        <input type="hidden" name="photo" id="er_photo">
         <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-md-6"><label class="form-label">Previous Reading</label><input type="number" step="0.01" min="0" inputmode="decimal" name="previous_reading" id="er_prev" class="form-control" required></div>
-            <div class="col-md-6"><label class="form-label">Present Reading</label><input type="number" step="0.01" min="0" inputmode="decimal" name="current_reading" id="er_curr" class="form-control" required></div>
+          <p class="small text-muted mb-2">Take a new photo of this meter. Its reading replaces the present reading; nothing is typed.</p>
+          <div class="d-flex justify-content-between small mb-3 p-2" style="background:var(--bg);border-radius:8px;">
+            <span>Previous: <strong id="er_prev"></strong></span><span>Present now: <strong id="er_curr"></strong></span>
           </div>
-          <div class="mb-3 mt-3"><label class="form-label">Reading Date</label><input type="date" name="reading_date" id="er_date" class="form-control" required></div>
-          <div class="mb-3"><label class="form-label">Remarks</label><input type="text" name="remarks" id="er_remarks" class="form-control"></div>
+          <div class="meter-photo" data-photo="correct">
+            <img alt="New photo of the meter" data-photo-preview hidden>
+            <div class="meter-photo-empty" data-photo-empty><i class="ph ph-camera" aria-hidden="true"></i><span>New photo of the meter dial</span></div>
+            <div class="meter-photo-busy" data-photo-busy hidden><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Reading the meter…</div>
+          </div>
+          <input type="file" accept="image/*" capture="environment" hidden data-photo-input="correct">
+          <button type="button" class="btn btn-primary w-100 mt-2" data-photo-take="correct"><i class="ph ph-camera" aria-hidden="true"></i> <span>Take New Photo</span></button>
+          <div class="meter-photo-msg" data-photo-msg="correct" role="status"></div>
+          <div class="mb-3 mt-3"><label class="form-label" for="er_remarks">Remarks</label><input type="text" name="remarks" id="er_remarks" class="form-control" maxlength="255"></div>
           <p class="text-muted mb-0" style="font-size:12px;">If the bill has no payments yet, it is re-calculated automatically.</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Update Reading</button>
+          <button type="submit" class="btn btn-primary" id="er_save" disabled>Update Reading</button>
         </div>
       </form>
     </div>
   </div>
 </div>
-<script>
-function openEditReading(r, action) {
-  document.getElementById('editReadingForm').action = action;
-  document.getElementById('er_meter').textContent = r.meter_number ? 'Meter ' + r.meter_number : '';
-  document.getElementById('er_prev').value = r.previous_reading;
-  document.getElementById('er_curr').value = r.current_reading;
-  document.getElementById('er_date').value = r.reading_date;
-  document.getElementById('er_remarks').value = r.remarks || '';
-  bootstrap.Modal.getOrCreateInstance(document.getElementById('editReadingModal')).show();
-}
-</script>
 @endif
 @endsection
 
@@ -180,14 +191,17 @@ function openEditReading(r, action) {
 <script>
 (function () {
   const tariff = {{ Js::from($tariff) }};
+  const scanUrl = {{ Js::from(route('admin.readings.scan')) }};
   const lookupUrl = {{ Js::from(route('admin.readings.lookup')) }};
-  const peso = n => '₱' + n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const peso = n => '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const num = n => Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const $ = id => document.getElementById(id);
-  let consumer = null, timer = null;
+  const TIPS = 'Wipe the meter glass, avoid glare, and keep the black numbers and the meter number in the photo.';
 
   // Same formula as the server (BillingService::computeBillAmount).
   function billTotal(consumption, isSenior) {
-    // Each tier charges only the cubic meters inside it.
     let excess = 0;
     tariff.tiers.forEach(t => {
       const top = t.to === null ? consumption : Math.min(consumption, t.to);
@@ -199,191 +213,227 @@ function openEditReading(r, action) {
     return Math.round((subtotal - discount) * 100) / 100;
   }
 
-  function recalc() {
-    const prev = parseFloat($('previous_reading').value), curr = parseFloat($('current_reading').value);
-    const ready = consumer && consumer.active && !consumer.already_read && !isNaN(prev) && !isNaN(curr);
-    if (!isNaN(prev) && !isNaN(curr) && curr < prev) {
-      $('calcConsumption').textContent = 'Present must not be lower than Previous';
-      $('calcConsumption').style.color = '#e5533d';
-      $('calcTotal').textContent = '—';
-      $('saveReadingBtn').disabled = true;
-      return;
-    }
-    $('calcConsumption').style.color = '';
-    const consumption = (!isNaN(prev) && !isNaN(curr)) ? curr - prev : 0;
-    $('calcConsumption').textContent = consumption.toFixed(2) + ' m³';
-    $('calcTotal').textContent = (!isNaN(prev) && !isNaN(curr)) ? peso(billTotal(consumption, consumer && consumer.is_senior)) : '₱0.00';
-    $('saveReadingBtn').disabled = !ready;
+  /** The phone's photo, made smaller (sharp enough to read the numbers) as a JPEG data URL. */
+  function shrink(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const max = 1280, scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.naturalWidth * scale);
+        canvas.height = Math.round(img.naturalHeight * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('image')); };
+      img.src = url;
+    });
   }
 
-  // Readings are saved on the phone and sent in the background (reading-outbox.js);
-  // without browser storage the form is posted the old way.
+  /**
+   * One "take a photo → read it on the server" box. onRead(data) gets what was read;
+   * onOffline(dataUrl) is called when there is no internet (or the reader is busy).
+   */
+  function photoBox(key, opts) {
+    const box = document.querySelector('[data-photo="' + key + '"]');
+    const input = document.querySelector('[data-photo-input="' + key + '"]');
+    const btn = document.querySelector('[data-photo-take="' + key + '"]');
+    const msg = document.querySelector('[data-photo-msg="' + key + '"]');
+    const preview = box.querySelector('[data-photo-preview]'), empty = box.querySelector('[data-photo-empty]'), busy = box.querySelector('[data-photo-busy]');
+    let request = 0;
+
+    const say = (html, kind) => { msg.className = 'meter-photo-msg' + (kind ? ' is-' + kind : ''); msg.innerHTML = html || ''; };
+    function reset() {
+      request++;
+      preview.hidden = true; preview.removeAttribute('src'); empty.hidden = false; busy.hidden = true;
+      btn.querySelector('span').textContent = opts.takeLabel; btn.disabled = false; say('');
+    }
+
+    btn.addEventListener('click', () => input.click());
+    input.addEventListener('change', async () => {
+      const file = input.files[0];
+      input.value = '';
+      if (!file) return;
+      const mine = ++request;
+      opts.onStart();
+      say('');
+      let dataUrl;
+      try { dataUrl = await shrink(file); } catch (e) { say('This picture could not be opened. Please take the photo again.', 'error'); return; }
+      if (mine !== request) return;
+      preview.src = dataUrl; preview.hidden = false; empty.hidden = true;
+      btn.querySelector('span').textContent = 'Retake Photo';
+
+      if (navigator.onLine === false) { opts.onOffline && opts.onOffline(dataUrl); return; }
+      busy.hidden = false; btn.disabled = true;
+      let res = null;
+      try {
+        const r = await fetch(scanUrl, {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+          body: JSON.stringify(Object.assign({ photo_data: dataUrl }, opts.extra())),
+        });
+        res = { status: r.status, data: await r.json().catch(() => null) };
+      } catch (e) { res = null; }
+      if (mine !== request) return;
+      busy.hidden = true; btn.disabled = false;
+
+      if (res && res.status === 200 && res.data && res.data.ok) { opts.onRead(res.data); return; }
+      if (res && (res.status === 401 || res.status === 419)) { say('Your session ended. Please log in again.', 'error'); return; }
+      if (!res || res.status === 503 || res.status >= 500) {
+        // No internet or the reader is busy: keep the photo on the phone and read it when it is sent.
+        if (opts.onOffline) { opts.onOffline(dataUrl); return; }
+        say('The photo could not be read right now. Check your internet and take the photo again.', 'error');
+        return;
+      }
+      say('<i class="ph ph-warning" aria-hidden="true"></i> ' + esc((res.data && res.data.message) || 'The photo could not be read.') , 'error');
+      opts.onFail && opts.onFail();
+    });
+    return { reset, say };
+  }
+
+  // ======================= Record Meter Reading =======================
   const outbox = window.AwasOutbox && window.AwasOutbox.available ? window.AwasOutbox : null;
-
-  function showConsumer(d) {
-    consumer = d;
-    hideSuggest();
-    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    let html = '<strong>' + esc(d.name) + '</strong> · ' + esc(d.purok) + ' · ' + esc(d.consumer_type)
-      + (d.is_senior ? ' · <span class="badge badge-info">Senior</span>' : '');
-    if (!d.active) html += '<div class="text-danger">This account is not active.</div>';
-    if (d.already_read) html += '<div class="text-danger">This meter already has a reading for the selected billing period.</div>';
-    if (d.last_period) html += '<div class="text-muted">Last reading: ' + esc(d.last_period) + '</div>';
-    $('meterInfo').innerHTML = html;
-    $('previous_reading').value = d.previous_reading.toFixed(2);
-    $('calcBalance').textContent = d.balance > 0 ? peso(d.balance) : '₱0.00 (no unpaid bills)';
-    $('calcBalance').style.color = d.balance > 0 ? '#e5533d' : '';
-    recalc();
-    $('current_reading').focus();
-  }
-
-  function lookup() {
-    const meter = $('meter_number').value.trim();
-    consumer = null;
-    $('calcBalance').textContent = '—';
-    if (!/^\d+$/.test(meter)) { $('meterInfo').innerHTML = ''; recalc(); return; }
-
-    // Downloaded meters: found at once, no internet needed.
-    const local = outbox ? outbox.findMeter(meter) : null;
-    if (local) {
-      showConsumer(Object.assign({ found: true }, local, { already_read: local.read_periods.includes($('billing_period').value) }));
-      return;
-    }
-
-    $('meterInfo').innerHTML = '<span class="text-muted">Looking up…</span>';
-    fetch(lookupUrl + '?meter=' + encodeURIComponent(meter) + '&period=' + encodeURIComponent($('billing_period').value), { headers: { 'Accept': 'application/json' } })
-      .then(r => r.json())
-      .then(d => {
-        if (meter !== $('meter_number').value.trim()) return; // typed on meanwhile
-        if (!d.found) { $('meterInfo').innerHTML = '<span class="text-danger">' + d.message + '</span>'; recalc(); return; }
-        showConsumer(d);
-      })
-      .catch(() => {
-        $('meterInfo').innerHTML = '<span class="text-danger">' + (outbox && !outbox.meterData()
-          ? 'No internet, and your meters are not downloaded yet. Tap "Download my puroks" when you have signal.'
-          : 'Could not look up meter ' + meter + '. Check the number, or try again when the internet is better.') + '</span>';
-      });
-  }
-
-  // ---- Suggestions: type a name or part of a meter number, then pick the consumer ----
-  const searchUrl = {{ Js::from(route('admin.readings.search')) }};
-  const box = $('meterSuggest'), field = $('meter_number');
-  const escHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  let active = -1;
-
-  function hideSuggest() { box.hidden = true; box.innerHTML = ''; active = -1; field.setAttribute('aria-expanded', 'false'); }
-  function pick(meter) {
-    field.value = meter;
-    hideSuggest();
-    lookup();
-  }
-  function showSuggest(q, list) {
-    if (q !== field.value.trim()) return;               // typed on meanwhile
-    if (consumer && consumer.found && /^\d+$/.test(q)) { hideSuggest(); return; }   // exact meter already found
-    if (!list.length) {
-      box.innerHTML = /^\d+$/.test(q) ? '' : '<div class="list-group-item text-muted small">No consumer in your puroks matches "' + escHtml(q) + '".</div>';
-      box.hidden = !box.innerHTML; field.setAttribute('aria-expanded', String(!box.hidden));
-      return;
-    }
-    box.innerHTML = list.map(c => '<button type="button" class="list-group-item list-group-item-action" role="option" data-meter="' + escHtml(c.meter) + '">'
-      + '<strong>' + escHtml(c.name) + '</strong> <span class="text-muted small">· Meter ' + escHtml(c.meter) + ' · ' + escHtml(c.purok)
-      + (c.active ? '' : ' · <span class="text-danger">not active</span>') + '</span></button>').join('');
-    box.hidden = false; active = -1; field.setAttribute('aria-expanded', 'true');
-  }
-
-  function suggest() {
-    const q = field.value.trim();
-    if (q.length < 2) { hideSuggest(); return; }
-    const local = outbox ? outbox.searchMeters(q) : null;   // downloaded meters: no internet needed
-    if (local) { showSuggest(q, local); return; }
-    fetch(searchUrl + '?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } })
-      .then(r => r.json())
-      .then(list => showSuggest(q, list))
-      .catch(() => hideSuggest());
-  }
-
-  box.addEventListener('mousedown', e => e.preventDefault());   // keep focus in the field while clicking
-  box.addEventListener('click', e => { const b = e.target.closest('[data-meter]'); if (b) pick(b.dataset.meter); });
-  field.addEventListener('keydown', e => {
-    const items = [...box.querySelectorAll('[data-meter]')];
-    if (box.hidden || !items.length) return;
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      active = (active + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
-      items.forEach((b, i) => b.classList.toggle('active', i === active));
-      items[active].scrollIntoView({ block: 'nearest' });
-    } else if (e.key === 'Enter') {
-      e.preventDefault();                                     // pick, don't submit the form
-      pick((items[active] || items[0]).dataset.meter);
-    } else if (e.key === 'Escape') {
-      e.stopPropagation(); hideSuggest();
-    }
-  });
-  field.addEventListener('blur', () => setTimeout(hideSuggest, 150));
-
-  // Digits: look the meter up directly (as before). Letters: only suggestions.
-  field.addEventListener('input', () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => { lookup(); suggest(); }, 300);
-  });
-  $('billing_period').addEventListener('change', lookup);
-  $('previous_reading').addEventListener('input', recalc);
-  $('current_reading').addEventListener('input', recalc);
-
-  // Opened from the dashboard's or the Consumer List's "Record Reading" button.
   const params = new URLSearchParams(location.search);
-  if (params.get('record') === '1') {
-    const meter = (params.get('meter') || '').replace(/\D/g, '');
-    if (meter) { $('meter_number').value = meter; lookup(); }
-    document.addEventListener('DOMContentLoaded', () => bootstrap.Modal.getOrCreateInstance($('addReadingModal')).show());
-  }
-  $('addReadingModal').addEventListener('shown.bs.modal', () => ($('meter_number').value ? $('current_reading') : $('meter_number')).focus());
+  const back = params.get('back');
+  const expectMeter = (params.get('meter') || '').replace(/\D/g, '');
+  let scanned = null, offlinePhoto = null, saving = false;
 
-  // Unusual reading? Ask before saving: no water used at all, or far more than usual.
-  let saving = false;
+  function showExpected() {
+    if (!expectMeter) return;
+    $('expect_meter').value = expectMeter;
+    const note = name => { $('expectNote').innerHTML = '<i class="ph ph-info" aria-hidden="true"></i> Recording <strong>Meter ' + esc(expectMeter) + '</strong>'
+      + (name ? ' — ' + esc(name) : '') + '. Take the photo of this meter.'; $('expectNote').hidden = false; };
+    const local = outbox ? outbox.findMeter(expectMeter) : null;
+    if (local) { note(local.name); return; }
+    note('');
+    fetch(lookupUrl + '?meter=' + encodeURIComponent(expectMeter), { headers: { 'Accept': 'application/json' } })
+      .then(r => r.json()).then(d => { if (d.found) note(d.name); }).catch(() => {});
+  }
+
+  function clearResult() {
+    scanned = null; offlinePhoto = null;
+    $('photo').value = '';
+    $('meterResult').hidden = true;
+    $('saveReadingBtn').disabled = true;
+    $('saveReadingBtn').textContent = 'Save Reading';
+  }
+
+  const record = photoBox('record', {
+    takeLabel: 'Take Photo of Meter',
+    extra: () => ({ billing_period: $('billing_period').value, expect_meter: expectMeter }),
+    onStart: clearResult,
+    onFail: clearResult,
+    onRead(d) {
+      scanned = d;
+      $('photo').value = d.photo;
+      $('consumerName').textContent = d.name;
+      $('consumerMeta').innerHTML = 'Meter <strong>' + esc(d.meter) + '</strong> · ' + esc(d.purok) + ' · ' + esc(d.consumer_type)
+        + (d.is_senior ? ' · <span class="badge badge-info">Senior</span>' : '')
+        + (d.last_period ? '<div class="text-muted">Last reading: ' + esc(d.last_period) + '</div>' : '');
+      const used = d.present_reading - d.previous_reading;
+      $('previous_reading').value = num(d.previous_reading);
+      $('current_reading').value = num(d.present_reading);
+      $('calcConsumption').textContent = used.toFixed(2) + ' m³';
+      $('calcTotal').textContent = peso(billTotal(used, d.is_senior));
+      $('calcBalance').textContent = d.balance > 0 ? peso(d.balance) : '₱0.00 (no unpaid bills)';
+      $('calcBalance').style.color = d.balance > 0 ? '#e5533d' : '';
+      $('meterResult').hidden = false;
+      $('saveReadingBtn').disabled = false;
+      record.say('<i class="ph ph-check-circle" aria-hidden="true"></i> Read from the photo. Check that this is <strong>' + esc(d.name) + '</strong>\'s meter, then save.', 'ok');
+    },
+    onOffline(dataUrl) {
+      if (!outbox) { record.say('No internet, and this phone cannot keep readings. Take the photo again when you have signal.', 'error'); return; }
+      offlinePhoto = dataUrl;
+      $('saveReadingBtn').disabled = false;
+      $('saveReadingBtn').textContent = 'Save Photo on Phone';
+      record.say('<i class="ph ph-wifi-slash" aria-hidden="true"></i> No internet right now. Save the photo on this phone — the meter is read automatically when it is sent. '
+        + 'If it cannot be read then, it shows under <strong>Readings on this phone</strong> and you will need to retake it.', 'warn');
+    },
+  });
+
   $('readingForm').addEventListener('submit', e => {
-    const used = parseFloat($('current_reading').value) - parseFloat($('previous_reading').value);
-    const usual = consumer ? consumer.usual_consumption : 0;
-    let ask = '';
-    if (used === 0) ask = 'This reading shows 0 m³ used (same as last time).';
-    else if (usual > 0 && used > Math.max(usual * 2, usual + 10)) {
-      ask = 'This reading shows ' + used.toFixed(2) + ' m³ used — much more than usual (about ' + usual.toFixed(2) + ' m³ a month).';
+    if (!scanned && !offlinePhoto) { e.preventDefault(); return; }
+
+    // Unusual reading? Ask before saving: no water used at all, or far more than usual.
+    if (scanned) {
+      const used = scanned.present_reading - scanned.previous_reading, usual = scanned.usual_consumption || 0;
+      let ask = '';
+      if (used === 0) ask = 'This reading shows 0 m³ used (same as last time).';
+      else if (usual > 0 && used > Math.max(usual * 2, usual + 10)) {
+        ask = 'This reading shows ' + used.toFixed(2) + ' m³ used — much more than usual (about ' + usual.toFixed(2) + ' m³ a month).';
+      }
+      if (ask && !confirm(ask + '\n\nCheck the meter (and for leaks). Save this reading anyway?')) { e.preventDefault(); return; }
     }
-    if (ask && !confirm(ask + '\n\nPlease double-check the meter. Save this reading anyway?')) { e.preventDefault(); return; }
 
     // Save on the phone at once; it is sent in the background.
-    const item = outbox && outbox.add({
-      meter: $('meter_number').value.trim(), name: consumer ? consumer.name : '',
-      period: $('billing_period').value, prev: parseFloat($('previous_reading').value), curr: parseFloat($('current_reading').value),
-      date: $('reading_date').value, remarks: $('remarks').value.trim(),
+    const item = outbox && outbox.add(scanned ? {
+      meter: scanned.meter, name: scanned.name, period: $('billing_period').value, prev: scanned.previous_reading, curr: scanned.present_reading,
+      date: $('reading_date').value, remarks: $('remarks').value.trim(), photo: scanned.photo,
+    } : {
+      meter: expectMeter, name: '', period: $('billing_period').value, prev: null, curr: null,
+      date: $('reading_date').value, remarks: $('remarks').value.trim(), photoData: offlinePhoto, expectMeter,
     });
     if (item) {
       e.preventDefault();
       if (back && back.indexOf(location.origin + '/') === 0) { saving = true; location.href = back; return; }
-      $('savedNote').innerHTML = '<i class="ph ph-check-circle" aria-hidden="true"></i> Saved on this phone: <strong>Meter ' + escHtml(item.meter) + '</strong>'
-        + (item.name ? ' (' + escHtml(item.name) + ')' : '') + ', ' + (item.curr - item.prev).toFixed(2) + ' m³. Sending in the background — record the next meter.';
+      $('savedNote').innerHTML = '<i class="ph ph-check-circle" aria-hidden="true"></i> Saved on this phone: '
+        + (item.curr != null ? '<strong>Meter ' + esc(item.meter) + '</strong> (' + esc(item.name) + '), ' + (item.curr - item.prev).toFixed(2) + ' m³.'
+          : 'meter photo — it is read when sent.') + ' Take the next meter\'s photo.';
       $('savedNote').hidden = false;
-      ['meter_number', 'previous_reading', 'current_reading', 'remarks'].forEach(id => { $(id).value = ''; });
-      $('meterInfo').innerHTML = '';
-      consumer = null;
-      $('calcBalance').textContent = '—';
-      $('calcBalance').style.color = '';
-      recalc();
-      $('meter_number').focus();
+      $('remarks').value = '';
+      record.reset();
+      clearResult();
       return;
     }
-
+    if (offlinePhoto) {
+      e.preventDefault();
+      record.say('This phone\'s storage is full. Connect to the internet so the readings on this phone are sent, then try again.', 'error');
+      return;
+    }
     saving = true;
     $('saveReadingBtn').disabled = true;
     $('saveReadingBtn').textContent = 'Saving…';
   });
-  $('addReadingModal').addEventListener('hidden.bs.modal', () => { $('savedNote').hidden = true; });
 
+  $('addReadingModal').addEventListener('hidden.bs.modal', () => { $('savedNote').hidden = true; });
+  if (params.get('record') === '1') {
+    showExpected();
+    document.addEventListener('DOMContentLoaded', () => bootstrap.Modal.getOrCreateInstance($('addReadingModal')).show());
+  }
   // Opened from the Consumer List: closing the form goes back there.
-  const back = params.get('back');
   if (back && back.indexOf(location.origin + '/') === 0) {
     $('addReadingModal').addEventListener('hidden.bs.modal', () => { if (!saving) location.href = back; });
   }
+
+  // ======================= Correct a reading =======================
+  let correcting = null;
+  const correct = photoBox('correct', {
+    takeLabel: 'Take New Photo',
+    extra: () => ({ reading_id: correcting ? correcting.reading_id : null }),
+    onStart: () => { $('er_photo').value = ''; $('er_save').disabled = true; },
+    onFail: () => { $('er_photo').value = ''; $('er_save').disabled = true; },
+    onRead(d) {
+      $('er_photo').value = d.photo;
+      $('er_save').disabled = false;
+      correct.say('<i class="ph ph-check-circle" aria-hidden="true"></i> New reading from the photo: <strong>' + num(d.present_reading) + '</strong> (was '
+        + num(correcting.current_reading) + '), ' + (d.present_reading - d.previous_reading).toFixed(2) + ' m³ used.', 'ok');
+    },
+  });
+
+  window.openEditReading = function (r, action) {
+    correcting = r;
+    $('editReadingForm').action = action;
+    $('er_meter').textContent = r.meter_number ? 'Meter ' + r.meter_number : '';
+    $('er_prev').textContent = num(r.previous_reading);
+    $('er_curr').textContent = num(r.current_reading);
+    $('er_remarks').value = r.remarks || '';
+    $('er_photo').value = '';
+    $('er_save').disabled = true;
+    correct.reset();
+    bootstrap.Modal.getOrCreateInstance($('editReadingModal')).show();
+  };
 })();
 </script>
 @endpush

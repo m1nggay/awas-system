@@ -577,3 +577,24 @@ a.collect-card.is-selected{border-left-color:var(--primary-dark);outline:2px sol
 .session-warning strong{display:block;font-size:14px;color:var(--text-dark);}
 .session-warning span{color:var(--text-muted);}
 .session-warning .btn{flex:none;white-space:nowrap;}
+/* Record Meter Reading: photo of the meter → read-only result */
+.meter-photo{position:relative;border:2px dashed var(--border);border-radius:12px;background:var(--bg);min-height:170px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.meter-photo img{display:block;width:100%;max-height:300px;object-fit:contain;background:#000;}
+.meter-photo-empty{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:20px;color:var(--text-muted);font-size:13px;max-width:320px;}
+.meter-photo-empty i{font-size:38px;color:var(--primary);}
+.meter-photo-busy{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;
+  background:rgba(255,255,255,.82);font-weight:600;color:var(--primary-dark);}
+.meter-photo-busy[hidden]{display:none;}
+.meter-photo-msg{font-size:13px;margin-top:10px;line-height:1.5;}
+.meter-photo-msg:empty{display:none;}
+.meter-photo-msg.is-ok{color:#1e7e34;}
+.meter-photo-msg.is-warn{color:#946313;background:#fff6e5;border-radius:8px;padding:8px 10px;}
+.meter-photo-msg.is-error{color:#b8382a;background:#fde9e6;border-radius:8px;padding:8px 10px;}
+.meter-result{margin-top:16px;}
+.meter-consumer{border:1px solid var(--border);border-left:4px solid var(--primary);border-radius:10px;padding:12px 14px;margin-bottom:14px;background:#fff;}
+.meter-consumer .label{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:600;}
+.meter-consumer .name{font-size:20px;font-weight:700;color:var(--primary-dark);line-height:1.3;}
+.meter-consumer .meta{font-size:13px;color:var(--text-dark);margin-top:2px;}
+#addReadingModal input[readonly], #editReadingModal input[readonly]{background:#f4f7f9;cursor:default;}
+.reading-photo-link{font-size:12px;color:var(--primary);font-weight:500;}

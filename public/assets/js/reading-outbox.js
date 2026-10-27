@@ -8,6 +8,11 @@
  *  - "Download my puroks" keeps the meters of the reader's puroks on the phone, so the
  *    Record Reading form can find a meter and its previous reading without internet.
  *
+ * Readings come from a photo of the meter (read on the server). Normally the photo is read in the
+ * form and the item carries its name (photo); taken without internet, the item carries the photo
+ * itself (photoData) and the server reads it when it is sent — then the item learns the meter and
+ * the numbers from the answer.
+ *
  * Statuses: pending (on the phone) → sending → sent, or error (the server refused it).
  * Runs on every page of the Meter Reader (the layout loads it), so sending continues
  * while they move around AWAS. Exposes window.AwasOutbox for the Record Reading form.
@@ -65,6 +70,7 @@
   function applyOutbox(data, since) {
     if (!data) return data;
     items().filter(i => i.status === 'pending' || i.status === 'sending' || (i.status === 'sent' && i.sentAt >= since)).sort((a, b) => a.savedAt - b.savedAt).forEach(i => {
+      if (i.curr == null) return;   // a photo not read yet: its meter is unknown
       const c = data.consumers.find(x => x.meter === i.meter);
       if (!c || c.read_periods.includes(i.period)) return;
       c.read_periods.unshift(i.period);
@@ -106,9 +112,10 @@
   /** Save a reading on the phone; it is sent in the background. */
   function add(r) {
     const item = {
-      ref: newRef(), meter: r.meter, name: r.name || '', period: r.period, prev: r.prev, curr: r.curr,
+      ref: newRef(), meter: r.meter || '', name: r.name || '', period: r.period, prev: r.prev, curr: r.curr,
       date: r.date, remarks: r.remarks || '', status: 'pending', message: '', total: null,
       savedAt: Date.now(), sentAt: null,
+      photo: r.photo || null, photoData: r.photoData || null, expectMeter: r.expectMeter || '',
     };
     const list = items();
     list.push(item);
@@ -172,8 +179,8 @@
           res = await fetchJson(cfg.syncUrl, {
             method: 'POST',
             body: JSON.stringify({
-              client_ref: next.ref, meter_number: next.meter, billing_period: next.period,
-              previous_reading: next.prev, current_reading: next.curr, reading_date: next.date, remarks: next.remarks,
+              client_ref: next.ref, billing_period: next.period, reading_date: next.date, remarks: next.remarks,
+              photo: next.photo, photo_data: next.photo ? null : next.photoData, expect_meter: next.expectMeter,
             }),
           });
         } catch (e) {
@@ -188,7 +195,9 @@
           return;
         }
         if (res && res.ok && res.data && res.data.status === 'saved') {
-          updateItem(next.ref, { status: 'sent', sentAt: Date.now(), total: res.data.total, message: '' });
+          const d = res.data;
+          updateItem(next.ref, Object.assign({ status: 'sent', sentAt: Date.now(), total: d.total, message: '', photoData: null },
+            d.curr != null ? { meter: d.meter, name: d.name, prev: d.prev, curr: d.curr } : {}));
           delay = 5000;
           changed();
           continue;
@@ -276,11 +285,13 @@
 
     const rows = list.map(i => {
       const s = STATUS[i.status] || STATUS.pending;
-      const used = (Number(i.curr) - Number(i.prev)).toFixed(2);
+      const read = i.curr != null;
+      const used = read ? (Number(i.curr) - Number(i.prev)).toFixed(2) : '';
       return '<div class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">'
-        + '<div><strong>Meter ' + esc(i.meter) + '</strong>' + (i.name ? ' · ' + esc(i.name) : '')
-        + '<div class="text-muted" style="font-size:12px;">' + esc(periodLabel(i.period)) + ' · ' + esc(Number(i.prev).toFixed(2)) + ' → ' + esc(Number(i.curr).toFixed(2))
-        + ' (' + used + ' m³)' + (i.total != null ? ' · ' + peso(i.total) : '') + ' · saved ' + when(i.savedAt) + '</div>'
+        + '<div><strong>' + (i.meter ? 'Meter ' + esc(i.meter) : '<i class="ph ph-camera" aria-hidden="true"></i> Meter photo') + '</strong>' + (i.name ? ' · ' + esc(i.name) : '')
+        + '<div class="text-muted" style="font-size:12px;">' + esc(periodLabel(i.period)) + ' · '
+        + (read ? esc(Number(i.prev).toFixed(2)) + ' → ' + esc(Number(i.curr).toFixed(2)) + ' (' + used + ' m³)' : 'read when sent')
+        + (i.total != null ? ' · ' + peso(i.total) : '') + ' · saved ' + when(i.savedAt) + '</div>'
         + (i.status === 'error' ? '<div class="text-danger" style="font-size:12px;">' + esc(i.message) + '</div>' : '')
         + '</div>'
         + '<div class="d-flex align-items-center gap-2"><span class="badge ' + s[0] + '"><i class="ph ' + s[1] + '" aria-hidden="true"></i> ' + s[2] + '</span>'

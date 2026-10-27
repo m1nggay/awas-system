@@ -50,4 +50,10 @@ return [
         'api_key' => env('RECEIPT_AI_API_KEY', env('CHATBOT_AI_API_KEY', '')),
         'model'   => env('RECEIPT_AI_MODEL', 'claude-opus-5-5'),
     ],
+
+    /* Meter photos: the meter number and the reading are read from the photo (no typing). */
+    'meter_reader' => [
+        'api_key' => env('METER_AI_API_KEY', env('RECEIPT_AI_API_KEY', env('CHATBOT_AI_API_KEY', ''))),
+        'model'   => env('METER_AI_MODEL', 'claude-opus-5-5'),
+    ],
 ];
