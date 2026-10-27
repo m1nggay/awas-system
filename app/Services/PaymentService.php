@@ -132,6 +132,8 @@ class PaymentService
                         . " for the $period bill ($refText) with a receipt screenshot. Please verify.");
             }
             log_activity($userId, 'payment_submit', "Submitted GCash QR payment $ref (" . formatCurrency($amount) . ", $refText) for the $period bill with a receipt screenshot");
+            app(PaymentMailer::class)->toConsumer($paymentId, 'submitted');
+            app(PaymentMailer::class)->toAdmins($paymentId, 'submitted');
 
             return [DB::table('payments')->where('payment_id', $paymentId)->first(), null];
         });
@@ -179,7 +181,7 @@ class PaymentService
                 'verified_at'            => now(),
                 'remarks'                => $remarks ?: ($method === 'cash' ? 'Paid in cash at the barangay' : 'Paid via GCash QR at the barangay'),
             ], 'payment_id');
-            $this->billing->applyPaymentToBill($billId, round($amount, 2));
+            $this->billing->applyPaymentToBill($billId, round($amount, 2), $paymentId);
 
             $meter = DB::table('consumers')->where('consumer_id', $bill->consumer_id)->value('meter_number');
             log_activity($staffId, 'payment_record', "Recorded " . paymentMethodLabel($method) . " payment $ref (" . formatCurrency($amount)
@@ -230,7 +232,7 @@ class PaymentService
                 'payment_gateway_txn_id' => $ref,
             ]);
             $payment->payment_gateway_txn_id = $ref;
-            $this->billing->applyPaymentToBill((int)$payment->bill_id, (float)$payment->amount_paid);
+            $this->billing->applyPaymentToBill((int)$payment->bill_id, (float)$payment->amount_paid, $paymentId);
             log_activity($staffId, 'payment_verify', "Verified GCash payment {$payment->payment_reference} (" . formatCurrency($payment->amount_paid)
                 . ", GCash Ref. {$payment->payment_gateway_txn_id})");
             return null;
@@ -258,8 +260,9 @@ class PaymentService
                 $this->billing->createNotification((int)$userId, (int)$payment->bill_id, 'GCash Payment Rejected',
                     'Your GCash payment of ' . formatCurrency($payment->amount_paid) . ' for the ' . billingPeriodLabel($bill->billing_period)
                         . " bill (Ref. {$payment->payment_gateway_txn_id}) was rejected: $reason. Please pay again or visit the barangay water office.",
-                    'general', true);
+                    'general', false);
             }
+            app(PaymentMailer::class)->toConsumer($paymentId, 'rejected');
             log_activity($staffId, 'payment_reject', "Rejected GCash payment {$payment->payment_reference} (Ref. {$payment->payment_gateway_txn_id}): $reason");
             return null;
         });

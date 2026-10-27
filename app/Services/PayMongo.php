@@ -244,7 +244,11 @@ class PayMongo
                     ->update(['status' => 'verified', 'verified_at' => now(),
                         'remarks' => 'Paid with ' . self::walletName($payment->wallet ?? null) . ' via PayMongo (auto-verified)']);
                 if ($updated > 0) {
-                    $this->billing->applyPaymentToBill((int)$payment->bill_id, (float)$payment->amount_paid);
+                    $this->billing->applyPaymentToBill((int)$payment->bill_id, (float)$payment->amount_paid, (int)$payment->payment_id);
+                    // The office didn't take this payment in person, so they get an email about it too.
+                    if (($payment->channel ?? 'online') === 'online') {
+                        app(PaymentMailer::class)->toAdmins((int)$payment->payment_id, 'received');
+                    }
                     log_activity(null, 'payment_paymongo_verified', "PayMongo payment {$payment->payment_reference} verified");
                 }
             });

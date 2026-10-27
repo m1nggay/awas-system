@@ -375,7 +375,7 @@ class BillingService
      * recalculates status, then notifies the resident. Shared by manual
      * staff recording/verification and automatic PayMongo confirmation.
      */
-    public function applyPaymentToBill(int $billId, float $amount): void
+    public function applyPaymentToBill(int $billId, float $amount, ?int $paymentId = null): void
     {
         $bill = DB::table('water_bills')->where('bill_id', $billId)->first();
         if (!$bill) return;
@@ -395,8 +395,13 @@ class BillingService
             $this->createNotification(
                 (int)$userId, $billId, 'Payment Received',
                 'We received your payment of ' . formatCurrency($amount) . ' for your ' . billingPeriodLabel($bill->billing_period) . ' water bill. Thank you!',
-                'payment_received'
+                'payment_received',
+                // With the payment known, the email is the detailed one from PaymentMailer instead.
+                $paymentId ? false : null
             );
+        }
+        if ($paymentId) {
+            app(PaymentMailer::class)->toConsumer($paymentId, 'received');
         }
     }
 
