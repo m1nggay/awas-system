@@ -11,6 +11,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         $schedule->command('awas:bill-reminders')->hourly();
+        $schedule->command('awas:backup')->dailyAt('02:00');
     }
 
     protected function commands(): void

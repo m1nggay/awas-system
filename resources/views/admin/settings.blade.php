@@ -33,8 +33,20 @@
   $tierRows = old('tier_rate') !== null
       ? collect(old('tier_rate'))->map(fn ($rate, $i) => ['to' => old('tier_to')[$i] ?? '', 'rate' => $rate])->values()->all()
       : collect($tiers)->map(fn ($t) => ['to' => $n($t['to']), 'rate' => $n($t['rate'])])->all();
+  $maintOn = setting('maintenance_mode', '0') === '1';
 @endphp
 
+{{-- One tab per area; the URL's #… opens a tab (e.g. #maintenance, #backup), so saves land back on the same tab. --}}
+<nav class="settings-tabs" role="tablist" aria-label="System Settings">
+  <a href="#billing" role="tab" data-tab="billing"><i class="ph ph-receipt" aria-hidden="true"></i> Billing &amp; Rates</a>
+  <a href="#chatbot-faqs" role="tab" data-tab="chatbot-faqs"><i class="ph ph-robot" aria-hidden="true"></i> Chatbot FAQs
+    @if (count($unanswered ?? []) > 0)<span class="tab-count">{{ count($unanswered) }}</span>@endif</a>
+  <a href="#maintenance" role="tab" data-tab="maintenance"><i class="ph ph-wrench" aria-hidden="true"></i> Maintenance
+    @if ($maintOn)<span class="tab-count warn">ON</span>@endif</a>
+  <a href="#backup" role="tab" data-tab="backup"><i class="ph ph-database" aria-hidden="true"></i> Backup &amp; Restore</a>
+</nav>
+
+<div class="settings-pane" data-pane="billing" role="tabpanel">
 <form method="POST" action="{{ route('admin.settings.update') }}" id="settingsForm">
   @csrf
   @include('partials.errors')
@@ -146,6 +158,7 @@
     <button type="submit" class="btn btn-primary">Save Settings</button>
   </div>
 </form>
+</div>
 
 <template id="tierTemplate">
   <tr>
@@ -239,12 +252,12 @@
 })();
 </script>
 
+<div class="settings-pane" data-pane="chatbot-faqs" role="tabpanel">
 @include('admin.faqs._section')
+</div>
 
-@php
-  $maintOn = setting('maintenance_mode', '0') === '1';
-  $maintUntil = (string)setting('maintenance_until', '');
-@endphp
+@php $maintUntil = (string)setting('maintenance_until', ''); @endphp
+<div class="settings-pane" data-pane="maintenance" role="tabpanel">
 <div class="card" id="maintenance" style="scroll-margin-top:80px;">
   <div class="card-header">
     <h3><i class="ph ph-wrench" aria-hidden="true"></i> Maintenance</h3>
@@ -283,5 +296,42 @@ document.getElementById('maintenanceForm').addEventListener('submit', function (
     e.preventDefault();
   }
 });
+</script>
+</div>
+
+<div class="settings-pane" data-pane="backup" role="tabpanel">
+@include('admin.backups._section')
+</div>
+
+<script>
+// Tabs: show one area at a time. Without JavaScript every area simply shows, one after another.
+(function () {
+  const tabs = [...document.querySelectorAll('.settings-tabs [data-tab]')];
+  const panes = [...document.querySelectorAll('.settings-pane')];
+  // A #… may name a tab or anything inside one (e.g. an old link to #maintenance).
+  const paneFor = hash => {
+    const id = (hash || '').replace(/^#/, '');
+    const el = id && document.getElementById(id);
+    return panes.find(p => p.dataset.pane === id) || (el && el.closest('.settings-pane')) || panes[0];
+  };
+  function show(pane, push) {
+    panes.forEach(p => { p.hidden = p !== pane; });
+    tabs.forEach(t => {
+      const on = t.dataset.tab === pane.dataset.pane;
+      t.classList.toggle('active', on);
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    if (push) history.replaceState(null, '', '#' + pane.dataset.pane);
+  }
+  tabs.forEach(t => t.addEventListener('click', e => {
+    e.preventDefault();
+    show(panes.find(p => p.dataset.pane === t.dataset.tab), true);
+  }));
+  window.addEventListener('hashchange', () => show(paneFor(location.hash), false));
+  // A failed Billing save shows its errors on the Billing tab.
+  show(panes[0].querySelector('.alert-danger') ? panes[0] : paneFor(location.hash), false);
+  // Open the tab at the top, not where the browser would jump for the #…
+  if (location.hash) window.addEventListener('load', () => setTimeout(() => window.scrollTo(0, 0), 0));
+})();
 </script>
 @endsection

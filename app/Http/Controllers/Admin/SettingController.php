@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\BillingService;
+use App\Services\DatabaseBackup;
 use App\Services\Settings;
 use Illuminate\Http\Request;
 
@@ -22,7 +23,7 @@ class SettingController extends Controller
         'senior_discount_percent',
     ];
 
-    public function edit(BillingService $billing, Settings $settings)
+    public function edit(BillingService $billing, Settings $settings, DatabaseBackup $backups)
     {
         $values = [];
         foreach (self::FIELDS as $key) {
@@ -31,7 +32,7 @@ class SettingController extends Controller
         return view('admin.settings', [
             'values' => $values,
             'tiers'  => $billing->tariff()['tiers'],
-        ] + ChatbotFaqController::sectionData($settings));
+        ] + ChatbotFaqController::sectionData($settings) + BackupController::sectionData($backups));
     }
 
     public function update(Request $request, Settings $settings)

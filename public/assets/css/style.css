@@ -551,3 +551,15 @@ a.collect-card.is-selected{border-left-color:var(--primary-dark);outline:2px sol
 .collect-table tfoot td{background:var(--bg);font-size:13px;}
 .collect-table .collect-subtotal td{padding-top:6px;padding-bottom:6px;}
 .collect-table .collect-total td{font-weight:700;border-top:2px solid var(--border);}
+/* System Settings → Backup & Restore */
+.backup-upload{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;height:100%;}
+.backup-table{border:1px solid var(--border);border-radius:10px;}
+/* System Settings tabs */
+.settings-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto;scrollbar-width:none;}
+.settings-tabs::-webkit-scrollbar{display:none;}
+.settings-tabs a{display:inline-flex;align-items:center;gap:7px;padding:10px 14px;font-size:13.5px;font-weight:500;color:var(--text-muted);
+  text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:8px 8px 0 0;}
+.settings-tabs a:hover{color:var(--primary);background:rgba(0,119,182,0.05);}
+.settings-tabs a.active{color:var(--primary-dark);font-weight:600;border-bottom-color:var(--primary);}
+.settings-tabs .tab-count{font-size:10.5px;font-weight:700;line-height:1;padding:3px 6px;border-radius:999px;background:var(--accent-light);color:var(--primary-dark);}
+.settings-tabs .tab-count.warn{background:#fff2dc;color:#946313;}

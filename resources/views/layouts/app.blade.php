@@ -18,8 +18,7 @@
                 ['admin.reports.index', 'admin.reports.*', 'ph-chart-bar', 'Reports'],
                 ['admin.users.index', 'admin.users.index', 'ph-user-gear', 'Manage Users'],
                 ['admin.puroks.index', 'admin.puroks.*', 'ph-map-pin', 'Puroks'],
-                ['admin.settings.edit', ['admin.settings.*', 'admin.faqs.*'], 'ph-gear-six', 'System Settings'],
-            ],
+                ['admin.settings.edit', ['admin.settings.*', 'admin.faqs.*'], 'ph-gear-six', 'System Settings'],            ],
             'Account' => [
                 ['admin.profile', ['admin.profile*', 'account.*'], 'ph-user', 'Profile'],
                 ['admin.users.logs', 'admin.users.logs', 'ph-scroll', 'Activity Logs'],

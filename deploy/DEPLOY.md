@@ -102,5 +102,11 @@ sudo -u www-data php artisan config:cache && sudo -u www-data php artisan route:
 
 ## Backups
 
+Administrators can back up, download, upload and restore the database in AWAS itself: **Administration → Backup & Restore**.
+Those backups are saved in `/var/www/awas/storage/app/backups`; an automatic one is made every night at 2:00 AM (the newest 14 are kept).
+A restore first saves the current data as a "Before restore" backup, so it can be undone from the same page.
+
+Separately, the server keeps its own copies:
+
 Backups run every night at 2:30 AM and are stored in `/var/backups/awas`. Each night saves a database dump and the uploaded files, and the last 14 days are kept.
 To restore a database dump: `sudo -u postgres pg_restore --clean --no-owner --role=awas -d awas_db /var/backups/awas/db-YYYY-MM-DD.dump`

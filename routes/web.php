@@ -125,6 +125,14 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
 
             Route::get('/bills', [Admin\WaterBillController::class, 'index'])->name('bills.index');
 
+            // Database Backup & Restore.
+            Route::get('/backups', [Admin\BackupController::class, 'index'])->name('backups.index');
+            Route::post('/backups', [Admin\BackupController::class, 'store'])->name('backups.store');
+            Route::post('/backups/upload', [Admin\BackupController::class, 'upload'])->name('backups.upload');
+            Route::get('/backups/{name}/download', [Admin\BackupController::class, 'download'])->name('backups.download');
+            Route::post('/backups/{name}/restore', [Admin\BackupController::class, 'restore'])->name('backups.restore');
+            Route::delete('/backups/{name}', [Admin\BackupController::class, 'destroy'])->name('backups.destroy');
+
             // Dashboard Collection Monitoring: today / this week / this month, printable or CSV.
             Route::get('/collections/print', [Admin\CollectionController::class, 'print'])->name('collections.print');
             Route::get('/collections/export', [Admin\CollectionController::class, 'export'])->name('collections.export');
