@@ -85,14 +85,6 @@
   .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px;}
   .trust-line{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#c7dbea;}
   .trust-line i{color:var(--aqua);font-size:17px;}
-  /* "There's more below" arrow at the bottom of the hero */
-  .scroll-cue{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:2;width:44px;height:44px;border-radius:50%;
-    border:1.5px solid rgba(255,255,255,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;}
-  .scroll-cue:hover{background:rgba(255,255,255,.12);}
-  @media (prefers-reduced-motion: no-preference){
-    .scroll-cue i{animation:cue 1.8s ease-in-out infinite;}
-    @keyframes cue{0%,100%{transform:translateY(-2px);}50%{transform:translateY(3px);}}
-  }
 
   /* ---------- Sections ---------- */
   .section{padding:84px 0;}
@@ -206,7 +198,7 @@
     .brand .word{font-size:16.5px;}
     .brand .tagline{font-size:10px;}
     .btn.nav-cta{padding:8px 12px;font-size:12.5px;white-space:nowrap;}
-    .hero-body .wrap{padding-top:28px;padding-bottom:88px;}
+    .hero-body .wrap{padding-top:28px;padding-bottom:52px;}
     .hero .lede{font-size:16px;}
     .cta-row .btn, .steps-cta .btn{flex:1 1 100%;width:100%;}
     .card{padding:22px 20px;}
@@ -256,9 +248,8 @@
     <div class="hero-body">
       <div class="wrap">
         <div class="hero-copy">
-          <span class="eyebrow">Barangay Adlay Water Service</span>
-          <h1>Every drop, accounted for.</h1>
-          <p class="lede">AWAS gives Barangay Adlay one place to record meter readings, generate bills, and take payments — so nothing is written on paper twice, and no one is billed by guesswork.</p>
+          <h1>Track the Flow. Trust the Bill.</h1>
+          <p class="lede">AWAS brings water meter readings, billing, and payment monitoring together in one convenient system for Barangay Adlay.</p>
           <div class="cta-row">
             <a class="btn btn-light" href="{{ route('login') }}"><i class="ph ph-sign-in" aria-hidden="true"></i> Login</a>
             <a class="btn btn-ghost" href="{{ route('register') }}">Create Account</a>
@@ -267,7 +258,6 @@
         </div>
       </div>
     </div>
-    <a class="scroll-cue" href="#features" aria-label="Scroll down to learn more"><i class="ph ph-caret-down" aria-hidden="true"></i></a>
   </header>
 
   <main>
