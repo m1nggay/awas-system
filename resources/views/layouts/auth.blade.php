@@ -10,7 +10,7 @@
 <title>@yield('title') · {{ config('agas.short_name') }}</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}?v={{ @filemtime(public_path('assets/css/style.css')) ?: '1' }}">
-<link rel="icon" type="image/png" href="{{ asset('assets/img/logo.png') }}">
+<link rel="icon" type="image/png" href="{{ asset('assets/img/logo-round.png') }}">
 @stack('styles')
 </head>
 <body class="auth-body">
@@ -23,7 +23,7 @@
   @endif
 
   <div class="auth-card" @isset($cardStyle) style="{{ $cardStyle }}" @endisset>
-    <div class="auth-logo"><img src="{{ asset('assets/img/logo.png') }}" alt="AWAS logo"></div>
+    <div class="auth-logo"><img src="{{ asset('assets/img/logo-round.png') }}" alt="AWAS logo"></div>
     @include('partials.flash')
     @yield('content')
   </div>

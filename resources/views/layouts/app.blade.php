@@ -65,7 +65,7 @@
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}?v={{ @filemtime(public_path('assets/css/style.css')) ?: '1' }}">
-<link rel="icon" type="image/png" href="{{ asset('assets/img/logo.png') }}">
+<link rel="icon" type="image/png" href="{{ asset('assets/img/logo-round.png') }}">
 @stack('styles')
 </head>
 <body @if (!empty($liveStart)) data-live-url="{{ route('admin.live') }}" data-live-reading="{{ $liveStart['reading'] }}" data-live-notif="{{ $liveStart['notif'] }}" @endif>
@@ -79,7 +79,7 @@
     </div>
     <div class="offcanvas-body d-flex flex-column p-0">
       <div class="sidebar-brand">
-        <img src="{{ asset('assets/img/logo.png') }}" alt="AWAS logo">
+        <img src="{{ asset('assets/img/logo-round.png') }}" alt="AWAS logo">
         <div>
           <div class="name">AWAS</div>
           <div class="sub">BARANGAY ADLAY</div>

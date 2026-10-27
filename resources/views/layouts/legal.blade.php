@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}?v={{ @filemtime(public_path('assets/css/style.css')) ?: '1' }}">
-<link rel="icon" type="image/png" href="{{ asset('assets/img/logo.png') }}">
+<link rel="icon" type="image/png" href="{{ asset('assets/img/logo-round.png') }}">
 <style>
   body{background:var(--bg);}
   .legal-top{background:#fff;border-bottom:1px solid var(--border);}
@@ -27,7 +27,7 @@
 <body>
   <header class="legal-top">
     <div class="wrap">
-      <a href="{{ url('/') }}" class="legal-brand"><img src="{{ asset('assets/img/logo.png') }}" alt="">AWAS</a>
+      <a href="{{ url('/') }}" class="legal-brand"><img src="{{ asset('assets/img/logo-round.png') }}" alt="">AWAS</a>
       <a href="{{ url('/') }}" class="small"><i class="ph ph-arrow-left" aria-hidden="true"></i> Back to Home</a>
     </div>
   </header>

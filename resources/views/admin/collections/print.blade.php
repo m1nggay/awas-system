@@ -27,7 +27,7 @@
   </div>
 
   <div class="report-head">
-    <img src="{{ asset('assets/img/logo.png') }}" alt="AWAS logo">
+    <img src="{{ asset('assets/img/logo-round.png') }}" alt="AWAS logo">
     <div>
       <div style="font-weight:700;font-size:18px;">AWAS — {{ $barangay }}</div>
       <div>{{ $title }} — {{ $label }}</div>

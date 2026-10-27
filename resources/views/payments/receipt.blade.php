@@ -59,7 +59,7 @@
     <div class="receipt-head">
       <div>
         <div style="display:flex;align-items:center;gap:8px;font-size:20px;font-weight:700;">
-          <img src="{{ asset('assets/img/logo.png') }}" alt="AWAS logo" style="width:34px;height:34px;object-fit:contain;">AWAS
+          <img src="{{ asset('assets/img/logo-round.png') }}" alt="AWAS logo" style="width:34px;height:34px;object-fit:contain;">AWAS
         </div>
         <div style="font-size:12px;opacity:.85;">Adlay Water Augmentation System</div>
       </div>
