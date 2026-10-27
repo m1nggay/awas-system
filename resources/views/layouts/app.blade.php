@@ -188,6 +188,12 @@
 @if (!empty($liveStart))
 <script src="{{ asset('assets/js/live.js') }}?v={{ @filemtime(public_path('assets/js/live.js')) ?: '1' }}"></script>
 @endif
+<script>window.AWAS_SESSION = {{ Js::from([
+    'timeout' => config('agas.idle_timeout_minutes') * 60,
+    'statusUrl' => route('session.status'), 'keepAliveUrl' => route('session.keep-alive'),
+    'loginUrl' => route('login', ['timeout' => 1]),
+]) }};</script>
+<script src="{{ asset('assets/js/session-timeout.js') }}?v={{ @filemtime(public_path('assets/js/session-timeout.js')) ?: '1' }}"></script>
 @stack('scripts')
 </body>
 </html>

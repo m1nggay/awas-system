@@ -81,8 +81,20 @@ class LoginController extends Controller
         return self::startSession($request, $user, 'User logged in');
     }
 
-    /** Signs the (already checked) user in and opens their dashboard. Also used by Google / Facebook sign-in. */
+    /**
+     * The password (or Google / Facebook) checked out. Administrators then get
+     * a second step — a code emailed to them; everyone else is signed in now.
+     */
     public static function startSession(Request $request, User $user, string $logMessage)
+    {
+        if ($user->isAdmin() && config('agas.admin_2fa')) {
+            return TwoFactorController::challenge($request, $user, $logMessage);
+        }
+        return self::finishLogin($request, $user, $logMessage);
+    }
+
+    /** Signs the (fully checked) user in and opens their dashboard. */
+    public static function finishLogin(Request $request, User $user, string $logMessage)
     {
         Auth::login($user);
         $request->session()->regenerate();

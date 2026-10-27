@@ -33,6 +33,12 @@ class OtpService
         return new self('email_change_otps', 10, 5, 60, 5);
     }
 
+    /** Two-factor login codes for administrator accounts. */
+    public static function login(): self
+    {
+        return new self('login_otps', 10, 5, 60, 6);
+    }
+
     /** Registration / membership-application email verification codes. */
     public static function emailVerification(): self
     {

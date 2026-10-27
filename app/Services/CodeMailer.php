@@ -35,6 +35,18 @@ class CodeMailer
         ));
     }
 
+    /** Two-factor login code: the second step of an administrator's sign-in. */
+    public function sendLoginCode(int $userId, string $email, string $name): string
+    {
+        $otp = OtpService::login();
+        return $otp->issueAndSend($userId, fn (string $code) => $this->mailer->send(
+            $email, $name, 'Your AWAS login code', 'emails.password-reset-code',
+            ['name' => $name, 'code' => $code, 'ttl' => $otp->ttlMinutes,
+             'purpose' => 'Someone (hopefully you) entered your AWAS administrator password. Use this code to finish signing in:',
+             'footer'  => 'If you did not just try to sign in, someone knows your password — change it right away in AWAS (Profile → Change Password).']
+        ));
+    }
+
     /** Password code: "Forgot Password" and signed-in "Change Password". */
     public function sendPasswordCode(int $userId, string $email, string $name, string $subject, string $purpose): string
     {

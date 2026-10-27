@@ -91,12 +91,14 @@
     if (busy || document.hidden) return;
     busy = true;
     fetch(url + '?reading=' + lastReading + '&notif=' + lastNotif, {
-      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      // A background check: it must not count as activity, or an open tab would never time out.
+      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-AWAS-Background': '1' },
       credentials: 'same-origin',
       cache: 'no-store'
     })
       .then(function (res) {
-        if (res.status === 401 || res.status === 403 || res.redirected) { stop(); return null; }  // signed out
+        if (res.status === 401) { stop(); if (window.AWAS_SESSION) window.location.href = window.AWAS_SESSION.loginUrl; return null; }  // timed out
+        if (res.status === 403 || res.redirected) { stop(); return null; }  // signed out
         return res.ok ? res.json() : null;
       })
       .then(function (d) {

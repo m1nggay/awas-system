@@ -15,6 +15,10 @@ return [
        sets RENDER=true) ends HTTPS at its proxy, so it is trusted automatically there. */
     'trusted_proxies' => env('TRUSTED_PROXIES', env('RENDER') ? '*' : null),
 
+    /* Two-factor login for administrators: after the password, a code emailed to them.
+       Emergency switch only (e.g. email is down): set AWAS_ADMIN_2FA=false in .env. */
+    'admin_2fa' => filter_var(env('AWAS_ADMIN_2FA', true), FILTER_VALIDATE_BOOLEAN),
+
     /* Outbound email via the Brevo transactional HTTP API (OTP codes, application updates). */
     'brevo' => [
         'api_key'    => env('BREVO_API_KEY', ''),
