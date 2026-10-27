@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Analytics;
 use App\Services\BillingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request, BillingService $billing)
+    public function __invoke(Request $request, BillingService $billing, Analytics $analytics)
     {
         $billing->refreshOverdueBills();
         $currentPeriod = currentBillingPeriod();
@@ -25,11 +26,6 @@ class DashboardController extends Controller
             $billsByStatus[$status] = (int)$cnt;
         }
 
-        $trend = DB::table('meter_readings')
-            ->groupBy('billing_period')->orderByDesc('billing_period')->limit(6)
-            ->selectRaw('billing_period, SUM(consumption) total_consumption')
-            ->get()->reverse()->values();
-
         return view('admin.dashboard', [
             'currentPeriod'     => $currentPeriod,
             'totalConsumers'    => DB::table('consumers')->where('status', 'active')->count(),
@@ -42,7 +38,7 @@ class DashboardController extends Controller
                 ->join('water_bills as b', 'b.bill_id', '=', 'p.bill_id')
                 ->orderByDesc('p.payment_date')->limit(8)
                 ->get(['p.*', 'c.full_name', 'c.meter_number', 'b.billing_period']),
-            'trend'             => $trend,
+            'analytics'         => $analytics->admin(),
         ]);
     }
 
