@@ -39,6 +39,11 @@ class DashboardController extends Controller
                 ->orderByDesc('p.payment_date')->limit(8)
                 ->get(['p.*', 'c.full_name', 'c.meter_number', 'b.billing_period']),
             'analytics'         => $analytics->admin(),
+            // Collection Monitoring: the Daily / Weekly / Monthly switch (?collect=).
+            'collect'           => $collect = array_key_exists($c = clean($request->query('collect')), Analytics::COLLECTION_RANGES) ? $c : 'day',
+            'collectTotals'     => $analytics->collectionTotals(),
+            'collectSeries'     => $analytics->collectionSeries($collect),
+            'collectRecords'    => $analytics->collectionRecords($collect, 10),
         ]);
     }
 

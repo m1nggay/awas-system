@@ -34,12 +34,6 @@ class Analytics
             ->map(fn ($r) => (object)['period' => $r->billing_period, 'billed' => (float)$r->billed, 'collected' => (float)$r->collected,
                 'rate' => (float)$r->billed > 0 ? round((float)$r->collected / (float)$r->billed * 100, 1) : null]);
 
-        // Money received in a calendar month (by payment date), this month and last.
-        $received = fn (\Carbon\CarbonInterface $month) => (float)DB::table('payments')->where('status', 'verified')
-            ->whereBetween('payment_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])->sum('amount_paid');
-        $thisMonth = now();
-        $lastMonth = now()->subMonthNoOverflow();
-
         // How people pay (verified payments): by method, and at the barangay vs online.
         $methods = DB::table('payments')->where('status', 'verified')->groupBy('payment_method', 'wallet')
             ->selectRaw('payment_method, wallet, COUNT(*) AS cnt, SUM(amount_paid) AS amount')->get()
@@ -63,10 +57,6 @@ class Analytics
             'avgPerHousehold'     => $avg($latest),
             'avgPerHouseholdPrev' => $avg($previous),
             'previousPeriod'      => $previous?->period,
-            'collectedThisMonth'  => $received($thisMonth),
-            'collectedLastMonth'  => $received($lastMonth),
-            'thisMonthLabel'      => $thisMonth->format('F Y'),
-            'lastMonthLabel'      => $lastMonth->format('F'),
             'rate'          => $latestBilling?->rate,
             'ratePrev'      => $previousBilling?->rate,
             'ratePeriod'    => $latestBilling?->period,
@@ -168,6 +158,122 @@ class Analytics
             'paidThisYear' => (float)DB::table('payments')->where('consumer_id', $consumerId)->where('status', 'verified')
                 ->where('payment_date', '>=', now()->startOfYear())->sum('amount_paid'),
         ];
+    }
+
+    /* ---------------- Collection monitoring (admin) ---------------- */
+
+    /** Daily / Weekly / Monthly: the chart's steps, and the "current" period the records table shows. */
+    public const COLLECTION_RANGES = [
+        'day'   => ['tab' => 'Daily',   'current' => 'Today',      'previous' => 'yesterday'],
+        'week'  => ['tab' => 'Weekly',  'current' => 'This Week',  'previous' => 'last week'],
+        'month' => ['tab' => 'Monthly', 'current' => 'This Month', 'previous' => 'last month'],
+    ];
+
+    /** Start and end of today / this week (Monday–Sunday) / this month, or $back of them earlier. */
+    public static function collectionRange(string $range, int $back = 0): array
+    {
+        $now = now();
+        return match ($range) {
+            'day'   => [$now->copy()->subDays($back)->startOfDay(), $now->copy()->subDays($back)->endOfDay()],
+            'week'  => [$now->copy()->subWeeks($back)->startOfWeek(), $now->copy()->subWeeks($back)->endOfWeek()],
+            default => [$s = $now->copy()->startOfMonth()->subMonthsNoOverflow($back), $s->copy()->endOfMonth()],
+        };
+    }
+
+    /** Paid (verified) payments received between two moments, by the date the money came in. */
+    private function collectedBetween($from, $to)
+    {
+        return DB::table('payments')->where('status', 'verified')->whereBetween('payment_date', [$from, $to]);
+    }
+
+    /** Today, this week and this month: amount, number of payments, and the same for the period before. */
+    public function collectionTotals(): array
+    {
+        $totals = [];
+        foreach (array_keys(self::COLLECTION_RANGES) as $range) {
+            [$now, $before] = array_map(function ($back) use ($range) {
+                $q = $this->collectedBetween(...self::collectionRange($range, $back));
+                return ['amount' => (float)(clone $q)->sum('amount_paid'), 'count' => (clone $q)->count()];
+            }, [0, 1]);
+            $totals[$range] = $now + ['previous' => $before['amount'], 'change' => self::change($now['amount'], $before['amount'])];
+        }
+        return $totals;
+    }
+
+    /**
+     * Collections per step for the chart: the last 30 days, 12 weeks or 12 months,
+     * each with its total, number of payments and amount per method.
+     */
+    public function collectionSeries(string $range): array
+    {
+        [$steps, $key, $label] = match ($range) {
+            'day'   => [30, fn ($d) => $d->format('Y-m-d'), fn ($d) => $d->format('M j')],
+            'week'  => [12, fn ($d) => $d->copy()->startOfWeek()->format('Y-m-d'), fn ($d) => $d->copy()->startOfWeek()->format('M j')],
+            default => [12, fn ($d) => $d->format('Y-m'), fn ($d) => $d->format("M 'y")],
+        };
+        $buckets = [];
+        for ($back = $steps - 1; $back >= 0; $back--) {
+            $start = self::collectionRange($range, $back)[0];
+            $buckets[$key($start)] = ['label' => $label($start), 'total' => 0.0, 'count' => 0, 'methods' => []];
+        }
+
+        $since = self::collectionRange($range, $steps - 1)[0];
+        $rows = $this->collectedBetween($since, now()->endOfDay())->get(['payment_date', 'amount_paid', 'payment_method', 'wallet']);
+        foreach ($rows as $r) {
+            $k = $key(\Illuminate\Support\Carbon::parse($r->payment_date));
+            if (!isset($buckets[$k])) {
+                continue;
+            }
+            $method = paymentMethodLabel($r->payment_method, $r->wallet);
+            $buckets[$k]['total'] += (float)$r->amount_paid;
+            $buckets[$k]['count']++;
+            $buckets[$k]['methods'][$method] = ($buckets[$k]['methods'][$method] ?? 0) + (float)$r->amount_paid;
+        }
+        return array_values($buckets);
+    }
+
+    /**
+     * The payments collected today / this week / this month, newest first, with
+     * the total and a subtotal per method. $limit = null returns every row (print, export).
+     */
+    public function collectionRecords(string $range, ?int $limit = null): array
+    {
+        [$from, $to] = self::collectionRange($range);
+        $base = DB::table('payments as p')->where('p.status', 'verified')->whereBetween('p.payment_date', [$from, $to]);
+
+        $byMethod = (clone $base)->groupBy('p.payment_method', 'p.wallet')
+            ->selectRaw('p.payment_method, p.wallet, COUNT(*) AS cnt, SUM(p.amount_paid) AS amount')->get()
+            ->groupBy(fn ($r) => paymentMethodLabel($r->payment_method, $r->wallet))
+            ->map(fn ($rows) => ['count' => (int)$rows->sum('cnt'), 'amount' => (float)$rows->sum('amount')])
+            ->sortByDesc('amount');
+
+        $rows = (clone $base)
+            ->join('consumers as c', 'c.consumer_id', '=', 'p.consumer_id')
+            ->join('water_bills as b', 'b.bill_id', '=', 'p.bill_id')
+            ->leftJoin('users as u', 'u.user_id', '=', 'p.received_by')
+            ->orderByDesc('p.payment_date')
+            ->when($limit, fn ($q) => $q->limit($limit))
+            ->get(['p.payment_id', 'p.payment_reference', 'p.amount_paid', 'p.payment_method', 'p.wallet', 'p.channel', 'p.payment_date',
+                'p.payment_gateway_txn_id', 'c.full_name', 'c.meter_number', 'b.billing_period', 'u.full_name as received_by']);
+
+        return [
+            'rows'     => $rows,
+            'count'    => (int)$byMethod->sum('count'),
+            'total'    => (float)$byMethod->sum('amount'),
+            'byMethod' => $byMethod,
+            'from'     => $from,
+            'to'       => $to,
+        ];
+    }
+
+    /** "Oct 27, 2026", "Oct 26 – Nov 1, 2026" or "October 2026" for a range's current period. */
+    public static function collectionRangeLabel(string $range, $from, $to): string
+    {
+        return match ($range) {
+            'day'   => $from->format('l, M j, Y'),
+            'week'  => $from->format('M j') . ' – ' . $to->format('M j, Y'),
+            default => $from->format('F Y'),
+        };
     }
 
     /** Percent change from $before to $now, or null when there is nothing to compare with. */

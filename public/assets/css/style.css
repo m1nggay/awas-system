@@ -544,3 +544,10 @@ details.analytics-table > summary h3::after{content:" ▸";color:var(--text-mute
 details.analytics-table[open] > summary h3::after{content:" ▾";}
 .timing{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;white-space:nowrap;}
 @media (max-width:575.98px){.chart-box{height:220px;}}
+/* Collection Monitoring */
+a.collect-card{text-decoration:none;color:inherit;transition:box-shadow .15s,transform .15s;}
+a.collect-card:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(2,62,138,0.12);}
+a.collect-card.is-selected{border-left-color:var(--primary-dark);outline:2px solid var(--primary);outline-offset:-2px;}
+.collect-table tfoot td{background:var(--bg);font-size:13px;}
+.collect-table .collect-subtotal td{padding-top:6px;padding-bottom:6px;}
+.collect-table .collect-total td{font-weight:700;border-top:2px solid var(--border);}

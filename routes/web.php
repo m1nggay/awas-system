@@ -125,6 +125,10 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
 
             Route::get('/bills', [Admin\WaterBillController::class, 'index'])->name('bills.index');
 
+            // Dashboard Collection Monitoring: today / this week / this month, printable or CSV.
+            Route::get('/collections/print', [Admin\CollectionController::class, 'print'])->name('collections.print');
+            Route::get('/collections/export', [Admin\CollectionController::class, 'export'])->name('collections.export');
+
             // Payments: record Cash / GCash QR at the barangay; verify or reject online GCash payments.
             Route::get('/payments', [Admin\PaymentController::class, 'index'])->name('payments.index');
             Route::post('/payments', [Admin\PaymentController::class, 'store'])->name('payments.store');

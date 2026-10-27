@@ -27,6 +27,91 @@
   @endforeach
 </div>
 
+{{-- ===== Collection Monitoring: paid payments by the date the money came in ===== --}}
+@php
+  $ranges = \App\Services\Analytics::COLLECTION_RANGES;
+  $cr = $collectRecords;
+  $crLabel = \App\Services\Analytics::collectionRangeLabel($collect, $cr['from'], $cr['to']);
+@endphp
+<div id="collection" class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+  <h2 class="section-title mb-0">Collection Monitoring</h2>
+  <div class="btn-group btn-group-sm" role="group" aria-label="Show collections">
+    @foreach ($ranges as $key => $r)
+      <a href="{{ route('admin.dashboard', ['collect' => $key]) }}#collection" class="btn {{ $collect === $key ? 'btn-primary' : 'btn-outline' }}" @if ($collect === $key) aria-current="true" @endif>{{ $r['tab'] }}</a>
+    @endforeach
+  </div>
+</div>
+<div class="row g-3 mb-3">
+  @foreach ($ranges as $key => $r)
+    @php $t = $collectTotals[$key]; @endphp
+    <div class="col-12 col-md-4">
+      <a href="{{ route('admin.dashboard', ['collect' => $key]) }}#collection" class="stat-card h-100 collect-card {{ $collect === $key ? 'is-selected' : '' }}">
+        <div class="stat-info">
+          <div class="label">Collected {{ $r['current'] }}</div>
+          <div class="value">{{ formatCurrency($t['amount']) }}</div>
+          <div class="change-note">{{ number_format($t['count']) }} {{ Str::plural('payment', $t['count']) }}</div>
+          @include('partials.change-note', ['pct' => $t['change'], 'vs' => $r['previous']])
+        </div>
+        <div class="stat-icon"><i class="ph {{ ['day' => 'ph-calendar-dot', 'week' => 'ph-calendar', 'month' => 'ph-calendar-blank'][$key] }}" aria-hidden="true"></i></div>
+      </a>
+    </div>
+  @endforeach
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-body">
+        <h3 class="h6 mb-1">{{ ['day' => 'Daily Collections — Last 30 Days', 'week' => 'Weekly Collections — Last 12 Weeks', 'month' => 'Monthly Collections — Last 12 Months'][$collect] }}</h3>
+        <p class="chart-note">Paid payments by the date the money was received. Hover a bar for the split by method.</p>
+        <div class="chart-box"><canvas id="collectChart" role="img" aria-label="Bar chart of money collected per {{ $collect }}"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header flex-wrap gap-2">
+        <h3>Collected {{ $ranges[$collect]['current'] }} <span class="text-muted fw-normal" style="font-size:12.5px;">· {{ $crLabel }}</span></h3>
+        <div class="d-flex gap-2">
+          <a href="{{ route('admin.collections.print', ['range' => $collect]) }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm"><i class="ph ph-printer" aria-hidden="true"></i> Print</a>
+          <a href="{{ route('admin.collections.export', ['range' => $collect]) }}" class="btn btn-outline btn-sm"><i class="ph ph-file-csv" aria-hidden="true"></i> Export</a>
+        </div>
+      </div>
+      <div class="card-body no-pad">
+        <div class="table-responsive">
+          <table class="table align-middle mb-0 collect-table">
+            <thead><tr><th>Consumer</th><th>Bill</th><th class="text-end">Amount</th><th>Method</th><th>{{ $collect === 'day' ? 'Time' : 'Date' }}</th></tr></thead>
+            <tbody>
+            @forelse ($cr['rows'] as $p)
+              <tr>
+                <td><strong>{{ $p->full_name }}</strong><div class="text-muted small">{{ $p->payment_reference }} · Meter {{ $p->meter_number }}</div></td>
+                <td>{{ billingPeriodLabel($p->billing_period) }}</td>
+                <td class="text-end">{{ formatCurrency($p->amount_paid) }}</td>
+                <td>{{ paymentMethodLabel($p->payment_method, $p->wallet) }}<div class="text-muted small">{{ paymentChannelLabel($p->channel) }}</div></td>
+                <td class="text-nowrap">{{ $collect === 'day' ? date('g:i A', strtotime($p->payment_date)) : formatDate($p->payment_date) }}</td>
+              </tr>
+            @empty
+              <tr class="empty-row"><td colspan="5">No payments collected {{ strtolower($ranges[$collect]['current']) }} yet.</td></tr>
+            @endforelse
+            </tbody>
+            @if ($cr['count'] > 0)
+              <tfoot>
+                @foreach ($cr['byMethod'] as $method => $m)
+                  <tr class="collect-subtotal"><td colspan="2">{{ $method }} <span class="text-muted">({{ $m['count'] }})</span></td><td class="text-end">{{ formatCurrency($m['amount']) }}</td><td colspan="2"></td></tr>
+                @endforeach
+                <tr class="collect-total"><td colspan="2">Total Collection <span class="text-muted fw-normal">({{ number_format($cr['count']) }} {{ Str::plural('payment', $cr['count']) }})</span></td><td class="text-end">{{ formatCurrency($cr['total']) }}</td><td colspan="2"></td></tr>
+              </tfoot>
+            @endif
+          </table>
+        </div>
+        @if ($cr['count'] > $cr['rows']->count())
+          <p class="chart-note px-3 py-2 mb-0">Showing the latest {{ $cr['rows']->count() }} of {{ number_format($cr['count']) }} payments — the totals include all of them. Use <strong>Print</strong> or <strong>Export</strong> for the full list.</p>
+        @endif
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="row g-3 mb-4">
   <div class="col-lg-7">
     <div class="card h-100">
@@ -56,17 +141,7 @@
 {{-- ===== Payment & Consumption Analytics ===== --}}
 <h2 class="section-title">Payment &amp; Consumption Analytics</h2>
 <div class="row g-3 mb-4">
-  <div class="col-6 col-xl-3">
-    <div class="stat-card h-100 success">
-      <div class="stat-info">
-        <div class="label">Collected — {{ $a['thisMonthLabel'] }}</div>
-        <div class="value">{{ formatCurrency($a['collectedThisMonth']) }}</div>
-        @include('partials.change-note', ['pct' => \App\Services\Analytics::change($a['collectedThisMonth'], $a['collectedLastMonth']), 'vs' => $a['lastMonthLabel']])
-      </div>
-      <div class="stat-icon"><i class="ph ph-hand-coins" aria-hidden="true"></i></div>
-    </div>
-  </div>
-  <div class="col-6 col-xl-3">
+  <div class="col-12 col-md-4">
     <div class="stat-card h-100">
       <div class="stat-info">
         <div class="label">Collection Rate{{ $a['ratePeriod'] ? ' — ' . billingPeriodLabel($a['ratePeriod']) . ' bills' : '' }}</div>
@@ -77,7 +152,7 @@
       <div class="stat-icon"><i class="ph ph-percent" aria-hidden="true"></i></div>
     </div>
   </div>
-  <div class="col-6 col-xl-3">
+  <div class="col-12 col-md-4">
     <div class="stat-card h-100">
       <div class="stat-info">
         <div class="label">Peak Consumption Month</div>
@@ -87,7 +162,7 @@
       <div class="stat-icon"><i class="ph ph-trend-up" aria-hidden="true"></i></div>
     </div>
   </div>
-  <div class="col-6 col-xl-3">
+  <div class="col-12 col-md-4">
     <div class="stat-card h-100">
       <div class="stat-info">
         <div class="label">Average per Household{{ $a['latestPeriod'] ? ' — ' . billingPeriodLabel($a['latestPeriod']) : '' }}</div>
@@ -242,6 +317,12 @@
 (function () {
   const A = AwasCharts;
   const short = p => new Date(p + '-01T00:00:00').toLocaleDateString('en-PH', { month: 'short', year: '2-digit' });
+
+  const collected = {{ Js::from($collectSeries) }};
+  A.collections(document.getElementById('collectChart'), collected.map(c => c.label), collected.map(c => c.total), i => {
+    const c = collected[i];
+    return [c.count + (c.count === 1 ? ' payment' : ' payments')].concat(Object.entries(c.methods).map(([m, v]) => m + ': ' + A.peso(v)));
+  });
 
   const usage = {{ Js::from($a['consumption']) }};
   A.usage(document.getElementById('trendChart'), usage.map(r => short(r.period)), usage.map(r => r.total), {

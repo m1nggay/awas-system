@@ -127,5 +127,22 @@ window.AwasCharts = (function () {
     });
   }
 
-  return { usage, pair, doughnut, ranked, peso, m3 };
+  /** Money collected per day / week / month; the current one (last bar) is darker. extra(i) adds tooltip lines. */
+  function collections(canvas, labels, values, extra) {
+    const last = values.length - 1;
+    return new Chart(canvas, {
+      type: 'bar',
+      data: { labels, datasets: [{ label: 'Collected', data: values, borderRadius: 4, maxBarThickness: 30,
+        backgroundColor: values.map((v, i) => (i === last ? C.peak : C.blue)) }] },
+      options: {
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: item => ' Collected: ' + peso(item.raw), afterBody: items => (extra ? extra(items[0].dataIndex) : []) } },
+        },
+        scales: Object.assign(axes(pesoShort), { x: { grid: { display: false }, border: { color: C.grid }, ticks: { autoSkip: true, maxRotation: 0, autoSkipPadding: 8 } } }),
+      },
+    });
+  }
+
+  return { usage, pair, doughnut, ranked, collections, peso, m3 };
 })();
