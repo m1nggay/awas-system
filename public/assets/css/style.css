@@ -95,7 +95,7 @@ a:focus-visible, button:focus-visible{outline:2px solid var(--primary-light);out
   min-height:100vh;
   display:flex;align-items:center;justify-content:center;
   position:relative;overflow-x:hidden;overflow-y:auto; /* tall forms (e.g. register.php) must be able to scroll instead of clipping off-screen */
-  background:linear-gradient(135deg,var(--primary-dark),var(--primary) 45%,var(--primary-light)); /* base look — the video crossfades on top once ready, so this never reads as a broken flat flash */
+  background:#062a4a url('../drone-poster.jpg') center/cover no-repeat fixed; /* base look (same navy as the landing page) — the video crossfades on top once ready */
   padding:20px;
 }
 .bg-video{
@@ -106,25 +106,29 @@ a:focus-visible, button:focus-visible{outline:2px solid var(--primary-light);out
 .bg-video.loaded{opacity:1;}
 /* With a still picture (first frame) it shows right away while the video loads. */
 .bg-video[poster]{opacity:1;}
+/* Deep navy over the video, matching the landing page: the video stays a calm backdrop, not a distraction. */
 .bg-video-tint{
   position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:linear-gradient(135deg,rgba(2,62,138,0.62),rgba(0,119,182,0.5) 45%,rgba(0,180,216,0.4));
+  background:
+    linear-gradient(135deg,rgba(6,42,74,0.90),rgba(6,42,74,0.82) 50%,rgba(6,42,74,0.72)),
+    radial-gradient(ellipse at center,rgba(6,42,74,0) 0%,rgba(6,42,74,0.35) 100%);
 }
+@media (prefers-reduced-motion: reduce){ .auth-body .bg-video{display:none;} }
 .auth-card{
   position:relative;z-index:1;
   background:var(--card-bg);
-  border-radius:var(--radius);
+  border-radius:16px;
   padding:40px 36px;
   width:100%;max-width:420px;
-  box-shadow:0 10px 40px rgba(0,0,0,0.35);
+  box-shadow:0 18px 50px rgba(0,0,0,0.38);
 }
 .auth-logo{
   display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:8px;
 }
 .auth-logo .drop{font-size:34px;}
 .auth-logo img{width:70px;height:70px;object-fit:contain;border-radius:8px;}
-.auth-card h1{font-size:22px;color:var(--primary-dark);text-align:center;}
-.auth-card p.subtitle{text-align:center;color:var(--text-muted);margin-bottom:24px;font-size:13px;}
+.auth-card h1{font-size:23px;font-weight:700;letter-spacing:-.01em;color:#062a4a;text-align:center;}
+.auth-card p.subtitle{text-align:center;color:#3e5568;margin-bottom:24px;font-size:13.5px;line-height:1.6;}
 .auth-footer-link{text-align:center;margin-top:18px;font-size:13px;color:var(--text-muted);}
 .auth-footer-link a{color:var(--primary);font-weight:600;}
 

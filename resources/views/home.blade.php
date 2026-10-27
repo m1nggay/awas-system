@@ -53,7 +53,7 @@
 
   /* ---------- Hero: the drone video, under a deep navy overlay so the text reads clearly ---------- */
   .hero{position:relative;overflow:hidden;color:#fff;background:var(--navy) url('{{ asset('assets/drone-poster.jpg') }}') center/cover no-repeat;
-    min-height:min(720px, 92vh);display:flex;flex-direction:column;}
+    min-height:100vh;min-height:100svh;display:flex;flex-direction:column;}   /* fills the whole first screen */
   .hero .bg-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;pointer-events:none;opacity:0;transition:opacity .6s ease;}
   .hero .bg-video.loaded{opacity:1;}
   .hero-tint{position:absolute;inset:0;z-index:1;pointer-events:none;
@@ -79,6 +79,14 @@
   .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px;}
   .trust-line{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#c7dbea;}
   .trust-line i{color:var(--aqua);font-size:17px;}
+  /* "There's more below" arrow at the bottom of the hero */
+  .scroll-cue{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:2;width:44px;height:44px;border-radius:50%;
+    border:1.5px solid rgba(255,255,255,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;}
+  .scroll-cue:hover{background:rgba(255,255,255,.12);}
+  @media (prefers-reduced-motion: no-preference){
+    .scroll-cue i{animation:cue 1.8s ease-in-out infinite;}
+    @keyframes cue{0%,100%{transform:translateY(-2px);}50%{transform:translateY(3px);}}
+  }
 
   /* ---------- Sections ---------- */
   .section{padding:84px 0;}
@@ -137,8 +145,7 @@
     .brand .word{font-size:16.5px;}
     .brand .tagline{font-size:10px;}
     .btn.nav-cta{padding:8px 12px;font-size:12.5px;white-space:nowrap;flex:none;}
-    .hero{min-height:auto;}
-    .hero-body .wrap{padding-top:28px;padding-bottom:52px;}
+    .hero-body .wrap{padding-top:28px;padding-bottom:88px;}
     .hero .lede{font-size:16px;}
     .cta-row .btn{flex:1 1 100%;}
     .card{padding:22px 20px;}
@@ -190,6 +197,7 @@
         </div>
       </div>
     </div>
+    <a class="scroll-cue" href="#features" aria-label="Scroll down to learn more"><i class="ph ph-caret-down" aria-hidden="true"></i></a>
   </header>
 
   <main>
