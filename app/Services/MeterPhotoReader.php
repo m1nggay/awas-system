@@ -30,6 +30,8 @@ class MeterPhotoReader
             return [null, null];
         }
         $mime = (new \finfo(FILEINFO_MIME_TYPE))->buffer($bytes);
+        // Reading a photo can take longer than PHP's usual 30-second limit.
+        @set_time_limit(120);
 
         try {
             $response = Http::withHeaders([
@@ -81,7 +83,7 @@ class MeterPhotoReader
         }
 
         if (!$response->successful() || $response->json('stop_reason') === 'refusal') {
-            Log::warning('Meter photo reading failed: HTTP ' . $response->status() . ' ' . $response->json('stop_reason', ''));
+            Log::warning('Meter photo reading failed: HTTP ' . $response->status() . ' ' . $response->json('stop_reason', '') . ' ' . mb_substr($response->body(), 0, 300));
             return [null, null];
         }
 
