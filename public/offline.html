@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>You're offline — AWAS</title>
+<link rel="icon" type="image/png" href="assets/img/logo-round.png">
+<style>
+  /* Shown by sw.js when the internet is gone and the page was never opened on this device. Self-contained. */
+  :root{--primary-dark:#023e8a;--primary:#0077b6;--primary-light:#00b4d8;--text:#1b2a3a;--muted:#5b6b7a;--border:#dbe7ee;}
+  *{box-sizing:border-box;}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;
+    font-family:'Poppins',system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans',Arial,sans-serif;color:var(--text);
+    background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary) 55%,var(--primary-light) 100%);}
+  .card{width:100%;max-width:400px;background:#fff;border-radius:20px;padding:32px 24px 24px;text-align:center;box-shadow:0 18px 50px rgba(2,62,138,.35);}
+  .logo{width:84px;height:84px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 18px;box-shadow:0 4px 14px rgba(0,0,0,.12);}
+  h1{font-size:22px;font-weight:700;margin:0 0 10px;color:var(--primary-dark);}
+  p{font-size:14px;line-height:1.7;color:var(--muted);margin:0 0 22px;}
+  button{border:0;border-radius:12px;padding:12px 28px;font:inherit;font-weight:600;font-size:15px;color:#fff;cursor:pointer;
+    background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);box-shadow:0 6px 16px rgba(0,119,182,.35);}
+  button:active{transform:translateY(1px);}
+  .status{font-size:13px;color:var(--muted);min-height:20px;margin-top:10px;}
+  .saved{text-align:left;margin-top:22px;}
+  .saved h2{font-size:13.5px;font-weight:600;margin:0 0 10px;color:var(--text);}
+  .saved a{display:block;text-decoration:none;border:1px solid var(--border);border-radius:12px;padding:11px 14px;margin-bottom:8px;color:var(--primary-dark);}
+  .saved a:hover{border-color:var(--primary);background:#f4fbfd;}
+  .saved .t{display:block;font-weight:600;font-size:14px;}
+  .saved .u{display:block;font-size:12px;color:var(--muted);margin-top:2px;word-break:break-all;}
+  .saved[hidden]{display:none;}
+</style>
+</head>
+<body>
+  <main class="card">
+    <img class="logo" src="assets/img/logo-round.png" alt="AWAS logo">
+    <h1>You're offline</h1>
+    <p>AWAS can't reach the internet right now. Check your connection and try again — pages you've already opened on this device may still be available.</p>
+    <button type="button" id="retry">Try Again</button>
+    <div class="status" id="status" role="status"></div>
+
+    <section class="saved" id="saved" hidden>
+      <h2>Saved pages you can open now / Mga page nga maablihan karon</h2>
+      <div id="list"></div>
+    </section>
+  </main>
+
+<script>
+(function () {
+  var status = document.getElementById('status');
+  document.getElementById('retry').addEventListener('click', function () {
+    if (navigator.onLine === false) { status.textContent = 'Still no internet. Try again in a moment.'; return; }
+    status.textContent = 'Trying again…';
+    location.reload();
+  });
+  // Back online: open the page that was asked for.
+  window.addEventListener('online', function () { location.reload(); });
+
+  // The pages kept on this device by sw.js, newest first, with their titles.
+  if (!window.caches) return;
+  caches.open('awas-pages-v1').then(function (cache) {
+    return cache.keys().then(function (keys) {
+      keys = keys.reverse().filter(function (k) { return new URL(k.url).href !== location.href; }).slice(0, 12);
+      return Promise.all(keys.map(function (k) {
+        return cache.match(k).then(function (res) { return res ? res.text() : ''; }).then(function (html) {
+          var m = /<title>([^<]*)<\/title>/i.exec(html);
+          var t = document.createElement('textarea'); t.innerHTML = m ? m[1].trim() : '';
+          return { url: k.url, title: t.value || 'AWAS page' };
+        });
+      }));
+    });
+  }).then(function (pages) {
+    if (!pages || !pages.length) return;
+    var list = document.getElementById('list');
+    pages.forEach(function (p) {
+      var a = document.createElement('a'), u = new URL(p.url);
+      a.href = p.url;
+      var t = document.createElement('span'); t.className = 't'; t.textContent = p.title;
+      var s = document.createElement('span'); s.className = 'u'; s.textContent = u.pathname + u.search;
+      a.appendChild(t); a.appendChild(s); list.appendChild(a);
+    });
+    document.getElementById('saved').hidden = false;
+  }).catch(function () {});
+})();
+</script>
+</body>
+</html>

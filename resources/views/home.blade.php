@@ -460,5 +460,6 @@
   </footer>
 
 <script src="{{ asset('assets/js/transitions.js') }}"></script>
+<script src="{{ asset('assets/js/offline.js') }}?v={{ @filemtime(public_path('assets/js/offline.js')) ?: '1' }}"></script>
 </body>
 </html>
