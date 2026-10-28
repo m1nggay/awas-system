@@ -91,7 +91,7 @@ if [ ! -f .env ]; then
   set_env BROADCAST_DRIVER log
   # Fill these in afterwards with:  nano /var/www/awas/.env
   for k in BREVO_API_KEY MAIL_FROM_EMAIL MAIL_FROM_NAME_AWAS PAYMONGO_SECRET_KEY \
-           PAYMONGO_PUBLIC_KEY PAYMONGO_WEBHOOK_SECRET CHATBOT_AI_API_KEY; do
+           PAYMONGO_PUBLIC_KEY PAYMONGO_WEBHOOK_SECRET CHATBOT_AI_API_KEY GEMINI_API_KEY; do
     grep -q "^$k=" .env || echo "$k=" >> .env
   done
   grep -q '^CHATBOT_AI_MODEL=' .env || echo 'CHATBOT_AI_MODEL=claude-haiku-4-5-20251001' >> .env
@@ -120,6 +120,7 @@ server {
     location ~ \.php\$ {
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/run/php/php$PHP-fpm.sock;
+        fastcgi_read_timeout 120s;   # reading a meter photo can take a while
     }
     location ~ /\.(?!well-known) { deny all; }
 }

@@ -51,9 +51,16 @@ return [
         'model'   => env('RECEIPT_AI_MODEL', 'claude-opus-5-5'),
     ],
 
-    /* Meter photos: the meter number and the reading are read from the photo (no typing). */
+    /*
+     * Meter photos: the meter number and the reading are read from the photo (no typing).
+     * Google Gemini (free tier, key from aistudio.google.com/apikey) when GEMINI_API_KEY is set,
+     * otherwise Claude. METER_AI_PROVIDER=gemini|claude picks one explicitly.
+     */
     'meter_reader' => [
-        'api_key' => env('METER_AI_API_KEY', env('RECEIPT_AI_API_KEY', env('CHATBOT_AI_API_KEY', ''))),
-        'model'   => env('METER_AI_MODEL', 'claude-opus-5-5'),
+        'provider'     => env('METER_AI_PROVIDER', env('GEMINI_API_KEY') ? 'gemini' : 'claude'),
+        'gemini_key'   => env('GEMINI_API_KEY', ''),
+        'gemini_model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+        'api_key'      => env('METER_AI_API_KEY', env('RECEIPT_AI_API_KEY', env('CHATBOT_AI_API_KEY', ''))),
+        'model'        => env('METER_AI_MODEL', 'claude-opus-5-5'),
     ],
 ];

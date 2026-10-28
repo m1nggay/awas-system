@@ -36,7 +36,7 @@ nano /var/www/awas/.env
 ```
 
 Copy these values from your local `.env`: `BREVO_API_KEY`, `MAIL_FROM_EMAIL`, `MAIL_FROM_NAME_AWAS`,
-`PAYMONGO_SECRET_KEY`, `PAYMONGO_PUBLIC_KEY`, `PAYMONGO_WEBHOOK_SECRET`, `CHATBOT_AI_API_KEY`.
+`PAYMONGO_SECRET_KEY`, `PAYMONGO_PUBLIC_KEY`, `PAYMONGO_WEBHOOK_SECRET`, `CHATBOT_AI_API_KEY`, `GEMINI_API_KEY` (reads meter photos; free key from https://aistudio.google.com/apikey).
 Save with `Ctrl+O`, `Enter`, then exit with `Ctrl+X`.
 
 ## 4. Load the data
