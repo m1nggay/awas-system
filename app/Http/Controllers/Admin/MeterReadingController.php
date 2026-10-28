@@ -231,19 +231,10 @@ class MeterReadingController extends Controller
         if (!$result['ok'] && ($saved = $this->savedByRef($ref))) {
             return response()->json($saved);   // the same reading arrived twice at once; the other one won
         }
-        if (!empty($result['retry'])) {
-            // The photo couldn't be read right now (service busy): the phone keeps it and tries again later.
-            return response()->json(['status' => 'retry', 'message' => $result['message']], 503);
-        }
         return response()->json([
             'status'  => $result['ok'] ? 'saved' : 'error',
             'message' => $result['message'],
             'total'   => $result['total'] ?? null,
-            // A photo saved without internet is read only now: the phone shows what it said.
-            'meter'   => $result['meter'] ?? null,
-            'name'    => $result['name'] ?? null,
-            'prev'    => $result['prev'] ?? null,
-            'curr'    => $result['curr'] ?? null,
         ]);
     }
 
@@ -303,9 +294,8 @@ class MeterReadingController extends Controller
     /**
      * Saves one reading from its meter photo and generates its bill. The meter, the previous and
      * the present reading all come from the server (the photo and the last reading) — numbers
-     * sent by the page are ignored. The photo is either one already read in the form (`photo`)
-     * or one taken without internet and read only now (`photo_data`).
-     * Returns ['ok', 'duplicate', 'retry', 'message', 'total', 'meter', 'name', 'prev', 'curr'].
+     * sent by the page are ignored. The photo is the one already read in the form (`photo`).
+     * Returns ['ok', 'duplicate', 'message', 'total'].
      */
     private function saveReading(Request $request, BillingService $billing, ?string $clientRef = null): array
     {
@@ -314,7 +304,7 @@ class MeterReadingController extends Controller
         $readingDate = clean($request->input('reading_date')) ?: date('Y-m-d');
         $remarks = clean($request->input('remarks'));
         $userId = $request->user()->user_id;
-        $fail = fn (string $message, bool $retry = false) => ['ok' => false, 'duplicate' => false, 'retry' => $retry, 'message' => $message];
+        $fail = fn (string $message) => ['ok' => false, 'duplicate' => false, 'message' => $message];
 
         if (!preg_match('/^\d{4}-\d{2}$/', $period) || $period > currentBillingPeriod()) {
             return $fail('Please choose a valid billing period.');
@@ -323,30 +313,19 @@ class MeterReadingController extends Controller
             $readingDate = date('Y-m-d');
         }
 
-        // The photo: read in the form already, or (saved without internet) read now.
+        // The photo, already read in the form (Take Photo of Meter).
         $photo = (string)$request->input('photo');
-        $fresh = false;
-        if ($photo !== '') {
-            $cached = Cache::get('meter-scan:' . $photo);
-            if (!$cached || $cached['user_id'] !== $userId || $cached['reading_id'] !== null || !$files->in(self::PHOTO_FOLDER)->exists($photo)) {
-                return $fail('This meter photo has expired. Please take the photo again.');
-            }
-            $scan = ['photo' => $photo, 'meter' => $cached['meter'], 'reading' => (float)$cached['reading']];
-        } elseif ($request->filled('photo_data')) {
-            [$scan, $error, $retry] = $this->readPhoto($files, app(MeterPhotoReader::class), (string)$request->input('photo_data'));
-            if (!$scan) {
-                return $fail($retry ? $error : $error . ' Go back to the meter and take the photo again.', $retry);
-            }
-            $fresh = true;
-        } else {
+        if ($photo === '') {
             return $fail('Take a photo of the meter to record its reading.');
         }
+        $cached = Cache::get('meter-scan:' . $photo);
+        if (!$cached || $cached['user_id'] !== $userId || $cached['reading_id'] !== null || !$files->in(self::PHOTO_FOLDER)->exists($photo)) {
+            return $fail('This meter photo has expired. Please take the photo again.');
+        }
+        $scan = ['photo' => $photo, 'meter' => $cached['meter'], 'reading' => (float)$cached['reading']];
 
         $check = $this->checkScan($request, $billing, $scan, $period, clean($request->input('expect_meter')), null);
         if ($check['error']) {
-            if ($fresh) {
-                $files->in(self::PHOTO_FOLDER)->delete($scan['photo']);
-            }
             return $fail($check['error']);
         }
         $consumerId = $check['consumer_id'];
@@ -367,10 +346,7 @@ class MeterReadingController extends Controller
                 return $billing->generateBillForReading($row, $userId);
             });
         } catch (QueryException) {
-            if ($fresh) {
-                $files->in(self::PHOTO_FOLDER)->delete($scan['photo']);
-            }
-            return ['ok' => false, 'duplicate' => true, 'retry' => false, 'message' => "Meter $meter already has a reading for " . billingPeriodLabel($period) . '.'];
+            return ['ok' => false, 'duplicate' => true, 'message' => "Meter $meter already has a reading for " . billingPeriodLabel($period) . '.'];
         }
         Cache::forget('meter-scan:' . $scan['photo']);
 
@@ -378,8 +354,7 @@ class MeterReadingController extends Controller
         log_activity($userId, 'meter_reading_add', "Recorded reading for meter $meter ({$check['name']}), " . billingPeriodLabel($period)
             . ': ' . number_format($previous, 2) . ' → ' . number_format($current, 2) . ' (read from the meter photo)');
         return [
-            'ok' => true, 'duplicate' => false, 'retry' => false, 'total' => (float)$bill->total_amount,
-            'meter' => $meter, 'name' => $check['name'], 'prev' => $previous, 'curr' => $current,
+            'ok' => true, 'duplicate' => false, 'total' => (float)$bill->total_amount,
             'message' => "Saved for meter $meter ({$check['name']}). Consumption: " . number_format($current - $previous, 2)
                 . ' m³, Total: ' . formatCurrency($bill->total_amount)
                 . ($previousBalance > 0 ? ', unpaid balance: ' . formatCurrency($previousBalance) : '')

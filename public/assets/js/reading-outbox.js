@@ -8,10 +8,8 @@
  *  - "Download my puroks" keeps the meters of the reader's puroks on the phone, so the
  *    Record Reading form can find a meter and its previous reading without internet.
  *
- * Readings come from a photo of the meter (read on the server). Normally the photo is read in the
- * form and the item carries its name (photo); taken without internet, the item carries the photo
- * itself (photoData) and the server reads it when it is sent — then the item learns the meter and
- * the numbers from the answer.
+ * Readings come from a photo of the meter, read on the server in the form; the item carries the
+ * photo's name (photo).
  *
  * Statuses: pending (on the phone) → sending → sent, or error (the server refused it).
  * Runs on every page of the Meter Reader (the layout loads it), so sending continues
@@ -70,7 +68,6 @@
   function applyOutbox(data, since) {
     if (!data) return data;
     items().filter(i => i.status === 'pending' || i.status === 'sending' || (i.status === 'sent' && i.sentAt >= since)).sort((a, b) => a.savedAt - b.savedAt).forEach(i => {
-      if (i.curr == null) return;   // a photo not read yet: its meter is unknown
       const c = data.consumers.find(x => x.meter === i.meter);
       if (!c || c.read_periods.includes(i.period)) return;
       c.read_periods.unshift(i.period);
@@ -115,7 +112,7 @@
       ref: newRef(), meter: r.meter || '', name: r.name || '', period: r.period, prev: r.prev, curr: r.curr,
       date: r.date, remarks: r.remarks || '', status: 'pending', message: '', total: null,
       savedAt: Date.now(), sentAt: null,
-      photo: r.photo || null, photoData: r.photoData || null, expectMeter: r.expectMeter || '',
+      photo: r.photo || null,
     };
     const list = items();
     list.push(item);
@@ -180,7 +177,7 @@
             method: 'POST',
             body: JSON.stringify({
               client_ref: next.ref, billing_period: next.period, reading_date: next.date, remarks: next.remarks,
-              photo: next.photo, photo_data: next.photo ? null : next.photoData, expect_meter: next.expectMeter,
+              photo: next.photo,
             }),
           });
         } catch (e) {
@@ -196,8 +193,7 @@
         }
         if (res && res.ok && res.data && res.data.status === 'saved') {
           const d = res.data;
-          updateItem(next.ref, Object.assign({ status: 'sent', sentAt: Date.now(), total: d.total, message: '', photoData: null },
-            d.curr != null ? { meter: d.meter, name: d.name, prev: d.prev, curr: d.curr } : {}));
+          updateItem(next.ref, { status: 'sent', sentAt: Date.now(), total: d.total, message: '' });
           delay = 5000;
           changed();
           continue;
@@ -285,12 +281,11 @@
 
     const rows = list.map(i => {
       const s = STATUS[i.status] || STATUS.pending;
-      const read = i.curr != null;
-      const used = read ? (Number(i.curr) - Number(i.prev)).toFixed(2) : '';
+      const used = (Number(i.curr) - Number(i.prev)).toFixed(2);
       return '<div class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">'
-        + '<div><strong>' + (i.meter ? 'Meter ' + esc(i.meter) : '<i class="ph ph-camera" aria-hidden="true"></i> Meter photo') + '</strong>' + (i.name ? ' · ' + esc(i.name) : '')
+        + '<div><strong>Meter ' + esc(i.meter) + '</strong>' + (i.name ? ' · ' + esc(i.name) : '')
         + '<div class="text-muted" style="font-size:12px;">' + esc(periodLabel(i.period)) + ' · '
-        + (read ? esc(Number(i.prev).toFixed(2)) + ' → ' + esc(Number(i.curr).toFixed(2)) + ' (' + used + ' m³)' : 'read when sent')
+        + esc(Number(i.prev).toFixed(2)) + ' → ' + esc(Number(i.curr).toFixed(2)) + ' (' + used + ' m³)'
         + (i.total != null ? ' · ' + peso(i.total) : '') + ' · saved ' + when(i.savedAt) + '</div>'
         + (i.status === 'error' ? '<div class="text-danger" style="font-size:12px;">' + esc(i.message) + '</div>' : '')
         + '</div>'
@@ -331,8 +326,10 @@
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') kick(0); });
   window.addEventListener('storage', e => { if (e.key === OUTBOX_KEY || e.key === METERS_KEY) changed(); });
 
-  // A send interrupted by closing the page is tried again.
-  saveItems(items().map(i => i.status === 'sending' ? Object.assign(i, { status: 'pending' }) : i));
+  // A send interrupted by closing the page is tried again. Photos kept from the old offline mode
+  // (no photo name: never read) can't be sent any more, so they are dropped.
+  saveItems(items().filter(i => i.photo || i.status === 'sent')
+    .map(i => i.status === 'sending' ? Object.assign(i, { status: 'pending' }) : i));
 
   window.AwasOutbox = { available: true, add, remove, items, counts, findMeter, searchMeters, meterData, download, periodLabel, onChange: fn => listeners.push(fn) };
 

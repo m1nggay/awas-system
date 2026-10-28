@@ -112,18 +112,13 @@ class MeterPhotoReadingTest extends TestCase
         $this->assertFalse(DB::table('meter_readings')->where('consumer_id', $this->consumer->consumer_id)->where('billing_period', currentBillingPeriod())->exists());
     }
 
-    public function test_photo_taken_offline_is_read_when_sent(): void
+    public function test_unread_photo_sent_from_the_phone_is_refused(): void
     {
-        $ref = 'test-ref-' . uniqid();
-        $body = ['client_ref' => $ref, 'billing_period' => currentBillingPeriod(), 'reading_date' => date('Y-m-d'), 'photo_data' => self::PHOTO];
-
-        $this->next = null;   // still can't be read: the phone keeps it and tries later
-        $this->postJson(route('admin.readings.sync'), $body)->assertStatus(503)->assertJson(['status' => 'retry']);
-
+        // The old offline mode sent the photo itself; the server no longer reads photos when saving.
         $this->next = [$this->consumer->meter_number, $this->previous + 7];
-        $this->postJson(route('admin.readings.sync'), $body)->assertOk()
-            ->assertJson(['status' => 'saved', 'meter' => $this->consumer->meter_number, 'name' => $this->consumer->full_name]);
-        $this->assertEquals($this->previous + 7, (float)DB::table('meter_readings')->where('client_ref', $ref)->value('current_reading'));
+        $this->postJson(route('admin.readings.sync'), ['client_ref' => 'test-ref-' . uniqid(), 'billing_period' => currentBillingPeriod(),
+            'photo_data' => self::PHOTO])->assertOk()->assertJson(['status' => 'error']);
+        $this->assertFalse(DB::table('meter_readings')->where('consumer_id', $this->consumer->consumer_id)->where('billing_period', currentBillingPeriod())->exists());
     }
 
     public function test_correction_needs_a_new_photo(): void
