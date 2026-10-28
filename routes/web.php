@@ -113,6 +113,8 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
         Route::post('/meter-readings', [Admin\MeterReadingController::class, 'store'])->middleware('role:staff')->name('readings.store');
         // Take Photo of Meter: the meter number and the reading are read from the photo.
         Route::post('/meter-readings/scan', [Admin\MeterReadingController::class, 'scan'])->middleware(['role:staff', 'throttle:30,1'])->name('readings.scan');
+        // Live camera: is a meter with readable numbers inside the square? (green / red)
+        Route::post('/meter-readings/check', [Admin\MeterReadingController::class, 'check'])->middleware(['role:staff', 'throttle:60,1'])->name('readings.check');
         // The meter photo a reading was read from.
         Route::get('/meter-readings/{reading}/photo', [Admin\MeterReadingController::class, 'photo'])->whereNumber('reading')->name('readings.photo');
         // Offline recording: the phone downloads its puroks, then sends saved readings one by one.

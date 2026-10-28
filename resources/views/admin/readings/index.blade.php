@@ -196,6 +196,7 @@
 (function () {
   const tariff = {{ Js::from($tariff) }};
   const scanUrl = {{ Js::from(route('admin.readings.scan')) }};
+  const checkUrl = {{ Js::from(route('admin.readings.check')) }};
   const lookupUrl = {{ Js::from(route('admin.readings.lookup')) }};
   const csrf = document.querySelector('meta[name="csrf-token"]').content;
   const peso = n => '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -271,8 +272,8 @@
 
   /**
    * One "take a photo → read it on the server" box. onRead(data) gets what was read.
-   * The phone camera is shown live with a square: green when the picture is clear enough to read,
-   * red (with what to fix) when not. Only what is inside the square is sent to be read.
+   * The phone camera is shown live with a square: green when the picture is clear and a meter with
+   * readable numbers is in it, red (with what to fix) when not. Only what is inside the square is sent to be read.
    * Phones without a live camera here use the camera app instead (the file input).
    */
   function photoBox(key, opts) {
@@ -293,6 +294,7 @@
     const smallCtx = small.getContext('2d', { willReadFrequently: true });
 
     let request = 0, stream = null, timer = null, good = false, recent = [], redSince = 0, torch = false;
+    let ai = {};
     let useCameraApp = !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.isSecureContext);
     const best = { sharp: 0 };
 
@@ -321,6 +323,28 @@
       return { x: (w - side) / 2, y: (h - side) / 2, side };
     }
 
+    /**
+     * Is a meter with readable numbers inside the square? A small copy of the square is asked on the
+     * server (at most every 2 seconds, only while the picture is clear). If that can't be asked
+     * (no internet, service busy), the square goes by picture quality alone.
+     */
+    function askMeter(s, inner) {
+      ai.busy = true;
+      const sent = Date.now(), mine = stream;
+      const c = document.createElement('canvas'); c.width = c.height = 384;
+      c.getContext('2d').drawImage(video, s.x + (s.side - inner) / 2, s.y + (s.side - inner) / 2, inner, inner, 0, 0, 384, 384);
+      fetch(checkUrl, {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({ photo_data: c.toDataURL('image/jpeg', 0.75) }),
+      }).then(r => r.json()).then(d => {
+        if (mine !== stream) return;
+        if (!d || d.available === false) { ai.off = true; return; }
+        ai.ok = !!d.ok; ai.hint = d.hint || ''; ai.at = sent; ai.fails = 0;
+      }).catch(() => { if (mine === stream && ++ai.fails >= 2) ai.off = true; })
+        .finally(() => { ai.busy = false; ai.sent = sent; });
+    }
+
     function watch() {
       if (!stream) return;
       if (video.videoWidth) {
@@ -328,11 +352,19 @@
         smallCtx.drawImage(video, s.x + (s.side - inner) / 2, s.y + (s.side - inner) / 2, inner, inner, 0, 0, CHECK, CHECK);
         const problem = checkFrame(smallCtx, best);
         recent.push(problem); if (recent.length > 4) recent.shift();
-        // Green after 3 good checks in a row; one bad check is enough for red.
-        good = recent.length >= 3 && recent.slice(-3).every(p => p === '');
-        if (good) redSince = 0; else if (!redSince) redSince = Date.now();
+        // The picture is clear after 3 good checks in a row; one bad check is enough to lose it.
+        const clear = recent.length >= 3 && recent.slice(-3).every(p => p === '');
+        const now = Date.now();
+        if (clear && !ai.off && !ai.busy && now - ai.sent > 2000) askMeter(s, inner);
+        const known = ai.at && now - ai.at < 4000;   // the meter check is about the last few seconds only
+        // Green only when the picture is clear AND a meter with readable numbers is in the square.
+        good = clear && (ai.off || (known && ai.ok));
+        if (good) redSince = 0; else if (!redSince) redSince = now;
         mark(good ? 'good' : 'bad');
-        hint.textContent = good ? 'Clear. Tap Capture.' : (problem || recent.find(p => p) || 'Hold steady…');
+        hint.textContent = !clear ? (problem || recent.find(p => p) || 'Hold steady…')
+          : ai.off ? 'Clear. Make sure the meter numbers are inside the square.'
+          : !known ? 'Looking for the meter numbers…'
+          : ai.ok ? 'Meter numbers readable. Tap Capture.' : (ai.hint || 'No meter numbers in view.');
         btn.classList.toggle('btn-success', good);
         // Never stuck: after 6 seconds of red, capturing is allowed anyway.
         const anyway = !good && redSince && Date.now() - redSince > 6000;
@@ -369,6 +401,7 @@
       box.classList.add('is-live');
       hint.textContent = 'Fit the whole meter dial inside the square.';
       recent = []; good = false; redSince = 0; best.sharp = 0;
+      ai = { ok: false, hint: '', at: 0, sent: 0, busy: false, off: false, fails: 0 };
       await video.play().catch(() => {});
       watch();
     }
