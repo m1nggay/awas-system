@@ -586,6 +586,18 @@ a.collect-card.is-selected{border-left-color:var(--primary-dark);outline:2px sol
 .meter-photo-busy{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;
   background:rgba(255,255,255,.82);font-weight:600;color:var(--primary-dark);}
 .meter-photo-busy[hidden]{display:none;}
+/* Live camera: the square is green when the picture can be read, red when not. */
+.meter-photo.is-live{aspect-ratio:1/1;border-style:solid;background:#000;}
+.meter-photo.is-good{border:3px solid #22b357;}
+.meter-photo.is-bad{border:3px solid #e5533d;}
+.meter-cam{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.meter-cam[hidden],.meter-cam-square[hidden],.meter-cam-hint[hidden],.meter-cam-light[hidden]{display:none;}
+.meter-cam-square{position:absolute;inset:10%;border:4px solid #e5533d;border-radius:14px;box-shadow:0 0 0 999px rgba(0,0,0,.35);transition:border-color .15s;pointer-events:none;}
+.meter-photo.is-good .meter-cam-square{border-color:#22b357;}
+.meter-cam-hint{position:absolute;left:8px;right:8px;bottom:8px;padding:6px 10px;border-radius:8px;background:rgba(229,83,61,.92);color:#fff;font-size:13px;font-weight:600;text-align:center;}
+.meter-photo.is-good .meter-cam-hint{background:rgba(34,179,87,.92);}
+.meter-cam-light{position:absolute;top:8px;right:8px;width:40px;height:40px;border:0;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;}
+.meter-cam-light.is-on{background:#ffd43b;color:#222;}
 .meter-photo-msg{font-size:13px;margin-top:10px;line-height:1.5;}
 .meter-photo-msg:empty{display:none;}
 .meter-photo-msg.is-ok{color:#1e7e34;}

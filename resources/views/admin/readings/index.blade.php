@@ -239,7 +239,43 @@
   }
 
   /**
+   * How good the camera picture inside the square is, from a small grey copy of it:
+   * light, glare on the glass, something to read (contrast), and sharpness.
+   * Sharpness is compared with the sharpest frame seen so far, so it works on any phone camera.
+   */
+  const CHECK = 160;
+  function checkFrame(ctx, best) {
+    const px = ctx.getImageData(0, 0, CHECK, CHECK).data;
+    const g = new Float32Array(CHECK * CHECK);
+    let sum = 0, sq = 0, glare = 0;
+    for (let i = 0, j = 0; i < px.length; i += 4, j++) {
+      const v = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+      g[j] = v; sum += v; sq += v * v; if (v >= 250) glare++;
+    }
+    const n = g.length, mean = sum / n, contrast = Math.sqrt(Math.max(0, sq / n - mean * mean));
+    let lap = 0, lapSq = 0, m = 0;
+    for (let y = 1; y < CHECK - 1; y++) {
+      for (let x = 1; x < CHECK - 1; x++) {
+        const k = y * CHECK + x;
+        const l = 4 * g[k] - g[k - 1] - g[k + 1] - g[k - CHECK] - g[k + CHECK];
+        lap += l; lapSq += l * l; m++;
+      }
+    }
+    const sharp = lapSq / m - (lap / m) * (lap / m);
+    best.sharp = Math.max(best.sharp * 0.995, sharp);   // slowly forget, in case the light changes
+
+    if (mean < 55) return 'Too dark. Turn on the light or move out of the shadow.';
+    if (glare / n > 0.03) return 'Glare on the glass. Tilt the phone a little.';
+    if (contrast < 22) return 'Point the camera at the meter dial.';
+    if (sharp < 15 || sharp < best.sharp * 0.35) return 'Blurry. Hold the phone steady.';
+    return '';
+  }
+
+  /**
    * One "take a photo → read it on the server" box. onRead(data) gets what was read.
+   * The phone camera is shown live with a square: green when the picture is clear enough to read,
+   * red (with what to fix) when not. Only what is inside the square is sent to be read.
+   * Phones without a live camera here use the camera app instead (the file input).
    */
   function photoBox(key, opts) {
     const box = document.querySelector('[data-photo="' + key + '"]');
@@ -247,30 +283,134 @@
     const btn = document.querySelector('[data-photo-take="' + key + '"]');
     const msg = document.querySelector('[data-photo-msg="' + key + '"]');
     const preview = box.querySelector('[data-photo-preview]'), empty = box.querySelector('[data-photo-empty]'), busy = box.querySelector('[data-photo-busy]');
-    let request = 0;
+    const label = btn.querySelector('span');
+
+    box.insertAdjacentHTML('beforeend', '<video class="meter-cam" playsinline muted hidden></video>'
+      + '<div class="meter-cam-square" hidden></div>'
+      + '<div class="meter-cam-hint" hidden></div>'
+      + '<button type="button" class="meter-cam-light" hidden aria-label="Flashlight"><i class="ph ph-flashlight" aria-hidden="true"></i></button>');
+    const video = box.querySelector('.meter-cam'), square = box.querySelector('.meter-cam-square'),
+      hint = box.querySelector('.meter-cam-hint'), light = box.querySelector('.meter-cam-light');
+    const small = document.createElement('canvas'); small.width = small.height = CHECK;
+    const smallCtx = small.getContext('2d', { willReadFrequently: true });
+
+    let request = 0, stream = null, timer = null, good = false, recent = [], redSince = 0, torch = false;
+    let useCameraApp = !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.isSecureContext);
+    const best = { sharp: 0 };
 
     const say = (html, kind) => { msg.className = 'meter-photo-msg' + (kind ? ' is-' + kind : ''); msg.innerHTML = html || ''; };
+    const mark = state => { box.classList.remove('is-good', 'is-bad'); if (state) box.classList.add('is-' + state); };
+
+    function stop() {
+      clearTimeout(timer); timer = null;
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      stream = null; torch = false;
+      video.srcObject = null;
+      [video, square, hint, light].forEach(el => { el.hidden = true; });
+      box.classList.remove('is-live');
+      btn.classList.remove('btn-success');
+    }
     function reset() {
       request++;
+      stop(); mark(null);
       preview.hidden = true; preview.removeAttribute('src'); empty.hidden = false; busy.hidden = true;
-      btn.querySelector('span').textContent = opts.takeLabel; btn.disabled = false; say('');
+      label.textContent = opts.takeLabel; btn.disabled = false; say('');
     }
 
-    btn.addEventListener('click', () => input.click());
+    /** The visible square of the camera picture (the box shows the middle of it). */
+    function squareOf() {
+      const w = video.videoWidth, h = video.videoHeight, side = Math.min(w, h);
+      return { x: (w - side) / 2, y: (h - side) / 2, side };
+    }
+
+    function watch() {
+      if (!stream) return;
+      if (video.videoWidth) {
+        const s = squareOf(), inner = s.side * 0.8;   // the drawn square is 80% of the picture
+        smallCtx.drawImage(video, s.x + (s.side - inner) / 2, s.y + (s.side - inner) / 2, inner, inner, 0, 0, CHECK, CHECK);
+        const problem = checkFrame(smallCtx, best);
+        recent.push(problem); if (recent.length > 4) recent.shift();
+        // Green after 3 good checks in a row; one bad check is enough for red.
+        good = recent.length >= 3 && recent.slice(-3).every(p => p === '');
+        if (good) redSince = 0; else if (!redSince) redSince = Date.now();
+        mark(good ? 'good' : 'bad');
+        hint.textContent = good ? 'Clear. Tap Capture.' : (problem || recent.find(p => p) || 'Hold steady…');
+        btn.classList.toggle('btn-success', good);
+        // Never stuck: after 6 seconds of red, capturing is allowed anyway.
+        const anyway = !good && redSince && Date.now() - redSince > 6000;
+        btn.disabled = !good && !anyway;
+        label.textContent = good ? 'Capture' : anyway ? 'Capture Anyway' : 'Capture';
+      }
+      timer = setTimeout(watch, 200);
+    }
+
+    async function startCamera() {
+      const mine = ++request;
+      opts.onStart();
+      say(''); mark(null);
+      preview.hidden = true; empty.hidden = true;
+      btn.disabled = true; label.textContent = 'Starting camera…';
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: false,
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
+      } catch (e) {
+        stream = null;
+        if (mine !== request) return;
+        useCameraApp = true;
+        empty.hidden = false; btn.disabled = false; label.textContent = opts.takeLabel;
+        say('The camera could not be opened here. Tap the button again to use the phone\'s camera app.', 'warn');
+        return;
+      }
+      if (mine !== request) { stream.getTracks().forEach(t => t.stop()); stream = null; return; }
+      const track = stream.getVideoTracks()[0];
+      track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+      const caps = track.getCapabilities ? track.getCapabilities() : {};
+      light.hidden = !caps.torch;
+      video.srcObject = stream;
+      video.hidden = false; square.hidden = false; hint.hidden = false;
+      box.classList.add('is-live');
+      hint.textContent = 'Fit the whole meter dial inside the square.';
+      recent = []; good = false; redSince = 0; best.sharp = 0;
+      await video.play().catch(() => {});
+      watch();
+    }
+
+    light.addEventListener('click', () => {
+      if (!stream) return;
+      torch = !torch;
+      stream.getVideoTracks()[0].applyConstraints({ advanced: [{ torch }] }).catch(() => {});
+      light.classList.toggle('is-on', torch);
+    });
+
+    /** What is inside the square, as a JPEG (up to 1280 px: sharp enough for the numbers). */
+    function capture() {
+      const s = squareOf(), out = Math.min(1280, Math.round(s.side));
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = out;
+      canvas.getContext('2d').drawImage(video, s.x, s.y, s.side, s.side, 0, 0, out, out);
+      return canvas.toDataURL('image/jpeg', 0.9);
+    }
+
+    btn.addEventListener('click', () => {
+      if (stream) { const dataUrl = capture(); stop(); send(dataUrl); return; }
+      if (useCameraApp) { input.click(); return; }
+      startCamera();
+    });
     input.addEventListener('change', async () => {
       const file = input.files[0];
       input.value = '';
       if (!file) return;
-      const mine = ++request;
       opts.onStart();
-      say('');
       let dataUrl;
       try { dataUrl = await shrink(file); } catch (e) { say('This picture could not be opened. Please take the photo again.', 'error'); return; }
-      if (mine !== request) return;
-      preview.src = dataUrl; preview.hidden = false; empty.hidden = true;
-      btn.querySelector('span').textContent = 'Retake Photo';
+      send(dataUrl);
+    });
 
-      if (navigator.onLine === false) { opts.onFail && opts.onFail(); say('No internet connection. Connect to the internet, then take the photo again.', 'error'); return; }
+    async function send(dataUrl) {
+      const mine = ++request;
+      say(''); mark(null);
+      preview.src = dataUrl; preview.hidden = false; empty.hidden = true;
+      label.textContent = 'Retake Photo';
       busy.hidden = false; btn.disabled = true;
       let res = null;
       try {
@@ -284,16 +424,17 @@
       if (mine !== request) return;
       busy.hidden = true; btn.disabled = false;
 
-      if (res && res.status === 200 && res.data && res.data.ok) { opts.onRead(res.data); return; }
-      if (res && (res.status === 401 || res.status === 419)) { say('Your session ended. Please log in again.', 'error'); return; }
-      if (!res || res.status === 503 || res.status >= 500) {
-        opts.onFail && opts.onFail();
-        say('The photo could not be read right now. Check your internet and take the photo again.', 'error');
-        return;
-      }
-      say('<i class="ph ph-warning" aria-hidden="true"></i> ' + esc((res.data && res.data.message) || 'The photo could not be read.') , 'error');
+      if (res && res.status === 200 && res.data && res.data.ok) { mark('good'); opts.onRead(res.data); return; }
+      mark('bad');
       opts.onFail && opts.onFail();
-    });
+      if (res && (res.status === 401 || res.status === 419)) { say('Your session ended. Please log in again.', 'error'); return; }
+      const why = res && res.status < 500 && res.data && res.data.message;
+      say('<i class="ph ph-warning" aria-hidden="true"></i> ' + esc(why || 'The photo could not be read right now. Please take the photo again.'), 'error');
+    }
+
+    // Closing the form turns the camera off.
+    const modal = box.closest('.modal');
+    if (modal) modal.addEventListener('hidden.bs.modal', reset);
     return { reset, say };
   }
 
