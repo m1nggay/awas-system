@@ -4,8 +4,6 @@
 
 @section('content')
 @php $isReader = auth()->user()->isMeterReader(); $isAdmin = auth()->user()->isAdmin(); $canManage = $isReader; @endphp
-{{-- Readings saved on this phone and their sending status (reading-outbox.js). --}}
-@if ($isReader)<div id="outboxPanel"></div>@endif
 <div class="card">
   @if ($isReader)
     <div class="card-header justify-content-end">
@@ -132,7 +130,7 @@
 
           <div class="row g-3 mt-1">
             <div class="col-6">
-              <label class="form-label" for="periodShown">Billing Period</label>
+              <label class="form-label" for="periodShown">Month of</label>
               <input type="text" id="periodShown" class="form-control" value="{{ billingPeriodLabel(currentBillingPeriod()) }}" readonly tabindex="-1">
             </div>
             <div class="col-6">

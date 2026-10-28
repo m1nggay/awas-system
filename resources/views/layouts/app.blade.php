@@ -126,7 +126,7 @@
       <div class="topbar-right">
         @if ($user->isMeterReader())
           {{-- Readings saved on the phone, not sent yet (reading-outbox.js). --}}
-          <a href="{{ route('admin.readings.index') }}#outboxPanel" id="outboxBadge" class="outbox-badge" hidden><i class="ph ph-cloud-arrow-up" aria-hidden="true"></i><span></span></a>
+          <a href="{{ route('admin.readings.index') }}" id="outboxBadge" class="outbox-badge" hidden><i class="ph ph-cloud-arrow-up" aria-hidden="true"></i><span></span></a>
         @endif
         <div class="dropdown">
           <button class="notif-btn" id="notifBtn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications" data-read-url="{{ route('notifications.read') }}">
