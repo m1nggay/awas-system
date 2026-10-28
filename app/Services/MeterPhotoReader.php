@@ -78,20 +78,29 @@ class MeterPhotoReader
             Log::warning('Meter photo reading skipped: no API key (GEMINI_API_KEY).');
             return null;
         }
-        $model = Cache::get(self::GEMINI_MODEL_CACHE) ?: config('agas.meter_reader.gemini_model');
-
-        $response = $this->postGemini($apiKey, $model, $bytes, $mime);
-        // Google retires model names: when the model is gone (404), find one that the key can use and remember it.
-        if ($response && $response->status() === 404 && ($found = $this->findGeminiModel($apiKey)) && $found !== $model) {
-            Log::info("Meter photo reading: Gemini model $model not found, using $found.");
-            Cache::put(self::GEMINI_MODEL_CACHE, $found, now()->addDays(7));
-            $response = $this->postGemini($apiKey, $found, $bytes, $mime);
+        // The model that answered last time first, then the configured one, then other Flash models
+        // the key can use: a model that is retired (404) or busy (429/500/503, common on the free tier)
+        // is skipped for the next one. At most 4 tries, so the reader isn't kept waiting.
+        $first = array_values(array_unique(array_filter([Cache::get(self::GEMINI_MODEL_CACHE), config('agas.meter_reader.gemini_model')])));
+        $models = $first;
+        $response = null;
+        for ($i = 0; $i < count($models) && $i < 4; $i++) {
+            $response = $this->postGemini($apiKey, $models[$i], $bytes, $mime);
+            if ($response && $response->successful()) {
+                Cache::put(self::GEMINI_MODEL_CACHE, $models[$i], now()->addDay());
+                break;
+            }
+            $status = $response ? $response->status() : 0;
+            Log::warning("Meter photo reading failed (Gemini {$models[$i]}): HTTP $status "
+                . ($response ? mb_substr(preg_replace('/\s+/', ' ', $response->body()), 0, 300) : ''));
+            if ($response && !in_array($status, [404, 429, 500, 503], true)) {
+                return null;   // e.g. a wrong key: another model won't help
+            }
+            if ($i === count($models) - 1 && $models === $first) {
+                $models = array_values(array_unique(array_merge($first, $this->geminiModels($apiKey))));
+            }
         }
-        if (!$response) {
-            return null;
-        }
-        if (!$response->successful()) {
-            Log::warning('Meter photo reading failed (Gemini): HTTP ' . $response->status() . ' ' . mb_substr(preg_replace('/\s+/', ' ', $response->body()), 0, 300));
+        if (!$response || !$response->successful()) {
             return null;
         }
         $text = collect($response->json('candidates.0.content.parts', []))->pluck('text')->filter()->implode('');
@@ -126,27 +135,24 @@ class MeterPhotoReader
     }
 
     /**
-     * A Gemini "Flash" model this key can use: the always-current alias when it is listed,
-     * otherwise the newest stable Flash model. Null when the list can't be fetched.
+     * The stable Gemini "Flash" models this key can use, newest first (no lite, image, audio or
+     * preview models). Kept for a day; empty when the list can't be fetched.
      */
-    private function findGeminiModel(string $apiKey): ?string
+    private function geminiModels(string $apiKey): array
     {
-        try {
-            $list = Http::withHeaders(['x-goog-api-key' => $apiKey])->timeout(20)
-                ->get('https://generativelanguage.googleapis.com/v1beta/models', ['pageSize' => 1000]);
-        } catch (\Throwable) {
-            return null;
-        }
-        $names = collect($list->json('models', []))
-            ->filter(fn ($m) => in_array('generateContent', $m['supportedGenerationMethods'] ?? [], true))
-            ->map(fn ($m) => str_replace('models/', '', $m['name']))
-            ->filter(fn ($n) => str_starts_with($n, 'gemini-') && str_contains($n, 'flash')
-                && !preg_match('/lite|image|tts|audio|live|thinking|exp|preview|8b/', $n))
-            ->values();
-        if ($names->contains('gemini-flash-latest')) {
-            return 'gemini-flash-latest';
-        }
-        return $names->sort(SORT_NATURAL)->last();
+        return Cache::remember('meter-reader:gemini-models', now()->addDay(), function () use ($apiKey) {
+            try {
+                $list = Http::withHeaders(['x-goog-api-key' => $apiKey])->timeout(20)
+                    ->get('https://generativelanguage.googleapis.com/v1beta/models', ['pageSize' => 1000]);
+            } catch (\Throwable) {
+                return [];
+            }
+            return collect($list->json('models', []))
+                ->filter(fn ($m) => in_array('generateContent', $m['supportedGenerationMethods'] ?? [], true))
+                ->map(fn ($m) => str_replace('models/', '', $m['name']))
+                ->filter(fn ($n) => preg_match('/^gemini-\d+(\.\d+)?-flash$/', $n))
+                ->sort(SORT_NATURAL)->reverse()->values()->all();
+        });
     }
 
     /** The Claude API (Messages with a JSON answer). Null when it can't be asked right now. */

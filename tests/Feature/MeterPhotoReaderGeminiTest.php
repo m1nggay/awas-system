@@ -50,24 +50,28 @@ class MeterPhotoReaderGeminiTest extends TestCase
         $this->assertStringContainsString('could not be read clearly (glare)', $error);
     }
 
-    public function test_retired_model_is_replaced_by_one_the_key_can_use(): void
+    public function test_retired_or_busy_model_moves_on_to_another_flash_model(): void
     {
-        Cache::forget('meter-reader:gemini-model');
+        $forget = fn () => Cache::forget('meter-reader:gemini-model') && Cache::forget('meter-reader:gemini-models');
+        $forget();
         $ok = ['candidates' => [['content' => ['parts' => [['text' => json_encode(
             ['is_water_meter' => true, 'meter_number' => '160400403', 'reading' => '01011', 'reading_clear' => true, 'problem' => ''])]]]]]];
         Http::fake([
             '*/models/gemini-test:generateContent' => Http::response(['error' => ['code' => 404]], 404),
-            '*/models/gemini-3-flash:generateContent' => Http::response($ok),
+            '*/models/gemini-3.8-flash:generateContent' => Http::response(['error' => ['code' => 503, 'message' => 'high demand']], 503),
+            '*/models/gemini-3.5-flash:generateContent' => Http::response($ok),
             '*/models?*' => Http::response(['models' => [
-                ['name' => 'models/gemini-2.0-flash', 'supportedGenerationMethods' => ['generateContent']],
-                ['name' => 'models/gemini-3-flash', 'supportedGenerationMethods' => ['generateContent']],
-                ['name' => 'models/gemini-3-flash-lite', 'supportedGenerationMethods' => ['generateContent']],
-                ['name' => 'models/gemini-3-pro', 'supportedGenerationMethods' => ['generateContent']],
+                ['name' => 'models/gemini-2.5-flash', 'supportedGenerationMethods' => ['generateContent']],
+                ['name' => 'models/gemini-3.8-flash', 'supportedGenerationMethods' => ['generateContent']],
+                ['name' => 'models/gemini-3.5-flash', 'supportedGenerationMethods' => ['generateContent']],
+                ['name' => 'models/gemini-3.8-flash-lite', 'supportedGenerationMethods' => ['generateContent']],
+                ['name' => 'models/gemini-3-flash-preview', 'supportedGenerationMethods' => ['generateContent']],
             ]]),
         ]);
         $this->assertSame([['meter' => '160400403', 'reading' => 1011.0], null], $this->read());
-        $this->assertSame('gemini-3-flash', Cache::get('meter-reader:gemini-model'));
-        Cache::forget('meter-reader:gemini-model');
+        $this->assertSame('gemini-3.5-flash', Cache::get('meter-reader:gemini-model'));
+        Http::assertNotSent(fn (Request $r) => str_contains($r->url(), 'lite') || str_contains($r->url(), 'preview') || str_contains($r->url(), '2.5'));
+        $forget();
     }
 
     public function test_quota_or_outage_means_try_later(): void
