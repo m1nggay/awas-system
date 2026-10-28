@@ -29,6 +29,7 @@
   </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ asset('assets/js/forms.js') }}?v={{ @filemtime(public_path('assets/js/forms.js')) ?: '1' }}"></script>
+<script src="{{ asset('assets/js/offline.js') }}?v={{ @filemtime(public_path('assets/js/offline.js')) ?: '1' }}"></script>
 @stack('scripts')
 <script src="{{ asset('assets/js/transitions.js') }}"></script>
 </body>

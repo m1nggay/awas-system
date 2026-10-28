@@ -68,7 +68,7 @@
 <div class="modal fade" id="addReadingModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-fullscreen-sm-down">
     <div class="modal-content">
-      <form method="POST" action="{{ route('admin.readings.store') }}" id="readingForm">
+      <form method="POST" action="{{ route('admin.readings.store') }}" id="readingForm" data-offline-ok>
         <div class="modal-header"><h3 class="h6 mb-0">Record Meter Reading</h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
         @csrf
         <input type="hidden" name="photo" id="photo">
@@ -340,8 +340,10 @@
         return;
       }
       ai.busy = true;
+      const ctrl = window.AbortController ? new AbortController() : null;
+      const limit = ctrl ? setTimeout(() => ctrl.abort(), 8000) : null;   // a stuck check must not freeze the square
       fetch(checkUrl, {
-        method: 'POST', credentials: 'same-origin',
+        method: 'POST', credentials: 'same-origin', signal: ctrl ? ctrl.signal : undefined,
         headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
         body: JSON.stringify({ photo_data: photo }),
       }).then(r => r.json()).then(d => {
@@ -349,7 +351,7 @@
         if (!d || d.available === false) { ai.off = true; return; }
         ai.ok = !!d.ok; ai.hint = d.hint || ''; ai.at = sent; ai.fails = 0;
       }).catch(() => { if (mine === stream && ++ai.fails >= 2) ai.off = true; })
-        .finally(() => { ai.busy = false; ai.sent = sent; });
+        .finally(() => { clearTimeout(limit); ai.busy = false; ai.sent = sent; });
     }
 
     function watch() {
@@ -462,21 +464,32 @@
       label.textContent = 'Retake Photo';
       busy.hidden = false; btn.disabled = true;
       let res = null;
+      // No answer within 60 seconds (connection lost on the way): stop waiting.
+      const ctrl = window.AbortController ? new AbortController() : null;
+      const limit = ctrl ? setTimeout(() => ctrl.abort(), 60000) : null;
       try {
+        if (navigator.onLine === false) throw new Error('offline');
         const r = await fetch(scanUrl, {
-          method: 'POST', credentials: 'same-origin',
+          method: 'POST', credentials: 'same-origin', signal: ctrl ? ctrl.signal : undefined,
           headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
           body: JSON.stringify(Object.assign({ photo_data: dataUrl }, opts.extra())),
         });
         res = { status: r.status, data: await r.json().catch(() => null) };
       } catch (e) { res = null; }
+      clearTimeout(limit);
       if (mine !== request) return;
       busy.hidden = true; btn.disabled = false;
 
       if (res && res.status === 200 && res.data && res.data.ok) { mark('good'); opts.onRead(res.data); return; }
       mark('bad');
       opts.onFail && opts.onFail();
-      if (res && (res.status === 401 || res.status === 419)) { say('Your session ended. Please log in again.', 'error'); return; }
+      if (!res) {
+        say('<i class="ph ph-wifi-slash" aria-hidden="true"></i> ' + (navigator.onLine === false
+          ? 'No internet connection. Move to a spot with signal, then tap Retake Photo.'
+          : 'The internet is too slow or was lost. Move to a spot with better signal, then tap Retake Photo.'), 'error');
+        return;
+      }
+      if (res.status === 401 || res.status === 419) { say('Your session ended. Please log in again.', 'error'); return; }
       const why = res && res.status < 500 && res.data && res.data.message;
       say('<i class="ph ph-warning" aria-hidden="true"></i> ' + esc(why || 'The photo could not be read right now. Please take the photo again.'), 'error');
     }
