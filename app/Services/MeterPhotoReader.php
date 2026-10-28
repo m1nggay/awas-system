@@ -70,6 +70,51 @@ class MeterPhotoReader
     }
 
     /**
+     * Live camera check (green / red square): is a water meter inside the picture, with its black
+     * number wheels big and clear enough to read? One fast model, taking turns between them, with
+     * a short wait. Returns ['ok' => bool, 'hint' => what to fix], or null when it can't be checked
+     * right now (no Gemini key, busy, or Claude is used — too slow for a live check).
+     */
+    public function check(string $bytes): ?array
+    {
+        $apiKey = config('agas.meter_reader.gemini_key');
+        if (config('agas.meter_reader.provider') !== 'gemini' || !$apiKey) {
+            return null;
+        }
+        $models = config('agas.meter_reader.gemini_models') ?: self::GEMINI_FAST;
+        $model = $models[Cache::increment('meter-reader:check-turn') % count($models)];
+        $t = fn (string $type) => ['type' => $type];
+        try {
+            $response = Http::withHeaders(['x-goog-api-key' => $apiKey])->timeout(6)
+                ->post("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent", [
+                    'contents' => [['parts' => [
+                        ['inline_data' => ['mime_type' => (new \finfo(FILEINFO_MIME_TYPE))->buffer($bytes), 'data' => base64_encode($bytes)]],
+                        ['text' => 'A meter reader is pointing a phone camera at a household water meter. Look at this camera frame.'
+                            . "\nmeter_visible: true only if a water meter dial is in the picture."
+                            . "\nwheels_readable: true only if the black number wheels (the counter next to m³) are in the picture and big and sharp enough that every digit could be read."
+                            . "\nhint: if either is false, a few words telling the reader what to do (e.g. \"No meter in view\", \"Move closer to the numbers\", \"Numbers cut off, center them\", \"Too blurry\", \"Glare on the numbers\"); otherwise empty."],
+                    ]]],
+                    'generationConfig' => [
+                        'temperature' => 0, 'responseMimeType' => 'application/json',
+                        'responseSchema' => ['type' => 'OBJECT', 'required' => ['meter_visible', 'wheels_readable', 'hint'],
+                            'properties' => ['meter_visible' => $t('BOOLEAN'), 'wheels_readable' => $t('BOOLEAN'), 'hint' => $t('STRING')]],
+                    ],
+                ]);
+        } catch (\Throwable) {
+            return null;
+        }
+        $info = $response->successful()
+            ? json_decode(collect($response->json('candidates.0.content.parts', []))->pluck('text')->filter()->implode(''), true)
+            : null;
+        if (!is_array($info)) {
+            return null;
+        }
+        $ok = !empty($info['meter_visible']) && !empty($info['wheels_readable']);
+        $hint = trim((string)($info['hint'] ?? ''));
+        return ['ok' => $ok, 'hint' => $ok ? '' : ($hint !== '' ? mb_substr($hint, 0, 80) : (empty($info['meter_visible']) ? 'No meter in view.' : 'Move closer to the numbers.'))];
+    }
+
+    /**
      * One answer from several: the meter number most of them gave, and each wheel's digit by
      * majority (ties: the first model's digit). Answers with a different number of wheels than
      * most are left out. A wheel counts as turning when any answer said so.

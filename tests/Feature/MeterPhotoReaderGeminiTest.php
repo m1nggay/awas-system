@@ -84,6 +84,26 @@ class MeterPhotoReaderGeminiTest extends TestCase
         $this->assertStringContainsString('could not be read clearly (glare)', $error);
     }
 
+    public function test_live_check_is_green_only_with_readable_meter_numbers(): void
+    {
+        $said = fn (array $info) => Http::response(['candidates' => [['content' => ['parts' => [['text' => json_encode($info)]]]]]]);
+        Http::fakeSequence('*')
+            ->pushResponse($said(['meter_visible' => false, 'wheels_readable' => false, 'hint' => 'No meter in view']))
+            ->pushResponse($said(['meter_visible' => true, 'wheels_readable' => false, 'hint' => '']))
+            ->pushResponse($said(['meter_visible' => true, 'wheels_readable' => true, 'hint' => '']))
+            ->pushResponse(Http::response(['error' => ['code' => 503]], 503));
+        $reader = new MeterPhotoReader();
+        $photo = base64_decode(self::PNG);
+
+        $this->assertSame(['ok' => false, 'hint' => 'No meter in view'], $reader->check($photo));
+        $this->assertSame(['ok' => false, 'hint' => 'Move closer to the numbers.'], $reader->check($photo));
+        $this->assertSame(['ok' => true, 'hint' => ''], $reader->check($photo));
+        $this->assertNull($reader->check($photo));   // busy: the phone goes by picture quality
+
+        config(['agas.meter_reader.provider' => 'claude']);
+        $this->assertNull($reader->check($photo));
+    }
+
     public function test_quota_or_outage_means_try_later(): void
     {
         Http::fake(['*' => Http::response(['error' => ['code' => 503]], 503)]);

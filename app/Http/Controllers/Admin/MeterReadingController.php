@@ -160,6 +160,22 @@ class MeterReadingController extends Controller
     }
 
     /**
+     * Live camera check: a small picture of what is inside the square → is a water meter there,
+     * with its number wheels readable? Nothing is stored. available = false when it can't be
+     * checked right now (the phone then goes by picture quality alone).
+     */
+    public function check(Request $request, MeterPhotoReader $reader)
+    {
+        $data = (string)$request->input('photo_data');
+        $bytes = preg_match('#^data:image/(jpeg|png|webp);base64,#', $data, $m) ? base64_decode(substr($data, strlen($m[0])), true) : false;
+        if (!$bytes || strlen($bytes) > 400 * 1024) {
+            return response()->json(['available' => true, 'ok' => false, 'hint' => 'Point the camera at the meter dial.'], 422);
+        }
+        $result = $reader->check($bytes);
+        return response()->json($result ? ['available' => true] + $result : ['available' => false]);
+    }
+
+    /**
      * "Take Photo of Meter": stores the photo, reads the meter number and the reading from it,
      * checks them, and returns what the form shows (all read-only). What was read is kept on the
      * server with the photo — saving uses that, never numbers sent by the page.
