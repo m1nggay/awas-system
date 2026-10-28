@@ -59,6 +59,8 @@ return [
     'meter_reader' => [
         'provider'     => env('METER_AI_PROVIDER', env('GEMINI_API_KEY') ? 'gemini' : 'claude'),
         'gemini_key'   => env('GEMINI_API_KEY', ''),
+        // Fast models asked together (comma-separated; empty = the built-in list), then the fallback model.
+        'gemini_models' => array_filter(array_map('trim', explode(',', (string)env('GEMINI_MODELS', '')))),
         'gemini_model' => env('GEMINI_MODEL', 'gemini-flash-latest'),
         'api_key'      => env('METER_AI_API_KEY', env('RECEIPT_AI_API_KEY', env('CHATBOT_AI_API_KEY', ''))),
         'model'        => env('METER_AI_MODEL', 'claude-opus-5-5'),

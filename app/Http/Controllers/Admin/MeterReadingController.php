@@ -189,7 +189,7 @@ class MeterReadingController extends Controller
             'reading_id' => $correcting?->reading_id,
         ], now()->addDays(self::SCAN_TTL_DAYS));
 
-        return response()->json(['ok' => true, 'photo' => $scan['photo']] + $check);
+        return response()->json(['ok' => true, 'photo' => $scan['photo'], 'turning' => !empty($scan['turning'])] + $check);
     }
 
     /** The photo a reading was read from (administrators, and the meter reader of its purok). */

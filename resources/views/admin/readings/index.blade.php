@@ -491,7 +491,12 @@
       $('calcBalance').textContent = d.balance > 0 ? peso(d.balance) : '₱0.00 (no unpaid bills)';
       $('calcBalance').style.color = d.balance > 0 ? '#e5533d' : '';
       $('saveReadingBtn').disabled = false;
-      record.say('<i class="ph ph-check-circle" aria-hidden="true"></i> Read from the photo. Check that this is <strong>' + esc(d.name) + '</strong>\'s meter, then save.', 'ok');
+      if (d.turning) {
+        record.say('<i class="ph ph-warning" aria-hidden="true"></i> A number wheel was turning between two digits. Check that the present reading <strong>'
+          + num(d.present_reading) + '</strong> matches the meter, then save. If not, retake the photo.', 'warn');
+      } else {
+        record.say('<i class="ph ph-check-circle" aria-hidden="true"></i> Read from the photo. Check that this is <strong>' + esc(d.name) + '</strong>\'s meter, then save.', 'ok');
+      }
     },
   });
 
