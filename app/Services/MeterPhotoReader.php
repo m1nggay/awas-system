@@ -43,6 +43,17 @@ class MeterPhotoReader
     /** @return array{0: ?array{meter: string, reading: float, turning: bool}, 1: ?string} */
     public function read(string $bytes): array
     {
+        try {
+            return $this->readPhoto($bytes);
+        } catch (\Throwable $e) {
+            // An unexpected answer or bug must not break the form: log it, the reader retakes.
+            Log::error('Meter photo reading crashed: ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine());
+            return [null, null];
+        }
+    }
+
+    private function readPhoto(string $bytes): array
+    {
         $mime = (new \finfo(FILEINFO_MIME_TYPE))->buffer($bytes);
         // The slower fallback models can take longer than PHP's usual 30-second limit.
         @set_time_limit(120);
@@ -100,7 +111,8 @@ class MeterPhotoReader
                             'properties' => ['meter_visible' => $t('BOOLEAN'), 'wheels_readable' => $t('BOOLEAN'), 'hint' => $t('STRING')]],
                     ],
                 ]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('Meter live check failed (Gemini ' . $model . '): ' . $e->getMessage());
             return null;
         }
         $info = $response->successful()
@@ -123,7 +135,9 @@ class MeterPhotoReader
     {
         $answers = array_values($answers);
         $wheels = array_map(fn ($a) => array_values(array_filter(
-            array_map(fn ($w) => ['digit' => preg_replace('/\D+/', '', (string)($w['digit'] ?? '')), 'turning' => !empty($w['turning'])], $a['wheels'] ?? []),
+            array_map(fn ($w) => is_array($w)
+                ? ['digit' => preg_replace('/\D+/', '', (string)($w['digit'] ?? '')), 'turning' => !empty($w['turning'])]
+                : ['digit' => '', 'turning' => false], is_array($a['wheels'] ?? null) ? $a['wheels'] : []),
             fn ($w) => strlen($w['digit']) === 1)), $answers);
         $majority = fn (array $values) => $values ? array_search(max($counts = array_count_values($values)), $counts, true) : '';
 
@@ -139,7 +153,7 @@ class MeterPhotoReader
             $turning = $turning || collect($same)->contains(fn ($w) => $w[$i]['turning']);
         }
 
-        $meters = array_filter(array_map(fn ($a) => preg_replace('/\D+/', '', (string)($a['meter_number'] ?? '')), $answers));
+        $meters = array_filter(array_map(fn ($a) => is_scalar($a['meter_number'] ?? null) ? preg_replace('/\D+/', '', (string)$a['meter_number']) : '', $answers));
         $yes = fn (string $key) => count(array_filter($answers, fn ($a) => !empty($a[$key]))) * 2 >= count($answers);
         return [
             'is_water_meter' => $yes('is_water_meter'),

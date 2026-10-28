@@ -329,14 +329,21 @@
      * (no internet, service busy), the square goes by picture quality alone.
      */
     function askMeter(s, inner) {
-      ai.busy = true;
       const sent = Date.now(), mine = stream;
-      const c = document.createElement('canvas'); c.width = c.height = 384;
-      c.getContext('2d').drawImage(video, s.x + (s.side - inner) / 2, s.y + (s.side - inner) / 2, inner, inner, 0, 0, 384, 384);
+      let photo;
+      try {
+        const c = document.createElement('canvas'); c.width = c.height = 384;
+        c.getContext('2d').drawImage(video, s.x + (s.side - inner) / 2, s.y + (s.side - inner) / 2, inner, inner, 0, 0, 384, 384);
+        photo = c.toDataURL('image/jpeg', 0.75);
+      } catch (e) {
+        ai.sent = sent;   // try again on a later frame
+        return;
+      }
+      ai.busy = true;
       fetch(checkUrl, {
         method: 'POST', credentials: 'same-origin',
         headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-        body: JSON.stringify({ photo_data: c.toDataURL('image/jpeg', 0.75) }),
+        body: JSON.stringify({ photo_data: photo }),
       }).then(r => r.json()).then(d => {
         if (mine !== stream) return;
         if (!d || d.available === false) { ai.off = true; return; }
@@ -347,31 +354,34 @@
 
     function watch() {
       if (!stream) return;
-      if (video.videoWidth) {
-        const s = squareOf(), inner = s.side * 0.8;   // the drawn square is 80% of the picture
-        smallCtx.drawImage(video, s.x + (s.side - inner) / 2, s.y + (s.side - inner) / 2, inner, inner, 0, 0, CHECK, CHECK);
-        const problem = checkFrame(smallCtx, best);
-        recent.push(problem); if (recent.length > 4) recent.shift();
-        // The picture is clear after 3 good checks in a row; one bad check is enough to lose it.
-        const clear = recent.length >= 3 && recent.slice(-3).every(p => p === '');
-        const now = Date.now();
-        if (clear && !ai.off && !ai.busy && now - ai.sent > 2000) askMeter(s, inner);
-        const known = ai.at && now - ai.at < 4000;   // the meter check is about the last few seconds only
-        // Green only when the picture is clear AND a meter with readable numbers is in the square.
-        good = clear && (ai.off || (known && ai.ok));
-        if (good) redSince = 0; else if (!redSince) redSince = now;
-        mark(good ? 'good' : 'bad');
-        hint.textContent = !clear ? (problem || recent.find(p => p) || 'Hold steady…')
-          : ai.off ? 'Clear. Make sure the meter numbers are inside the square.'
-          : !known ? 'Looking for the meter numbers…'
-          : ai.ok ? 'Meter numbers readable. Tap Capture.' : (ai.hint || 'No meter numbers in view.');
-        btn.classList.toggle('btn-success', good);
-        // Never stuck: after 6 seconds of red, capturing is allowed anyway.
-        const anyway = !good && redSince && Date.now() - redSince > 6000;
-        btn.disabled = !good && !anyway;
-        label.textContent = good ? 'Capture' : anyway ? 'Capture Anyway' : 'Capture';
-      }
+      // A frame that can't be checked (camera hiccup) is skipped; the loop keeps going.
+      try { if (video.videoWidth) watchFrame(); } catch (e) { console.warn('Meter camera check skipped a frame', e); }
       timer = setTimeout(watch, 200);
+    }
+
+    function watchFrame() {
+      const s = squareOf(), inner = s.side * 0.8;   // the drawn square is 80% of the picture
+      smallCtx.drawImage(video, s.x + (s.side - inner) / 2, s.y + (s.side - inner) / 2, inner, inner, 0, 0, CHECK, CHECK);
+      const problem = checkFrame(smallCtx, best);
+      recent.push(problem); if (recent.length > 4) recent.shift();
+      // The picture is clear after 3 good checks in a row; one bad check is enough to lose it.
+      const clear = recent.length >= 3 && recent.slice(-3).every(p => p === '');
+      const now = Date.now();
+      if (clear && !ai.off && !ai.busy && now - ai.sent > 2000) askMeter(s, inner);
+      const known = ai.at && now - ai.at < 4000;   // the meter check is about the last few seconds only
+      // Green only when the picture is clear AND a meter with readable numbers is in the square.
+      good = clear && (ai.off || (known && ai.ok));
+      if (good) redSince = 0; else if (!redSince) redSince = now;
+      mark(good ? 'good' : 'bad');
+      hint.textContent = !clear ? (problem || recent.find(p => p) || 'Hold steady…')
+        : ai.off ? 'Clear. Make sure the meter numbers are inside the square.'
+        : !known ? 'Looking for the meter numbers…'
+        : ai.ok ? 'Meter numbers readable. Tap Capture.' : (ai.hint || 'No meter numbers in view.');
+      btn.classList.toggle('btn-success', good);
+      // Never stuck: after 6 seconds of red, capturing is allowed anyway.
+      const anyway = !good && redSince && Date.now() - redSince > 6000;
+      btn.disabled = !good && !anyway;
+      label.textContent = good ? 'Capture' : anyway ? 'Capture Anyway' : 'Capture';
     }
 
     async function startCamera() {
@@ -423,7 +433,15 @@
     }
 
     btn.addEventListener('click', () => {
-      if (stream) { const dataUrl = capture(); stop(); send(dataUrl); return; }
+      if (stream) {
+        let dataUrl;
+        try { dataUrl = capture(); } catch (e) {
+          console.warn('Meter capture failed', e);
+          say('The photo could not be taken. Please tap Capture again.', 'error');
+          return;   // the camera stays on
+        }
+        stop(); send(dataUrl); return;
+      }
       if (useCameraApp) { input.click(); return; }
       startCamera();
     });

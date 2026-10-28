@@ -76,6 +76,15 @@ class MeterPhotoReaderGeminiTest extends TestCase
         Http::assertNotSent(fn (Request $r) => str_contains($r->url(), 'flash-lite'));
     }
 
+    public function test_odd_answer_does_not_crash(): void
+    {
+        Http::fake(['*' => Http::response(['candidates' => [['content' => ['parts' => [['text' => json_encode(
+            ['is_water_meter' => true, 'meter_number' => ['?'], 'wheels' => 'oops', 'reading_clear' => true, 'problem' => ''])]]]]]])]);
+        [$read, $error] = $this->read();
+        $this->assertNull($read);
+        $this->assertNotNull($error);   // "could not be read clearly", not a crash
+    }
+
     public function test_unclear_reading_asks_for_a_retake(): void
     {
         Http::fake(['*' => Http::response($this->said('0101', '160400403', false, 'glare'))]);
