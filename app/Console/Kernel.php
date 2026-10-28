@@ -12,6 +12,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('awas:bill-reminders')->hourly();
         $schedule->command('awas:backup')->dailyAt('02:00');
+        $schedule->command('awas:check-meter-photos')->everyTenMinutes()->withoutOverlapping();
     }
 
     protected function commands(): void

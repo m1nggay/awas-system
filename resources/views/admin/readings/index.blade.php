@@ -25,7 +25,7 @@
       </select>
       <select name="status" class="form-select w-auto" onchange="this.form.submit()">
         <option value="">All Status</option>
-        @foreach (['unpaid' => 'Unpaid', 'partially_paid' => 'Partially Paid', 'paid' => 'Paid', 'overdue' => 'Overdue'] as $v => $l)
+        @foreach (['unpaid' => 'Unpaid', 'partially_paid' => 'Partially Paid', 'paid' => 'Paid', 'overdue' => 'Overdue', 'review' => 'Needs review (photo)'] as $v => $l)
           <option value="{{ $v }}" @selected($statusFil === $v)>{{ $l }}</option>
         @endforeach
       </select>
@@ -411,18 +411,27 @@
       label.textContent = 'Retake Photo';
       busy.hidden = false; btn.disabled = true;
       let res = null;
-      try {
-        const r = await fetch(scanUrl, {
-          method: 'POST', credentials: 'same-origin',
-          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-          body: JSON.stringify(Object.assign({ photo_data: dataUrl }, opts.extra())),
-        });
-        res = { status: r.status, data: await r.json().catch(() => null) };
-      } catch (e) { res = null; }
+      if (navigator.onLine !== false) {
+        // Slow internet: give up after a while instead of leaving the reader waiting.
+        const ctrl = window.AbortController ? new AbortController() : null;
+        const t = ctrl ? setTimeout(() => ctrl.abort(), 25000) : null;
+        try {
+          const r = await fetch(scanUrl, {
+            method: 'POST', credentials: 'same-origin', signal: ctrl ? ctrl.signal : undefined,
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+            body: JSON.stringify(Object.assign({ photo_data: dataUrl }, opts.extra())),
+          });
+          res = { status: r.status, data: await r.json().catch(() => null) };
+        } catch (e) { res = null; }
+        if (t) clearTimeout(t);
+      }
       if (mine !== request) return;
       busy.hidden = true; btn.disabled = false;
 
       if (res && res.status === 200 && res.data && res.data.ok) { mark('good'); opts.onRead(res.data); return; }
+      // No internet (or the reading service is down): the form may let the reader type it instead.
+      const offline = !res || res.status >= 500 || (res.data && res.data.retry);
+      if (offline && opts.onOffline && opts.onOffline(dataUrl, !res)) { mark(null); return; }
       mark('bad');
       opts.onFail && opts.onFail();
       if (res && (res.status === 401 || res.status === 419)) { say('Your session ended. Please log in again.', 'error'); return; }
@@ -433,7 +442,14 @@
     // Closing the form turns the camera off.
     const modal = box.closest('.modal');
     if (modal) modal.addEventListener('hidden.bs.modal', reset);
-    return { reset, say };
+
+    /** Throw the photo away and open the camera again. */
+    function retake() {
+      reset();
+      opts.onStart();
+      if (useCameraApp) input.click(); else startCamera();
+    }
+    return { reset, say, retake };
   }
 
   // ======================= Record Meter Reading =======================
@@ -441,7 +457,7 @@
   const params = new URLSearchParams(location.search);
   const back = params.get('back');
   const expectMeter = (params.get('meter') || '').replace(/\D/g, '');
-  let scanned = null, saving = false;
+  let scanned = null, saving = false, typedPhoto = null;
 
   function showExpected() {
     if (!expectMeter) return;
@@ -457,6 +473,9 @@
 
   function clearResult() {
     scanned = null;
+    typedPhoto = null;
+    ['meterShown', 'current_reading'].forEach(id => { $(id).readOnly = true; $(id).tabIndex = -1; $(id).placeholder = 'From photo'; });
+    $('meterResult').classList.remove('is-typed');
     $('photo').value = '';
     ['meterShown', 'consumerName', 'previous_reading', 'current_reading'].forEach(id => { $(id).value = ''; });
     $('consumerMeta').innerHTML = '';
@@ -468,26 +487,121 @@
     $('saveReadingBtn').textContent = 'Save Reading';
   }
 
+  function showConsumer(d) {
+    $('consumerName').value = d.name;
+    $('consumerMeta').innerHTML = esc(d.purok) + ' · ' + esc(d.consumer_type)
+      + (d.is_senior ? ' · <span class="badge badge-info">Senior</span>' : '')
+      + (d.last_period ? '<div class="text-muted">Last reading: ' + esc(d.last_period) + '</div>' : '');
+    $('previous_reading').value = num(d.previous_reading);
+    $('calcBalance').textContent = d.balance > 0 ? peso(d.balance) : '₱0.00 (no unpaid bills)';
+    $('calcBalance').style.color = d.balance > 0 ? '#e5533d' : '';
+  }
+  function showTotals(d) {
+    const used = d.present_reading - d.previous_reading;
+    $('calcConsumption').textContent = used.toFixed(2) + ' m³';
+    $('calcTotal').textContent = peso(billTotal(used, d.is_senior));
+  }
+
+  /**
+   * Weak or no internet: the photo can't be read now. The reader is asked whether to type the reading
+   * instead (Yes) or retake the photo (No). Typing needs the meters on the phone (Download my puroks);
+   * the photo is kept with the typed reading and checked against it on the server once it is sent.
+   */
+  function startTyping(dataUrl, noAnswer) {
+    const why = navigator.onLine === false ? 'No internet' : noAnswer ? 'Weak internet' : 'The photo reader is busy';
+    if (!outbox || !outbox.meterData()) {
+      record.say('<i class="ph ph-wifi-slash" aria-hidden="true"></i> ' + why + ', so the photo can\'t be read, and the meters of your puroks '
+        + 'aren\'t on this phone yet. Retake the photo when the signal is better.', 'error');
+      return true;
+    }
+    record.say('<i class="ph ph-wifi-slash" aria-hidden="true"></i> <strong>' + why + '</strong> — the photo can\'t be read right now. Type the reading instead?'
+      + '<div class="d-flex gap-2 mt-2"><button type="button" class="btn btn-primary btn-sm flex-fill" data-type-yes>Yes, type it</button>'
+      + '<button type="button" class="btn btn-outline btn-sm flex-fill" data-type-no>No, retake photo</button></div>', 'warn');
+    const msg = document.querySelector('[data-photo-msg="record"]');
+    msg.querySelector('[data-type-yes]').addEventListener('click', () => enterTyping(dataUrl, why));
+    msg.querySelector('[data-type-no]').addEventListener('click', () => record.retake());
+    return true;
+  }
+
+  function enterTyping(dataUrl, why) {
+    typedPhoto = dataUrl;
+    $('meterResult').classList.add('is-typed');
+    ['meterShown', 'current_reading'].forEach(id => { $(id).readOnly = false; $(id).tabIndex = 0; });
+    $('meterShown').placeholder = 'Type the meter number';
+    $('current_reading').placeholder = 'Black numbers';
+    if (expectMeter) $('meterShown').value = expectMeter;
+    record.say('<i class="ph ph-keyboard" aria-hidden="true"></i> <strong>' + why + '</strong> — type the meter number and the '
+      + '<strong>black numbers</strong>. The photo is kept and checked against them when the internet is better.', 'warn');
+    typedChanged();
+    $(expectMeter ? 'current_reading' : 'meterShown').focus();
+  }
+
+  /** The downloaded meter with this number (a leading 0 printed on the dial, or missing, still matches). */
+  function downloadedMeter(meter) {
+    const core = meter.replace(/^0+/, '');
+    const data = outbox.meterData();
+    return core && data ? data.consumers.find(c => c.meter.replace(/^0+/, '') === core) || null : null;
+  }
+
+  function typedChanged() {
+    if (!typedPhoto) return;
+    scanned = null;
+    $('saveReadingBtn').disabled = true;
+    ['consumerName', 'previous_reading'].forEach(id => { $(id).value = ''; });
+    $('calcConsumption').textContent = '0.00 m³';
+    $('calcTotal').textContent = '₱0.00';
+    $('calcBalance').textContent = '—';
+    const meter = $('meterShown').value.replace(/\D/g, '');
+    const wrong = html => { $('consumerMeta').innerHTML = '<span class="text-danger">' + html + '</span>'; };
+    if (!meter) { $('consumerMeta').innerHTML = ''; return; }
+
+    const c = downloadedMeter(meter);
+    if (!c) return wrong('No meter ' + esc(meter) + ' in your puroks.');
+    if (expectMeter && c.meter.replace(/^0+/, '') !== expectMeter.replace(/^0+/, '')) return wrong('You are recording meter ' + esc(expectMeter) + '.');
+    const period = $('billing_period').value;
+    const d = { typed: true, meter: c.meter, name: c.name, purok: c.purok, consumer_type: c.consumer_type, is_senior: c.is_senior,
+      previous_reading: Number(c.previous_reading), last_period: c.last_period, balance: c.balance, usual_consumption: c.usual_consumption };
+    showConsumer(d);
+    if (!c.active) return wrong(esc(c.name) + '\'s account is not active.');
+    if (c.read_periods.includes(period)) return wrong(esc(c.name) + ' already has a reading for ' + esc(outbox.periodLabel(period)) + '.');
+
+    const typed = $('current_reading').value.replace(/,/g, '').trim();
+    if (typed === '' || !/^\d+(\.\d{1,2})?$/.test(typed)) return;
+    d.present_reading = Number(typed);
+    if (d.present_reading < d.previous_reading) {
+      $('consumerMeta').insertAdjacentHTML('beforeend', '<div class="text-danger">Lower than the previous reading (' + num(d.previous_reading) + ').</div>');
+      return;
+    }
+    showTotals(d);
+    scanned = d;
+    $('saveReadingBtn').disabled = false;
+  }
+  ['meterShown', 'current_reading'].forEach(id => $(id).addEventListener('input', typedChanged));
+
+  function savedOnPhone(item, typed) {
+    if (back && back.indexOf(location.origin + '/') === 0) { saving = true; location.href = back; return; }
+    $('savedNote').innerHTML = '<i class="ph ph-check-circle" aria-hidden="true"></i> Saved: <strong>Meter ' + esc(item.meter) + '</strong> ('
+      + esc(item.name) + '), ' + (item.curr - item.prev).toFixed(2) + ' m³.'
+      + (typed ? ' It is sent, and its photo checked, when you\'re back online.' : '') + ' Take the next meter\'s photo.';
+    $('savedNote').hidden = false;
+    $('remarks').value = '';
+    record.reset();
+    clearResult();
+  }
+
   const record = photoBox('record', {
     takeLabel: 'Take Photo of Meter',
     extra: () => ({ billing_period: $('billing_period').value, expect_meter: expectMeter }),
     onStart: clearResult,
     onFail: clearResult,
+    onOffline: startTyping,
     onRead(d) {
       scanned = d;
       $('photo').value = d.photo;
       $('meterShown').value = d.meter;
-      $('consumerName').value = d.name;
-      $('consumerMeta').innerHTML = esc(d.purok) + ' · ' + esc(d.consumer_type)
-        + (d.is_senior ? ' · <span class="badge badge-info">Senior</span>' : '')
-        + (d.last_period ? '<div class="text-muted">Last reading: ' + esc(d.last_period) + '</div>' : '');
-      const used = d.present_reading - d.previous_reading;
-      $('previous_reading').value = num(d.previous_reading);
       $('current_reading').value = num(d.present_reading);
-      $('calcConsumption').textContent = used.toFixed(2) + ' m³';
-      $('calcTotal').textContent = peso(billTotal(used, d.is_senior));
-      $('calcBalance').textContent = d.balance > 0 ? peso(d.balance) : '₱0.00 (no unpaid bills)';
-      $('calcBalance').style.color = d.balance > 0 ? '#e5533d' : '';
+      showConsumer(d);
+      showTotals(d);
       $('saveReadingBtn').disabled = false;
       if (d.turning) {
         record.say('<i class="ph ph-warning" aria-hidden="true"></i> A number wheel was turning between two digits. Check that the present reading <strong>'
@@ -510,20 +624,27 @@
     }
     if (ask && !confirm(ask + '\n\nCheck the meter (and for leaks). Save this reading anyway?')) { e.preventDefault(); return; }
 
-    // Save on the phone at once; it is sent in the background.
-    const item = outbox && outbox.add({
+    const reading = {
       meter: scanned.meter, name: scanned.name, period: $('billing_period').value, prev: scanned.previous_reading, curr: scanned.present_reading,
       date: $('reading_date').value, remarks: $('remarks').value.trim(), photo: scanned.photo,
-    });
+    };
+    // Typed without internet: kept on the phone with its photo until it can be sent.
+    if (scanned.typed) {
+      e.preventDefault();
+      $('saveReadingBtn').disabled = true;
+      outbox.addTyped(reading, typedPhoto).then(item => {
+        if (item) { savedOnPhone(item, true); return; }
+        $('saveReadingBtn').disabled = false;
+        record.say('<i class="ph ph-warning" aria-hidden="true"></i> This phone could not keep the photo (storage full or blocked). Free up space, or record this meter when you have internet.', 'error');
+      });
+      return;
+    }
+
+    // Save on the phone at once; it is sent in the background.
+    const item = outbox && outbox.add(reading);
     if (item) {
       e.preventDefault();
-      if (back && back.indexOf(location.origin + '/') === 0) { saving = true; location.href = back; return; }
-      $('savedNote').innerHTML = '<i class="ph ph-check-circle" aria-hidden="true"></i> Saved: <strong>Meter ' + esc(item.meter) + '</strong> ('
-        + esc(item.name) + '), ' + (item.curr - item.prev).toFixed(2) + ' m³. Take the next meter\'s photo.';
-      $('savedNote').hidden = false;
-      $('remarks').value = '';
-      record.reset();
-      clearResult();
+      savedOnPhone(item, false);
       return;
     }
     saving = true;

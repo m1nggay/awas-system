@@ -9,7 +9,9 @@
  *    Record Reading form can find a meter and its previous reading without internet.
  *
  * Readings come from a photo of the meter, read on the server in the form; the item carries the
- * photo's name (photo).
+ * photo's name (photo). Without internet the photo can't be read: the meter reader types the
+ * meter number and reading (typed: true) and the photo itself is kept in IndexedDB (too big for
+ * localStorage) until the item is sent. The server saves what was typed and checks the photo later.
  *
  * Statuses: pending (on the phone) → sending → sent, or error (the server refused it).
  * Runs on every page of the Meter Reader (the layout loads it), so sending continues
@@ -57,6 +59,35 @@
     const [y, m] = String(p).split('-').map(Number);
     return (y && m) ? new Date(y, m - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' }) : p;
   };
+
+  // ---- Photos of typed readings (IndexedDB, one per item ref) ------------------------
+  let photoDb = null;
+  function photos() {
+    if (!photoDb) {
+      photoDb = new Promise((resolve, reject) => {
+        if (!window.indexedDB) { reject(new Error('no indexedDB')); return; }
+        const open = indexedDB.open('awas-outbox-photos', 1);
+        open.onupgradeneeded = () => open.result.createObjectStore('photos');
+        open.onsuccess = () => resolve(open.result);
+        open.onerror = () => reject(open.error);
+      });
+      photoDb.catch(() => { photoDb = null; });
+    }
+    return photoDb;
+  }
+  function photoTx(mode, fn) {
+    return photos().then(db => new Promise((resolve, reject) => {
+      const tx = db.transaction('photos', mode);
+      const req = fn(tx.objectStore('photos'));
+      tx.oncomplete = () => resolve(req ? req.result : undefined);
+      tx.onerror = tx.onabort = () => reject(tx.error);
+    }));
+  }
+  const putPhoto = (ref, dataUrl) => photoTx('readwrite', s => s.put(dataUrl, ref));
+  const getPhoto = ref => photoTx('readonly', s => s.get(ref));
+  const deletePhoto = ref => photoTx('readwrite', s => s.delete(ref)).catch(() => {});
+  /** Can typed readings keep their photo on this phone? */
+  const canKeepPhotos = () => photos().then(() => true, () => false);
 
   // ---- Downloaded meters ------------------------------------------------------------
   const meterData = () => read(METERS_KEY, null);
@@ -109,10 +140,10 @@
   /** Save a reading on the phone; it is sent in the background. */
   function add(r) {
     const item = {
-      ref: newRef(), meter: r.meter || '', name: r.name || '', period: r.period, prev: r.prev, curr: r.curr,
+      ref: r.ref || newRef(), meter: r.meter || '', name: r.name || '', period: r.period, prev: r.prev, curr: r.curr,
       date: r.date, remarks: r.remarks || '', status: 'pending', message: '', total: null,
       savedAt: Date.now(), sentAt: null,
-      photo: r.photo || null,
+      photo: r.photo || null, typed: !!r.typed,
     };
     const list = items();
     list.push(item);
@@ -124,7 +155,17 @@
     return item;
   }
 
-  function remove(ref) { saveItems(items().filter(i => i.ref !== ref)); changed(); }
+  /** A reading typed without internet, with its photo (a data URL). Resolves to the item, or null if it couldn't be kept. */
+  function addTyped(r, photoData) {
+    const ref = newRef();
+    return putPhoto(ref, photoData).then(() => {
+      const item = add(Object.assign({}, r, { ref, typed: true, photo: null }));
+      if (!item) deletePhoto(ref);
+      return item;
+    }).catch(() => null);
+  }
+
+  function remove(ref) { saveItems(items().filter(i => i.ref !== ref)); deletePhoto(ref); changed(); }
 
   function counts() {
     const list = items();
@@ -171,15 +212,22 @@
       while ((next = items().find(i => i.status === 'pending' || i.status === 'sending'))) {
         updateItem(next.ref, { status: 'sending' }); changed();
         lastTry = Date.now();
+        const body = {
+          client_ref: next.ref, billing_period: next.period, reading_date: next.date, remarks: next.remarks,
+          photo: next.photo,
+        };
+        if (next.typed) {
+          const photoData = await getPhoto(next.ref).catch(() => null);
+          if (!photoData) {
+            updateItem(next.ref, { status: 'error', message: 'The photo of this reading is no longer on this phone. Record it again.' });
+            changed();
+            continue;
+          }
+          Object.assign(body, { photo_data: photoData, typed_meter: next.meter, typed_reading: next.curr });
+        }
         let res;
         try {
-          res = await fetchJson(cfg.syncUrl, {
-            method: 'POST',
-            body: JSON.stringify({
-              client_ref: next.ref, billing_period: next.period, reading_date: next.date, remarks: next.remarks,
-              photo: next.photo,
-            }),
-          });
+          res = await fetchJson(cfg.syncUrl, { method: 'POST', body: JSON.stringify(body) });
         } catch (e) {
           res = null;   // no internet / timed out
         }
@@ -194,12 +242,14 @@
         if (res && res.ok && res.data && res.data.status === 'saved') {
           const d = res.data;
           updateItem(next.ref, { status: 'sent', sentAt: Date.now(), total: d.total, message: '' });
+          if (next.typed) deletePhoto(next.ref);
           delay = 5000;
           changed();
           continue;
         }
         if (res && res.data && res.data.status === 'error') {
           updateItem(next.ref, { status: 'error', message: res.data.message });
+          if (next.typed) deletePhoto(next.ref);
           changed();
           continue;
         }
@@ -328,10 +378,10 @@
 
   // A send interrupted by closing the page is tried again. Photos kept from the old offline mode
   // (no photo name: never read) can't be sent any more, so they are dropped.
-  saveItems(items().filter(i => i.photo || i.status === 'sent')
+  saveItems(items().filter(i => i.photo || i.typed || i.status === 'sent')
     .map(i => i.status === 'sending' ? Object.assign(i, { status: 'pending' }) : i));
 
-  window.AwasOutbox = { available: true, add, remove, items, counts, findMeter, searchMeters, meterData, download, periodLabel, onChange: fn => listeners.push(fn) };
+  window.AwasOutbox = { available: true, add, addTyped, canKeepPhotos, remove, items, counts, findMeter, searchMeters, meterData, download, periodLabel, onChange: fn => listeners.push(fn) };
 
   function start() {
     changed();
