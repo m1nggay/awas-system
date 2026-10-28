@@ -59,7 +59,7 @@ return [
     'meter_reader' => [
         'provider'     => env('METER_AI_PROVIDER', env('GEMINI_API_KEY') ? 'gemini' : 'claude'),
         'gemini_key'   => env('GEMINI_API_KEY', ''),
-        'gemini_model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+        'gemini_model' => env('GEMINI_MODEL', 'gemini-flash-latest'),
         'api_key'      => env('METER_AI_API_KEY', env('RECEIPT_AI_API_KEY', env('CHATBOT_AI_API_KEY', ''))),
         'model'        => env('METER_AI_MODEL', 'claude-opus-5-5'),
     ],

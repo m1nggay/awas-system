@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Services\MeterPhotoReader;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -47,6 +48,26 @@ class MeterPhotoReaderGeminiTest extends TestCase
         [$read, $error] = $this->read();
         $this->assertNull($read);
         $this->assertStringContainsString('could not be read clearly (glare)', $error);
+    }
+
+    public function test_retired_model_is_replaced_by_one_the_key_can_use(): void
+    {
+        Cache::forget('meter-reader:gemini-model');
+        $ok = ['candidates' => [['content' => ['parts' => [['text' => json_encode(
+            ['is_water_meter' => true, 'meter_number' => '160400403', 'reading' => '01011', 'reading_clear' => true, 'problem' => ''])]]]]]];
+        Http::fake([
+            '*/models/gemini-test:generateContent' => Http::response(['error' => ['code' => 404]], 404),
+            '*/models/gemini-3-flash:generateContent' => Http::response($ok),
+            '*/models?*' => Http::response(['models' => [
+                ['name' => 'models/gemini-2.0-flash', 'supportedGenerationMethods' => ['generateContent']],
+                ['name' => 'models/gemini-3-flash', 'supportedGenerationMethods' => ['generateContent']],
+                ['name' => 'models/gemini-3-flash-lite', 'supportedGenerationMethods' => ['generateContent']],
+                ['name' => 'models/gemini-3-pro', 'supportedGenerationMethods' => ['generateContent']],
+            ]]),
+        ]);
+        $this->assertSame([['meter' => '160400403', 'reading' => 1011.0], null], $this->read());
+        $this->assertSame('gemini-3-flash', Cache::get('meter-reader:gemini-model'));
+        Cache::forget('meter-reader:gemini-model');
     }
 
     public function test_quota_or_outage_means_try_later(): void
