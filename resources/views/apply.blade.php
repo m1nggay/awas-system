@@ -112,11 +112,11 @@
     <div class="apply-section mb-4">
       <h2>2. Account Information</h2>
       <div class="mb-3">
-        <label for="username" class="form-label">Username *</label>
-        <div class="username-note" id="username_note">
+        <div class="username-note" id="username_note" style="margin-bottom:12px;">
           <i class="ph ph-info" aria-hidden="true"></i>
           <span>You'll use this username to log in. Write it down or save it somewhere safe.</span>
         </div>
+        <label for="username" class="form-label">Username *</label>
         <input type="text" id="username" name="username" class="form-control" required aria-describedby="username_note" minlength="4" maxlength="30"
                pattern="[A-Za-z0-9._\-]{4,30}" autocomplete="username" autocapitalize="none" spellcheck="false" value="{{ old('username') }}"
                title="4–30 characters: letters, numbers, dots, dashes or underscores — no spaces">
