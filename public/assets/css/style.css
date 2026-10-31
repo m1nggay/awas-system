@@ -131,6 +131,10 @@ a:focus-visible, button:focus-visible{outline:2px solid var(--primary-light);out
 .auth-card p.subtitle{text-align:center;color:#3e5568;margin-bottom:24px;font-size:13.5px;line-height:1.6;}
 .auth-footer-link{text-align:center;margin-top:18px;font-size:13px;color:var(--text-muted);}
 .auth-footer-link a{color:var(--primary);font-weight:600;}
+/* "Write down your username" reminder on the Activate Account and Apply pages */
+.username-note{display:flex;align-items:flex-start;gap:7px;font-size:13px;line-height:1.45;color:var(--text-muted);
+  background:#f0fbff;border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;}
+.username-note i{font-size:16px;color:var(--primary);flex:none;margin-top:1px;}
 
 .form-group{margin-bottom:16px;}
 .form-group label{display:block;font-weight:500;margin-bottom:6px;font-size:13px;color:var(--text-dark);}

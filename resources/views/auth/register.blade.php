@@ -7,9 +7,6 @@
   .activate-form .form-control, .activate-form .form-select{font-size:14px;}
   .activate-form .row > .col-half{flex:0 0 auto;width:50%;}
   @media (max-width: 640px){ .activate-form .row > .col-half{width:100%;} }
-  .username-note{display:flex;align-items:flex-start;gap:7px;font-size:13px;line-height:1.45;color:var(--text-muted);
-    background:#f0fbff;border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;}
-  .username-note i{font-size:16px;color:var(--primary);flex:none;margin-top:1px;}
 </style>
 @endpush
 
