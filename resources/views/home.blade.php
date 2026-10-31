@@ -252,7 +252,7 @@
           <p class="lede">AWAS brings water meter readings, billing, and payment monitoring together in one convenient system for Barangay Adlay.</p>
           <div class="cta-row">
             <a class="btn btn-light" href="{{ route('login') }}"><i class="ph ph-sign-in" aria-hidden="true"></i> Login</a>
-            <a class="btn btn-ghost" href="{{ route('register') }}">Activate Account</a>
+            <a class="btn btn-ghost" href="{{ route('activate') }}">Activate Account</a>
           </div>
           <p class="member-line">Not a member yet? <a href="{{ route('apply') }}">Apply for Membership</a></p>
           <div class="trust-line"><i class="ph ph-users-three" aria-hidden="true"></i> For barangay staff, water association personnel, and registered residents.</div>

@@ -72,7 +72,7 @@
   @endif
 
   <div class="auth-footer-link">
-    New resident? <a href="{{ route('register') }}">Create an account</a>
+    Already a member? <a href="{{ route('activate') }}">Activate your account</a>
   </div>
   <div class="auth-footer-link">
     <a href="{{ url('/') }}"><i class="ph ph-arrow-left" aria-hidden="true"></i> Back to Home</a>

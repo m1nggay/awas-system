@@ -240,7 +240,7 @@
   </form>
 
   <div class="auth-footer-link">
-    Already have a water account? <a href="{{ route('register') }}">Create your online login</a>
+    Already have a water account? <a href="{{ route('activate') }}">Activate your account</a>
   </div>
   <div class="auth-footer-link">
     Already applied? <a href="{{ route('login') }}">Log in to check your status</a>

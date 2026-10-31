@@ -33,8 +33,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/login/code/resend', [Auth\TwoFactorController::class, 'resend'])->name('two-factor.resend');
     Route::post('/login/code/cancel', [Auth\TwoFactorController::class, 'cancel'])->name('two-factor.cancel');
 
-    Route::get('/register', [Auth\RegisterController::class, 'show'])->name('register');
-    Route::post('/register', [Auth\RegisterController::class, 'store'])->name('register.store');
+    Route::get('/activate', [Auth\RegisterController::class, 'show'])->name('activate');
+    Route::post('/activate', [Auth\RegisterController::class, 'store'])->name('activate.store');
+    // Old address of the Activate Account page.
+    Route::get('/register', fn () => redirect()->route('activate', status: 301));
 
     Route::get('/verify-email', [Auth\EmailVerificationController::class, 'show'])->name('verify-email');
     Route::post('/verify-email', [Auth\EmailVerificationController::class, 'verify'])->name('verify-email.verify');
