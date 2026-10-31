@@ -74,7 +74,6 @@
   .nav-links{display:flex;gap:4px;margin-left:auto;}
   .nav-links a{font-size:14px;font-weight:500;color:#dbe8f2;padding:8px 12px;border-radius:8px;white-space:nowrap;}
   .nav-links a:hover{color:#fff;background:rgba(255,255,255,.1);}
-  .nav-cta{padding:10px 18px;font-size:14px;flex:none;}
 
   .hero-body{position:relative;z-index:2;flex:1;display:flex;align-items:center;}
   .hero-body .wrap{width:100%;padding-top:40px;padding-bottom:72px;}
@@ -82,7 +81,10 @@
   .eyebrow{display:inline-block;font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--aqua);margin-bottom:16px;}
   .hero h1{font-size:clamp(36px, 5.2vw, 58px);line-height:1.08;font-weight:700;letter-spacing:-.02em;margin:0 0 20px;text-wrap:balance;}
   .hero .lede{font-size:18px;line-height:1.7;color:#dbe8f2;margin:0 0 32px;max-width:54ch;}
-  .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px;}
+  .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px;}
+  .member-line{font-size:15px;color:#dbe8f2;margin:0 0 24px;}
+  .member-line a{color:var(--aqua);font-weight:600;text-decoration:underline;text-underline-offset:3px;}
+  .member-line a:hover{color:#fff;}
   .trust-line{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#c7dbea;}
   .trust-line i{color:var(--aqua);font-size:17px;}
 
@@ -197,7 +199,6 @@
     .brand img{width:42px;height:42px;}
     .brand .word{font-size:16.5px;}
     .brand .tagline{font-size:10px;}
-    .btn.nav-cta{padding:8px 12px;font-size:12.5px;white-space:nowrap;}
     .hero-body .wrap{padding-top:28px;padding-bottom:52px;}
     .hero .lede{font-size:16px;}
     .cta-row .btn, .steps-cta .btn{flex:1 1 100%;width:100%;}
@@ -241,7 +242,6 @@
           <a href="#faq">FAQ</a>
           <a href="#contact">Contact</a>
         </div>
-        <a class="btn btn-aqua nav-cta" href="{{ route('apply') }}">Apply Membership</a>
       </div>
     </nav>
 
@@ -252,8 +252,9 @@
           <p class="lede">AWAS brings water meter readings, billing, and payment monitoring together in one convenient system for Barangay Adlay.</p>
           <div class="cta-row">
             <a class="btn btn-light" href="{{ route('login') }}"><i class="ph ph-sign-in" aria-hidden="true"></i> Login</a>
-            <a class="btn btn-ghost" href="{{ route('register') }}">Create Account</a>
+            <a class="btn btn-ghost" href="{{ route('register') }}">Sign Up</a>
           </div>
+          <p class="member-line">Not a member yet? <a href="{{ route('apply') }}">Apply for Membership</a></p>
           <div class="trust-line"><i class="ph ph-users-three" aria-hidden="true"></i> For barangay staff, water association personnel, and registered residents.</div>
         </div>
       </div>
@@ -301,7 +302,7 @@
           <li class="step">
             <div class="step-no">1</div>
             <h3>Apply online</h3>
-            <p>Tap <strong>Apply Membership</strong> and fill in your name, purok, contact number and household details.</p>
+            <p>Tap <strong>Apply for Membership</strong> and fill in your name, purok, contact number and household details.</p>
           </li>
           <li class="step">
             <div class="step-no">2</div>
@@ -431,7 +432,7 @@
               <h2>Not a member yet?</h2>
               <p>Apply online in a few minutes — no need to visit the office first.</p>
             </div>
-            <a class="btn btn-aqua" href="{{ route('apply') }}">Apply Membership <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
+            <a class="btn btn-aqua" href="{{ route('apply') }}">Apply for Membership <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
           </div>
           <div class="contacts">
             <div class="contact">

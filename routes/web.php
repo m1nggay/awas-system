@@ -120,7 +120,9 @@ Route::middleware(['auth', 'idle', 'reminders'])->group(function () {
         // Offline recording: the phone downloads its puroks, then sends saved readings one by one.
         Route::get('/meter-readings/offline-data', [Admin\MeterReadingController::class, 'offlineData'])->middleware('role:staff')->name('readings.offline-data');
         Route::post('/meter-readings/sync', [Admin\MeterReadingController::class, 'sync'])->middleware('role:staff')->name('readings.sync');
-        Route::put('/meter-readings/{reading}', [Admin\MeterReadingController::class, 'update'])->middleware('role:staff')->name('readings.update');
+        // A reading typed without internet that its photo didn't confirm (Needs review).
+        Route::post('/meter-readings/{reading}/review', [Admin\MeterReadingController::class, 'review'])->whereNumber('reading')->middleware('role:admin')->name('readings.review');
+        Route::put('/meter-readings/{reading}',[Admin\MeterReadingController::class, 'update'])->middleware('role:staff')->name('readings.update');
         Route::delete('/meter-readings/{reading}', [Admin\MeterReadingController::class, 'destroy'])->middleware('role:staff')->name('readings.destroy');
 
         Route::get('/reports', [Admin\ReportController::class, 'index'])->name('reports.index');

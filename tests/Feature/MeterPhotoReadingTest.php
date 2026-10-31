@@ -112,13 +112,81 @@ class MeterPhotoReadingTest extends TestCase
         $this->assertFalse(DB::table('meter_readings')->where('consumer_id', $this->consumer->consumer_id)->where('billing_period', currentBillingPeriod())->exists());
     }
 
-    public function test_unread_photo_sent_from_the_phone_is_refused(): void
+    /** A reading typed without internet, sent from the phone's outbox with its photo. */
+    private function sendTyped(float $reading, array $extra = [])
     {
-        // The old offline mode sent the photo itself; the server no longer reads photos when saving.
+        return $this->postJson(route('admin.readings.sync'), [
+            'client_ref' => 'test-ref-' . uniqid(), 'billing_period' => currentBillingPeriod(), 'reading_date' => date('Y-m-d'),
+            'photo_data' => self::PHOTO, 'typed_meter' => $this->consumer->meter_number, 'typed_reading' => $reading,
+        ] + $extra);
+    }
+
+    private function thisMonth(): ?object
+    {
+        return DB::table('meter_readings')->where('consumer_id', $this->consumer->consumer_id)->where('billing_period', currentBillingPeriod())->first();
+    }
+
+    public function test_photo_without_typed_numbers_is_refused(): void
+    {
         $this->next = [$this->consumer->meter_number, $this->previous + 7];
         $this->postJson(route('admin.readings.sync'), ['client_ref' => 'test-ref-' . uniqid(), 'billing_period' => currentBillingPeriod(),
             'photo_data' => self::PHOTO])->assertOk()->assertJson(['status' => 'error']);
-        $this->assertFalse(DB::table('meter_readings')->where('consumer_id', $this->consumer->consumer_id)->where('billing_period', currentBillingPeriod())->exists());
+        $this->assertNull($this->thisMonth());
+    }
+
+    public function test_typed_reading_is_saved_and_its_photo_confirms_it(): void
+    {
+        $this->next = [$this->consumer->meter_number, $this->previous + 7];
+        $this->sendTyped($this->previous + 7)->assertOk()->assertJson(['status' => 'saved']);
+
+        $row = $this->thisMonth();
+        $this->assertEquals($this->previous + 7, (float)$row->current_reading);
+        $this->assertNotNull($row->photo_file);
+        $this->assertSame('match', $row->photo_check);   // checked after the answer was sent
+        $this->assertTrue(DB::table('water_bills')->where('reading_id', $row->reading_id)->exists());
+    }
+
+    public function test_typed_reading_the_photo_disagrees_with_is_flagged_and_reviewed(): void
+    {
+        $this->next = [$this->consumer->meter_number, $this->previous + 9];
+        $notes = DB::table('notifications')->where('title', 'Meter Reading Needs Review')->count();
+        $this->sendTyped($this->previous + 90)->assertJson(['status' => 'saved']);
+
+        $row = $this->thisMonth();
+        $this->assertEquals($this->previous + 90, (float)$row->current_reading);   // saved as typed
+        $this->assertSame('mismatch', $row->photo_check);
+        $this->assertEquals($this->previous + 9, (float)$row->photo_reading);
+        $this->assertGreaterThan($notes, DB::table('notifications')->where('title', 'Meter Reading Needs Review')->count());
+
+        // The meter reader can't review it; the admin uses the photo's reading and the bill follows.
+        $this->post(route('admin.readings.review', $row->reading_id), ['decision' => 'photo'])->assertForbidden();
+        $admin = User::where('role', 'admin')->where('status', 'active')->first();
+        $this->actingAs($admin)->post(route('admin.readings.review', $row->reading_id), ['decision' => 'photo'])->assertRedirect();
+        $row = $this->thisMonth();
+        $this->assertSame('corrected', $row->photo_check);
+        $this->assertEquals($this->previous + 9, (float)$row->current_reading);
+        $this->assertEquals(9, (float)DB::table('water_bills')->where('reading_id', $row->reading_id)->value('consumption'));
+    }
+
+    public function test_typed_reading_waits_while_the_photo_cannot_be_read(): void
+    {
+        $this->next = null;   // the reading service is down
+        $this->sendTyped($this->previous + 4)->assertJson(['status' => 'saved']);
+        $this->assertSame('pending', $this->thisMonth()->photo_check);
+
+        // The scheduled check reads it later.
+        $this->next = [$this->consumer->meter_number, $this->previous + 4];
+        $this->artisan('awas:check-meter-photos')->assertSuccessful();
+        $this->assertSame('match', $this->thisMonth()->photo_check);
+    }
+
+    public function test_typed_reading_lower_than_last_month_is_refused(): void
+    {
+        if ($this->previous < 5) {
+            $this->markTestSkipped('needs a previous reading of at least 5');
+        }
+        $this->sendTyped($this->previous - 5)->assertJson(['status' => 'error'])->assertSee('You typed');
+        $this->assertNull($this->thisMonth());
     }
 
     public function test_correction_needs_a_new_photo(): void
