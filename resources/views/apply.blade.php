@@ -117,10 +117,8 @@
           <span>You'll use this username to log in. Write it down or save it somewhere safe.</span>
         </div>
         <label for="username" class="form-label">Username *</label>
-        <input type="text" id="username" name="username" class="form-control" required aria-describedby="username_note" minlength="4" maxlength="30"
-               pattern="[A-Za-z0-9._\-]{4,30}" autocomplete="username" autocapitalize="none" spellcheck="false" value="{{ old('username') }}"
-               title="4–30 characters: letters, numbers, dots, dashes or underscores — no spaces">
-        <div class="hint">4–30 characters: letters, numbers, dots (.), dashes (-) or underscores (_). No spaces.</div>
+        <input type="text" id="username" name="username" class="form-control" required aria-describedby="username_note" maxlength="50"
+               autocomplete="username" autocapitalize="none" spellcheck="false" value="{{ old('username') }}">
       </div>
       <div class="row gx-3">
         <div class="col-md-6 mb-3">
@@ -272,9 +270,6 @@ document.getElementById('applyForm').addEventListener('submit', function (ev) {
   var livenessPassed = document.getElementById('liveness_passed').value === '1';
   if (!livenessPassed && !document.getElementById('verify_in_person').checked) {
     msgs.push('Please complete the face verification (blink when asked), or tick "I will verify my face in person".');
-  }
-  if (!/^[A-Za-z0-9._-]{4,30}$/.test(form.querySelector('[name="username"]').value)) {
-    msgs.push('Username must be 4–30 characters: letters, numbers, dots, dashes or underscores, with no spaces.');
   }
   var pw = form.querySelector('[name="password"]').value;
   if (!(pw.length >= 8 && /[A-Z]/.test(pw) && /\d/.test(pw) && /[^A-Za-z0-9]/.test(pw))) {

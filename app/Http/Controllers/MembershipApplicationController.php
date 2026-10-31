@@ -115,8 +115,8 @@ class MembershipApplicationController extends Controller
         }
 
         // --- Account information ----------------------------------------------
-        if ($old['username'] !== '' && !preg_match('/^[A-Za-z0-9._-]{4,30}$/', $old['username'])) {
-            $errors[] = 'Username must be 4–30 characters: letters, numbers, dots (.), dashes (-) or underscores (_), with no spaces.';
+        if (mb_strlen($old['username']) > 50) {
+            $errors[] = 'Username must be 50 characters or fewer.';
         }
         if ($policy = passwordPolicyError($password)) {
             $errors[] = $policy;
