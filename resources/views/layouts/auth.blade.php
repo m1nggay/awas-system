@@ -23,8 +23,6 @@
     <div class="bg-video-tint" aria-hidden="true"></div>
   @endif
 
-  <div class="auth-lang">@include('partials.lang-switch')</div>
-
   <div class="auth-card" @isset($cardStyle) style="{{ $cardStyle }}" @endisset>
     <div class="auth-logo"><img src="{{ asset('assets/img/logo-round.png') }}" alt="{{ __('AWAS logo') }}"></div>
     @include('partials.flash')

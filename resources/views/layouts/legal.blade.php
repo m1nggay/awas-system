@@ -28,10 +28,7 @@
   <header class="legal-top">
     <div class="wrap">
       <a href="{{ url('/') }}" class="legal-brand"><img src="{{ asset('assets/img/logo-round.png') }}" alt="">{{ __('AWAS') }}</a>
-      <div class="d-flex align-items-center gap-3">
-        <a href="{{ url('/') }}" class="small"><i class="ph ph-arrow-left" aria-hidden="true"></i> {{ __('Back to Home') }}</a>
-        @include('partials.lang-switch', ['light' => true])
-      </div>
+      <a href="{{ url('/') }}" class="small"><i class="ph ph-arrow-left" aria-hidden="true"></i> {{ __('Back to Home') }}</a>
     </div>
   </header>
   <main class="legal">
