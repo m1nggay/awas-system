@@ -4,15 +4,25 @@
 
 @push('styles')
 <style>
-  .auth-logo img{width:86px;height:86px;}
+  /* Compact so the whole card fits a 1080p screen without scrolling */
+  .auth-card{padding:26px 32px 22px;}
+  .auth-logo{margin-bottom:4px;}
+  .auth-logo img{width:62px;height:62px;}
+  .auth-card p.subtitle{margin-bottom:14px;}
+  .auth-card .form-label{margin-bottom:4px;}
+  .auth-card .auth-footer-link{margin-top:10px;}
+  .login-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px;font-size:13.5px;}
+  .login-row .form-check{margin:0;min-height:0;}
+  .login-row .form-check-label{color:var(--text-dark);}
+  .btn .spinner-border{width:16px;height:16px;border-width:2px;}
   .locked-help{display:flex;flex-direction:column;gap:6px;background:#f2f8fb;border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13.5px;}
   .locked-help a,.locked-help span{display:flex;align-items:center;gap:8px;color:var(--text-dark);}
   .locked-help a{font-weight:600;color:var(--primary-dark);text-decoration:none;min-height:32px;}
   .locked-help i{font-size:17px;color:var(--primary);}
-  .social-or{display:flex;align-items:center;gap:12px;margin:16px 0 12px;color:var(--text-muted);font-size:12.5px;}
+  .social-or{display:flex;align-items:center;gap:12px;margin:12px 0 10px;color:var(--text-muted);font-size:12.5px;}
   .social-or::before,.social-or::after{content:"";flex:1;height:1px;background:var(--border);}
   .social-btns{display:flex;flex-direction:column;gap:10px;}
-  .social-btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:46px;border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;transition:.15s;}
+  .social-btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:44px;border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;transition:.15s;}
   .social-btn i{font-size:20px;}
   .social-btn.google{background:#fff;border:1px solid #d6dde2;color:#1f1f1f;}
   .social-btn.google i{color:#4285f4;}
@@ -41,20 +51,27 @@
   @if ($timeoutMsg)<div class="alert alert-warning">{{ $timeoutMsg }}</div>@endif
   @if ($registeredMsg)<div class="alert alert-success">{{ $registeredMsg }}</div>@endif
 
-  <form method="POST" action="{{ route('login.attempt') }}">
+  <form method="POST" action="{{ route('login.attempt') }}" id="loginForm" data-loading-form>
     @csrf
     <div class="mb-3">
       <label for="username" class="form-label">{{ __('Username or Email') }}</label>
-      <input type="text" id="username" name="username" class="form-control" required autofocus value="{{ old('username') }}">
+      <input type="text" id="username" name="username" class="form-control" required autofocus autocomplete="username"
+             placeholder="{{ __('e.g. juan.delacruz or you@email.com') }}" value="{{ old('username') }}">
     </div>
-    <div class="mb-3">
+    <div class="mb-2">
       <label for="password" class="form-label">{{ __('Password') }}</label>
-      <input type="password" id="password" name="password" class="form-control" required>
+      <input type="password" id="password" name="password" class="form-control" required autocomplete="current-password"
+             placeholder="{{ __('Enter your password') }}">
     </div>
-    <div class="text-end mb-3">
+    <div class="login-row">
+      {{-- Remembers only the username on this device; the password is never saved. --}}
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="rememberUsername">
+        <label class="form-check-label" for="rememberUsername">{{ __('Remember my username') }}</label>
+      </div>
       <a href="{{ route('password.forgot') }}">{{ __('Forgot your password?') }}</a>
     </div>
-    <button type="submit" class="btn btn-primary w-100">{{ __('Login') }}</button>
+    <button type="submit" class="btn btn-primary w-100" data-loading-text="{{ __('Logging in…') }}">{{ __('Login') }}</button>
   </form>
 
   {{-- Google / Facebook: only the ones set up in .env (GOOGLE_CLIENT_ID, FACEBOOK_CLIENT_ID, ...) --}}
@@ -77,7 +94,28 @@
   <div class="auth-footer-link">
     <a href="{{ url('/') }}"><i class="ph ph-arrow-left" aria-hidden="true"></i> {{ __('Back to Home') }}</a>
   </div>
-  <div class="auth-footer-link" style="font-size:12px;margin-top:10px;">
+  <div class="auth-footer-link" style="font-size:12px;margin-top:8px;">
     <a href="{{ route('privacy') }}" style="font-weight:500;">{{ __('Privacy Policy') }}</a> · <a href="{{ route('terms') }}" style="font-weight:500;">{{ __('Terms of Service') }}</a>
   </div>
 @endsection
+
+@push('scripts')
+<script>
+  // "Remember my username": kept in this browser only (never the password).
+  (function () {
+    var box = document.getElementById('rememberUsername'), user = document.getElementById('username'), key = 'awas.username';
+    var saved = null;
+    try { saved = localStorage.getItem(key); } catch (e) {}
+    if (saved) {
+      box.checked = true;
+      if (!user.value) { user.value = saved; document.getElementById('password').focus(); }
+    }
+    document.getElementById('loginForm').addEventListener('submit', function () {
+      try {
+        if (box.checked && user.value.trim()) localStorage.setItem(key, user.value.trim());
+        else localStorage.removeItem(key);
+      } catch (e) {}
+    });
+  })();
+</script>
+@endpush

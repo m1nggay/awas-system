@@ -13,8 +13,8 @@ class LoginController extends Controller
     public function show(Request $request)
     {
         return view('auth.login', [
-            'timeoutMsg'    => $request->has('timeout') ? 'Your session expired due to inactivity. Please log in again.' : '',
-            'registeredMsg' => $request->has('registered') ? 'Account created successfully! You may now log in.' : '',
+            'timeoutMsg'    => $request->has('timeout') ? __('Your session expired due to inactivity. Please log in again.') : '',
+            'registeredMsg' => $request->has('registered') ? __('Account created successfully! You may now log in.') : '',
         ]);
     }
 
@@ -41,7 +41,7 @@ class LoginController extends Controller
 
         if (!$user) {
             log_activity(null, 'login_failed', "Unknown username attempt: $username");
-            return $this->failed($request, __('These credentials do not match our records.'));
+            return $this->failed($request);
         }
 
         // Locked after too many wrong passwords: Forgot Password or the administrator unlocks it.
@@ -60,10 +60,8 @@ class LoginController extends Controller
                 return $this->failed($request, self::lockedMessage())->with('locked', true);
             }
             log_activity($user->user_id, 'login_failed', "Incorrect password (attempt $attempts of " . User::MAX_LOGIN_ATTEMPTS . ')');
-            $left = User::MAX_LOGIN_ATTEMPTS - $attempts;
-            return $this->failed($request, $left === 1
-                ? __('Incorrect password. 1 attempt left before your account is locked.')
-                : __('Incorrect password. :left attempts left before your account is locked.', ['left' => $left]));
+            // Same message as an unknown username, so it never tells which usernames exist.
+            return $this->failed($request);
         }
         $user->clearLockout();
 
@@ -127,7 +125,7 @@ class LoginController extends Controller
         return __("Your account is locked due to :count failed login attempts. Click 'Forgot Password' to reset it, or contact the AWAS administrator.", ['count' => User::MAX_LOGIN_ATTEMPTS]);
     }
 
-    private function failed(Request $request, string $message = 'Invalid username or password.')
+    private function failed(Request $request, string $message = 'Incorrect username or password.')
     {
         return back()->withInput($request->only('username'))->with('error', __($message));
     }
