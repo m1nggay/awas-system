@@ -12,7 +12,8 @@
   .auth-card .form-label{margin-bottom:4px;}
   .auth-card .auth-footer-link{margin-top:10px;}
   .pw-label-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
-  .pw-label-row a{font-size:13px;}
+  .pw-label-row a{font-size:13px;font-weight:500;color:var(--primary);text-decoration:none;text-underline-offset:3px;transition:color .15s;}
+  .pw-label-row a:hover, .pw-label-row a:focus-visible{color:var(--primary-dark);text-decoration:underline;}
   .login-remember{margin:4px 0 14px;font-size:13.5px;}
   .login-remember .form-check-label{color:var(--text-dark);}
   .btn .spinner-border{width:16px;height:16px;border-width:2px;}
