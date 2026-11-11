@@ -179,7 +179,9 @@ select.form-control{appearance:auto;}
   --bs-offcanvas-width:var(--sidebar-w);
   --bs-offcanvas-color:#fff;
   --bs-offcanvas-border-width:0;
-  background:linear-gradient(180deg,var(--primary-dark),var(--primary)) !important;
+  /* Same deep navy as the landing page hero, lifting slightly toward the
+     bottom so it doesn't read as a flat slab. */
+  background:linear-gradient(180deg,#062a4a,#0b3b66) !important;
   /* Bootstrap only applies --bs-offcanvas-color in drawer mode (below lg);
      set it directly so the docked sidebar's text is white too. */
   color:#fff;
@@ -222,8 +224,10 @@ select.form-control{appearance:auto;}
   display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:8px;
   font-size:13.5px;font-weight:500;color:rgba(255,255,255,0.88);margin-bottom:2px;
 }
-.sidebar-nav a:hover{background:rgba(255,255,255,0.1);}
-.sidebar-nav a.active{background:rgba(255,255,255,0.18);color:#fff;font-weight:600;}
+.sidebar-nav a:hover{background:rgba(255,255,255,0.08);}
+/* Aqua accent bar on the active item, echoing the landing page's aqua highlights. */
+.sidebar-nav a.active{background:rgba(0,180,216,0.16);color:#fff;font-weight:600;box-shadow:inset 3px 0 0 var(--primary-light);}
+.sidebar-nav a.active .ic{color:var(--primary-light);}
 .sidebar-nav a .ic{width:20px;text-align:center;font-size:19px;line-height:1;opacity:.9;flex:none;}
 .sidebar-nav a.active .ic, .sidebar-nav a:hover .ic{opacity:1;}
 
