@@ -11,14 +11,18 @@
  * whenever the login page is shown (e.g. another user signing in on this device).
  */
 const PAGES = 'awas-pages-v1';
-const STATIC = 'awas-static-v1';
+const STATIC = 'awas-static-v2';   // new version: installs the new offline page and the Poppins files
 const BASE = new URL('./', self.location).pathname;   // where AWAS lives on the server
 const OFFLINE = BASE + 'offline.html';
 const CDN = ['cdn.jsdelivr.net', 'unpkg.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 const MAX_PAGES = 40;
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(STATIC).then(c => c.addAll([OFFLINE, BASE + 'assets/img/logo-round.png'])).then(() => self.skipWaiting()));
+  // Kept on the phone from the start, so the offline page looks right even if it is the first thing shown offline.
+  event.waitUntil(caches.open(STATIC).then(c => c.addAll([
+    OFFLINE, BASE + 'assets/img/logo-round.png',
+    BASE + 'assets/fonts/poppins-400.woff2', BASE + 'assets/fonts/poppins-600.woff2', BASE + 'assets/fonts/poppins-700.woff2',
+  ])).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', event => {

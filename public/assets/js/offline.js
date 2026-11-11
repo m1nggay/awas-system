@@ -12,6 +12,8 @@
  */
 (function () {
   var PAGES = 'awas-pages-v1';
+  // The page's language (EN | TL switch), so the offline page can use it too.
+  try { localStorage.setItem('awas.lang', document.documentElement.lang === 'tl' ? 'tl' : 'en'); } catch (e) { /* private mode */ }
   var bar, hideTimer, slowTimer;
   var swUrl = document.currentScript && new URL('../../sw.js', document.currentScript.src).href;
 

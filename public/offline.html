@@ -6,76 +6,152 @@
 <title>You're offline — AWAS</title>
 <link rel="icon" type="image/png" href="assets/img/logo-round.png">
 <style>
-  /* Shown by sw.js when the internet is gone and the page was never opened on this device. Self-contained. */
-  :root{--primary-dark:#023e8a;--primary:#0077b6;--primary-light:#00b4d8;--text:#1b2a3a;--muted:#5b6b7a;--border:#dbe7ee;}
+  /* Shown by sw.js when the internet is gone and the page was never opened on this device. Self-contained:
+     Poppins comes from assets/fonts (kept on the phone by sw.js), never from the internet. If it is missing,
+     a plain sans-serif is used — not system-ui, which on some phones is a decorative (handwriting) font. */
+  @font-face{font-family:'Poppins';font-style:normal;font-weight:400;font-display:swap;src:url(assets/fonts/poppins-400.woff2) format('woff2');}
+  @font-face{font-family:'Poppins';font-style:normal;font-weight:600;font-display:swap;src:url(assets/fonts/poppins-600.woff2) format('woff2');}
+  @font-face{font-family:'Poppins';font-style:normal;font-weight:700;font-display:swap;src:url(assets/fonts/poppins-700.woff2) format('woff2');}
+  :root{--navy:#062a4a;--primary-dark:#023e8a;--primary:#0077b6;--text:#1b2b34;--muted:#5b6d77;--border:#dfeef3;}
   *{box-sizing:border-box;}
-  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;
-    font-family:'Poppins',system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans',Arial,sans-serif;color:var(--text);
-    background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary) 55%,var(--primary-light) 100%);}
-  .card{width:100%;max-width:400px;background:#fff;border-radius:20px;padding:32px 24px 24px;text-align:center;box-shadow:0 18px 50px rgba(2,62,138,.35);}
-  .logo{width:84px;height:84px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 18px;box-shadow:0 4px 14px rgba(0,0,0,.12);}
-  h1{font-size:22px;font-weight:700;margin:0 0 10px;color:var(--primary-dark);}
-  p{font-size:14px;line-height:1.7;color:var(--muted);margin:0 0 22px;}
-  button{border:0;border-radius:12px;padding:12px 28px;font:inherit;font-weight:600;font-size:15px;color:#fff;cursor:pointer;
-    background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);box-shadow:0 6px 16px rgba(0,119,182,.35);}
-  button:active{transform:translateY(1px);}
-  .status{font-size:13px;color:var(--muted);min-height:20px;margin-top:10px;}
-  .saved{text-align:left;margin-top:22px;}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px 16px 48px;
+    font-family:'Poppins','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:var(--text);
+    background:linear-gradient(135deg,#062a4a 0%,#0b3b66 55%,#0077b6 100%);}
+  /* Same card as the login and apply pages */
+  .card{width:100%;max-width:420px;background:#fff;border-radius:16px;padding:32px 28px 26px;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.38);}
+  .logo{width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 14px;box-shadow:0 2px 10px rgba(6,42,74,.15);}
+  .off-icon{display:flex;align-items:center;justify-content:center;width:56px;height:56px;margin:0 auto 12px;border-radius:50%;background:#fdeceb;color:#c62828;}
+  .off-icon svg{width:30px;height:30px;}
+  h1{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0 0 8px;color:var(--navy);}
+  p{font-size:14px;line-height:1.65;color:var(--muted);margin:0 0 20px;}
+  /* Same as .btn-primary on the other pages */
+  button{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:8px;padding:11px 26px;
+    font:inherit;font-weight:600;font-size:14.5px;color:#fff;cursor:pointer;background:var(--primary);}
+  button:hover{background:var(--primary-dark);}
+  button:focus-visible{outline:2px solid #00b4d8;outline-offset:2px;}
+  .status{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--muted);min-height:20px;margin-top:12px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:#e9a23b;animation:pulse 1.4s ease-in-out infinite;flex:none;}
+  .status.ok .dot{background:#2a9d8f;animation:none;}
+  @keyframes pulse{50%{opacity:.25;}}
+  .saved{text-align:left;margin-top:24px;padding-top:18px;border-top:1px solid var(--border);}
   .saved h2{font-size:13.5px;font-weight:600;margin:0 0 10px;color:var(--text);}
-  .saved a{display:block;text-decoration:none;border:1px solid var(--border);border-radius:12px;padding:11px 14px;margin-bottom:8px;color:var(--primary-dark);}
-  .saved a:hover{border-color:var(--primary);background:#f4fbfd;}
-  .saved .t{display:block;font-weight:600;font-size:14px;}
-  .saved .u{display:block;font-size:12px;color:var(--muted);margin-top:2px;word-break:break-all;}
+  .saved a{display:flex;align-items:center;gap:12px;text-decoration:none;border:1px solid var(--border);border-radius:10px;padding:11px 14px;margin-bottom:8px;
+    color:var(--navy);font-weight:600;font-size:14.5px;}
+  .saved a:hover, .saved a:focus-visible{border-color:var(--primary);background:#f0fbff;outline:none;}
+  .saved .ico{font-size:20px;line-height:1;width:26px;text-align:center;flex:none;}
   .saved[hidden]{display:none;}
+  @media (prefers-reduced-motion: reduce){ .dot{animation:none;} }
 </style>
 </head>
 <body>
   <main class="card">
-    <img class="logo" src="assets/img/logo-round.png" alt="AWAS logo">
-    <h1>You're offline</h1>
-    <p>AWAS can't reach the internet right now. Check your connection and try again — pages you've already opened on this device may still be available.</p>
-    <button type="button" id="retry">Try Again</button>
-    <div class="status" id="status" role="status"></div>
+    <img class="logo" src="assets/img/logo-round.png" alt="AWAS">
+    <div class="off-icon" aria-hidden="true">
+      <!-- Wi-Fi with a line through it -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="2" y1="2" x2="22" y2="22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/>
+        <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 13a10 10 0 0 1 5.24-2.76"/>
+        <line x1="12" y1="20" x2="12.01" y2="20"/>
+      </svg>
+    </div>
+    <h1 data-t="title">You're offline</h1>
+    <p data-t="intro">AWAS can't reach the internet right now. This page will open by itself when your connection comes back. Pages you opened before on this device are listed below.</p>
+    <button type="button" id="retry" data-t="retry">Try Again</button>
+    <div class="status" id="status" role="status"><span class="dot" aria-hidden="true"></span><span id="statusText" data-t="waiting">Waiting for the internet…</span></div>
 
     <section class="saved" id="saved" hidden>
-      <h2>Saved pages you can open now / Mga page nga maablihan karon</h2>
+      <h2 data-t="saved">Pages you can open now</h2>
       <div id="list"></div>
     </section>
   </main>
 
 <script>
 (function () {
-  var status = document.getElementById('status');
-  document.getElementById('retry').addEventListener('click', function () {
-    if (navigator.onLine === false) { status.textContent = 'Still no internet. Try again in a moment.'; return; }
-    status.textContent = 'Trying again…';
-    location.reload();
-  });
-  // Back online: open the page that was asked for.
-  window.addEventListener('online', function () { location.reload(); });
+  // The language picked with the EN | TL switch (saved on this device by offline.js on every page).
+  var TL = {
+    title: 'Wala kang internet',
+    intro: 'Hindi makakonekta ang AWAS sa internet ngayon. Kusang magbubukas ang pahinang ito kapag bumalik ang koneksyon. Nasa ibaba ang mga pahinang binuksan mo na dati sa device na ito.',
+    retry: 'Subukang Muli', waiting: 'Hinihintay ang internet…', reconnecting: 'Kumokonekta muli…',
+    still: 'Wala pa ring internet. Kusa itong magbubukas kapag bumalik ang koneksyon.', saved: 'Mga pahinang mabubuksan mo ngayon',
+    pages: { home: 'Home', dashboard: 'Dashboard', myDashboard: 'Aking Dashboard', bills: 'Aking mga Singil', billHistory: 'Kasaysayan ng Singil',
+      payHistory: 'Kasaysayan ng Bayad', profile: 'Aking Profile', notifications: 'Mga Notification', consumers: 'Mga Consumer',
+      applications: 'Mga Aplikasyon', readings: 'Pagbasa ng Metro', recorded: 'Mga Naitalang Pagbasa', waterBills: 'Mga Singil sa Tubig',
+      payments: 'Mga Bayad', reports: 'Mga Ulat', announcements: 'Mga Anunsyo', users: 'Pamahalaan ang mga User', settings: 'Mga Setting ng Sistema',
+      apply: 'Mag-apply bilang Miyembro', activate: 'I-activate ang Account', privacy: 'Patakaran sa Privacy', terms: 'Mga Tuntunin ng Serbisyo',
+      status: 'Status ng Aplikasyon', page: 'Pahina ng AWAS' }
+  };
+  var EN = {
+    reconnecting: 'Reconnecting…', still: 'Still no internet. It will open by itself when the connection comes back.',
+    pages: { home: 'Home', dashboard: 'Dashboard', myDashboard: 'My Dashboard', bills: 'My Bills', billHistory: 'Billing History',
+      payHistory: 'Payment History', profile: 'My Profile', notifications: 'Notifications', consumers: 'Consumers',
+      applications: 'Applications', readings: 'Meter Readings', recorded: 'Recorded Readings', waterBills: 'Water Bills',
+      payments: 'Payments', reports: 'Reports', announcements: 'Announcements', users: 'Manage Users', settings: 'System Settings',
+      apply: 'Apply for Membership', activate: 'Activate Account', privacy: 'Privacy Policy', terms: 'Terms of Service',
+      status: 'Application Status', page: 'AWAS page' }
+  };
+  var lang = 'en';
+  try { lang = localStorage.getItem('awas.lang') === 'tl' ? 'tl' : 'en'; } catch (e) {}
+  var T = lang === 'tl' ? TL : EN;
+  if (lang === 'tl') {
+    document.documentElement.lang = 'tl';
+    document.title = TL.title + ' — AWAS';
+    document.querySelectorAll('[data-t]').forEach(function (el) { var k = el.getAttribute('data-t'); if (TL[k]) el.textContent = TL[k]; });
+  }
 
-  // The pages kept on this device by sw.js, newest first, with their titles.
+  // Back online: open the page that was asked for — on the browser's "online" event, on Try Again, and with a
+  // quiet check every 10 seconds (some phones say "online" while there is no internet yet, or never send the event).
+  // A HEAD request is not handled by sw.js, so it only succeeds when the server can really be reached.
+  var status = document.getElementById('status'), statusText = document.getElementById('statusText'), busy = false;
+  function reconnect() {
+    if (busy) return;
+    busy = true;
+    statusText.textContent = T.reconnecting;
+    fetch(location.href.split('#')[0], { method: 'HEAD', cache: 'no-store' })
+      .then(function () { status.className = 'status ok'; location.reload(); })
+      .catch(function () { busy = false; statusText.textContent = T.still; });
+  }
+  document.getElementById('retry').addEventListener('click', reconnect);
+  window.addEventListener('online', reconnect);
+  setInterval(function () { if (navigator.onLine !== false) reconnect(); }, 10000);
+
+  // The pages kept on this device by sw.js, newest first, with friendly names and icons (no addresses).
+  var NAMES = [
+    [/^\/?$/, 'home', '🏠'], [/^\/resident\/dashboard$/, 'myDashboard', '🏠'], [/^\/admin\/dashboard$/, 'dashboard', '📊'],
+    [/^\/resident\/bill(\/|$)/, 'bills', '💧'], [/^\/resident\/billing-history$/, 'billHistory', '📄'],
+    [/^\/resident\/payment-history$/, 'payHistory', '🧾'], [/^\/(resident|admin)\/profile$/, 'profile', '👤'],
+    [/^\/notifications$/, 'notifications', '🔔'], [/^\/admin\/consumers/, 'consumers', '👥'], [/^\/admin\/applications/, 'applications', '📝'],
+    [/^\/admin\/meter-readings\/history$/, 'recorded', '📋'], [/^\/admin\/meter-readings/, 'readings', '📷'],
+    [/^\/admin\/bills/, 'waterBills', '💧'], [/^\/admin\/payments/, 'payments', '💳'], [/^\/admin\/reports/, 'reports', '📈'],
+    [/^\/admin\/announcements/, 'announcements', '📣'], [/^\/admin\/users/, 'users', '⚙️'], [/^\/admin\/settings/, 'settings', '⚙️'],
+    [/^\/apply/, 'apply', '📝'], [/^\/activate/, 'activate', '🔑'], [/^\/applicant\/status/, 'status', '📝'],
+    [/^\/privacy/, 'privacy', '🔒'], [/^\/terms/, 'terms', '📜']
+  ];
+  var baseEl = document.querySelector('base');
+  var basePath = new URL(baseEl ? baseEl.href : location.origin + '/').pathname.replace(/\/$/, '');
+  function nameOf(url) {
+    var path = new URL(url).pathname.slice(basePath.length) || '/';
+    for (var i = 0; i < NAMES.length; i++) if (NAMES[i][0].test(path)) return { key: NAMES[i][1], icon: NAMES[i][2] };
+    return { key: 'page', icon: '📄' };
+  }
   if (!window.caches) return;
-  caches.open('awas-pages-v1').then(function (cache) {
-    return cache.keys().then(function (keys) {
-      keys = keys.reverse().filter(function (k) { return new URL(k.url).href !== location.href; }).slice(0, 12);
-      return Promise.all(keys.map(function (k) {
-        return cache.match(k).then(function (res) { return res ? res.text() : ''; }).then(function (html) {
-          var m = /<title>([^<]*)<\/title>/i.exec(html);
-          var t = document.createElement('textarea'); t.innerHTML = m ? m[1].trim() : '';
-          return { url: k.url, title: t.value || 'AWAS page' };
-        });
-      }));
+  caches.open('awas-pages-v1').then(function (cache) { return cache.keys(); }).then(function (keys) {
+    var seen = {}, pages = [];
+    keys.reverse().forEach(function (k) {
+      if (k.url.split('#')[0] === location.href.split('#')[0]) return;
+      var n = nameOf(k.url), label = T.pages[n.key];
+      if (seen[label]) return;   // one link per page: the newest copy
+      seen[label] = true;
+      pages.push({ url: k.url, label: label, icon: n.icon });
     });
-  }).then(function (pages) {
-    if (!pages || !pages.length) return;
+    pages = pages.slice(0, 10);
+    if (!pages.length) return;
     var list = document.getElementById('list');
     pages.forEach(function (p) {
-      var a = document.createElement('a'), u = new URL(p.url);
+      var a = document.createElement('a');
       a.href = p.url;
-      var t = document.createElement('span'); t.className = 't'; t.textContent = p.title;
-      var s = document.createElement('span'); s.className = 'u'; s.textContent = u.pathname + u.search;
-      a.appendChild(t); a.appendChild(s); list.appendChild(a);
+      var i = document.createElement('span'); i.className = 'ico'; i.setAttribute('aria-hidden', 'true'); i.textContent = p.icon;
+      var t = document.createElement('span'); t.textContent = p.label;
+      a.appendChild(i); a.appendChild(t); list.appendChild(a);
     });
     document.getElementById('saved').hidden = false;
   }).catch(function () {});
