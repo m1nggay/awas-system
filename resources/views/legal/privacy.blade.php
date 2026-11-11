@@ -6,63 +6,52 @@
 <h1>{{ __('Privacy Policy') }}</h1>
 <p class="legal-date">{{ __('Effective :effective', ['effective' => $effective]) }}</p>
 
-<p>{{ __('The Adlay Water Augmentation System (') }}<strong>{{ __('AWAS') }}</strong>{{ __(') is the water service and billing system of :barangay, Carrascal, Surigao del Sur. This policy explains what personal information AWAS collects, why, and how it is protected, in line with the', ['barangay' => $barangay]) }} <strong>{{ __('Data Privacy Act of 2012 (Republic Act No. 10173)') }}</strong>.</p>
+<p>{{ __('AWAS (Adlay Water Augmentation System) is the online water management and billing system of the AWAS Water Office, :barangay, Carrascal, Surigao del Sur. We protect your information under the Data Privacy Act of 2012 (RA 10173).', ['barangay' => $barangay]) }}</p>
 
-<h2>{{ __('1. Information we collect') }}</h2>
+<h2>{{ __('What we collect') }}</h2>
 <ul>
-  <li><strong>{{ __('Membership application:') }}</strong> {{ __('full name, birth date, sex, purok and address, contact number, email address, household number and members, and type of residence.') }}</li>
-  <li><strong>{{ __('Identity check:') }}</strong> {{ __('photos of the front and back of a valid government ID, and a selfie taken during the application to confirm that the applicant is a real person.') }}</li>
-  <li><strong>{{ __('Water account:') }}</strong> {{ __('meter number, meter readings, bills, payments, receipts and notices.') }}</li>
-  <li><strong>{{ __('Payments:') }}</strong> {{ __('the amount, date, reference number and method (GCash or cash). Payments made with the "Open GCash app" button are processed by PayMongo; AWAS never receives or stores your e-wallet PIN or card details. If you pay by scanning the barangay\'s QR code, the screenshot of your receipt that you upload is kept as proof of payment.') }}</li>
-  <li><strong>{{ __('Your account:') }}</strong> {{ __('username, a securely hashed password (never stored as plain text), profile picture if you add one, and — if you choose "Continue with Google" — your Google account ID and email.') }}</li>
-  <li><strong>{{ __('Activity records:') }}</strong> {{ __('sign-ins, important actions and the IP address they came from, to keep accounts secure.') }}</li>
-  <li><strong>{{ __('Chat assistant:') }}</strong> {{ __('the questions you type into the AWAS Assistant.') }}</li>
+  <li><strong>{{ __('When you apply:') }}</strong> {{ __('full name, date of birth, sex, contact number, email, purok and address, household number, number of household members, type of residence and type of consumer') }}</li>
+  <li><strong>{{ __('To verify your identity:') }}</strong> {{ __('photos of the front and back of one valid government ID, and a live selfie') }}</li>
+  <li><strong>{{ __('Your login:') }}</strong> {{ __('username and password (stored encrypted), or your Google account name and email if you use "Continue with Google"') }}</li>
+  <li><strong>{{ __('Your water account:') }}</strong> {{ __('meter number, monthly meter readings, consumption, bills, penalties and discounts') }}</li>
+  <li><strong>{{ __('Your payments:') }}</strong> {{ __('GCash payment confirmations, uploaded GCash receipts, and payments made at the office') }}</li>
+  <li><strong>{{ __('Senior citizen ID') }}</strong>{{ __(', if you claim the senior discount') }}</li>
 </ul>
 
-<h2>{{ __('2. Why we use it') }}</h2>
+<h2>{{ __('How we use it') }}</h2>
 <ul>
-  <li>{{ __('To review membership applications and confirm identity and residence.') }}</li>
-  <li>{{ __('To read meters, compute bills (including senior citizen discounts), record payments and issue receipts.') }}</li>
-  <li>{{ __('To send bill notices, due-date reminders, announcements and one-time verification codes by email and in-app notifications.') }}</li>
-  <li>{{ __('To protect accounts (for example, locking an account after repeated wrong passwords) and to prevent fraud.') }}</li>
-  <li>{{ __('To prepare reports required for the operation of the barangay water system.') }}</li>
+  <li>{{ __('Review your membership application and assign your meter') }}</li>
+  <li>{{ __('Confirm you are a real person and the rightful account owner') }}</li>
+  <li>{{ __('Record meter readings and compute your bill using the barangay\'s rates') }}</li>
+  <li>{{ __('Process GCash and office payments and keep your payment history and receipts') }}</li>
+  <li>{{ __('Apply the senior citizen discount (your date of birth shows if you are 60 or older)') }}</li>
+  <li>{{ __('Send your 6-digit email code, password reset codes, bill reminders and notices by email and in AWAS') }}</li>
+  <li>{{ __('Lock accounts after repeated failed logins to stop break-ins') }}</li>
 </ul>
-<p>{{ __('We do not sell your information or use it for advertising.') }}</p>
+<p>{{ __('We use your information only for the water service. We never sell it or use it for ads.') }}</p>
 
-<h2>{{ __('3. Who we share it with') }}</h2>
-<p>{{ __('Only the barangay\'s authorized AWAS administrators and meter readers can see your records, and only what their work needs (a meter reader sees the consumers in their assigned puroks). Some services help run AWAS and receive only what they need:') }}</p>
+<h2>{{ __('Who can see it') }}</h2>
 <ul>
-  <li><strong>{{ __('PayMongo') }}</strong> {{ __('— to process GCash payments made with the "Open GCash app" button.') }}</li>
-  <li><strong>{{ __('Brevo') }}</strong> {{ __('— to deliver emails such as codes, notices and receipts.') }}</li>
-  <li><strong>{{ __('Google') }}</strong> {{ __('— only if you use "Continue with Google", to confirm your sign-in.') }}</li>
-  <li><strong>{{ __('Anthropic (Claude)') }}</strong> {{ __('— to answer questions in the AWAS Assistant, and to read the reference number and amount from uploaded GCash receipt screenshots.') }}</li>
-  <li><strong>{{ __('Hostinger') }}</strong> {{ __('— the server where AWAS and its database are hosted.') }}</li>
-</ul>
-<p>{{ __('We may also disclose information when required by law or by a lawful order of a government authority.') }}</p>
-
-<h2>{{ __('4. How we protect it') }}</h2>
-<ul>
-  <li>{{ __('The website uses an encrypted connection (HTTPS).') }}</li>
-  <li>{{ __('Passwords are hashed; changing a password or email needs a code sent to your email.') }}</li>
-  <li>{{ __('ID photos, selfies and receipts are stored privately and can be opened only by signed-in administrators.') }}</li>
-  <li>{{ __('Access is limited by role, sessions end after inactivity, and important actions are logged.') }}</li>
+  <li><strong>{{ __('AWAS Water Office staff') }}</strong> {{ __('with their own admin accounts. Meter readers see only what they need to record readings.') }}</li>
+  <li><strong>{{ __('GCash') }}</strong> {{ __('and') }} <strong>{{ __('PayMongo') }}</strong>{{ __(', to process your online payments') }}</li>
+  <li><strong>{{ __('Brevo') }}</strong>{{ __(', to send emails such as your codes, bill notices and receipts') }}</li>
+  <li><strong>{{ __('Google') }}</strong>{{ __(', only if you sign in with Google, and our email and hosting providers that run AWAS') }}</li>
+  <li><strong>{{ __('Government authorities') }}</strong>{{ __(', only when the law requires it') }}</li>
 </ul>
 
-<h2>{{ __('5. How long we keep it') }}</h2>
-<p>{{ __('We keep your information while you are a member of the water system and afterwards only as long as needed for billing records, audits and legal requirements. Records of applications that were not approved are kept only as long as needed to handle them.') }}</p>
+<h2>{{ __('How long we keep it') }}</h2>
+<ul>
+  <li>{{ __('ID photos and selfie: deleted :days days after your application is approved or rejected', ['days' => $photoDays]) }}</li>
+  <li>{{ __('Account, billing and payment records: while your account is active, then 5 years') }}</li>
+</ul>
 
-<p>{{ __('The photos of your valid ID and the face photo from your membership application are deleted :days days after your application is approved or rejected. The rest of the application record is kept with your account.', ['days' => config('agas.application_photo_days')]) }}</p>
+<h2>{{ __('How we protect it') }}</h2>
+<p>{{ __('AWAS uses HTTPS encryption. Passwords are stored encrypted, ID photos and selfies are kept in private storage, and only authorized staff can open your records.') }}</p>
 
-<h2>{{ __('6. Your rights') }}</h2>
-<p>{{ __('Under the Data Privacy Act you have the right to be informed, to access your information, to have wrong information corrected, to object to or withdraw consent for processing, to ask for deletion when the information is no longer needed, to data portability, to damages, and to file a complaint with the') }} <strong>{{ __('National Privacy Commission') }}</strong> {{ __('(privacy.gov.ph).') }}</p>
-<p>{{ __('You can view and update your contact details, password and profile in') }} <strong>{{ __('My Profile') }}</strong>{{ __('. For anything else, contact us below.') }}</p>
+<h2>{{ __('Your rights') }}</h2>
+<p>{{ __('You can ask to see, correct or delete your information, or withdraw your consent. You can also file a complaint with the National Privacy Commission (privacy.gov.ph). If your data is ever leaked, we will tell you and the Commission within 72 hours.') }}</p>
 
-<h2>{{ __('7. Contact us') }}</h2>
-<p>{{ __('AWAS Water Office, :barangay, Carrascal, Surigao del Sur', ['barangay' => $barangay]) }}
-  @if ($email)<br>{{ __('Email:') }} <a href="mailto:{{ $email }}">{{ $email }}</a>@endif
-  @if ($phone)<br>{{ __('Phone:') }} <a href="tel:{{ preg_replace('/[^\d+]/', '', $phone) }}">{{ $phone }}</a>@endif
-</p>
-
-<h2>{{ __('8. Changes to this policy') }}</h2>
-<p>{{ __('If we change this policy, we will post the new version on this page with a new effective date.') }}</p>
+<h2>{{ __('Contact') }}</h2>
+<p>{{ __('Privacy contact: AWAS Water Office, :barangay, Carrascal, Surigao del Sur', ['barangay' => $barangay]) }}<br>
+  {{ __('Email:') }} <a href="mailto:{{ $email }}">{{ $email }}</a></p>
 @endsection

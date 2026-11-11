@@ -65,8 +65,8 @@
       linear-gradient(180deg, rgba(6,42,74,.35) 0%, rgba(6,42,74,0) 30%, rgba(6,42,74,.55) 100%);}
   @media (prefers-reduced-motion: reduce){ .hero .bg-video{display:none;} }
 
-  .site-nav{position:relative;z-index:2;}
-  .site-nav .wrap{display:flex;align-items:center;justify-content:space-between;height:84px;gap:20px;}
+  .site-nav{position:relative;z-index:10;}   /* above the hero text, so the ☰ menu opens over it */
+  .site-nav .wrap{display:flex;align-items:center;justify-content:space-between;min-height:84px;gap:20px;}
   .brand{display:flex;align-items:center;gap:12px;min-width:0;flex:none;}
   .brand img{width:52px;height:52px;object-fit:cover;border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,.85);}
   .brand .word{font-weight:700;font-size:19px;letter-spacing:.3px;line-height:1.2;}
@@ -185,7 +185,24 @@
   footer.site-foot a{color:#fff;}
   footer.site-foot a:hover{text-decoration:underline;}
 
-  @media (max-width: 1060px){ .nav-links{display:none;} .lang-switch{margin-left:auto;} }
+  /* Menu: a row on wide screens; a ☰ dropdown on phones and tablets */
+  .site-nav .wrap{position:relative;}
+  .nav-menu{display:flex;align-items:center;gap:16px;margin-left:auto;}
+  .nav-toggle{display:none;margin-left:auto;width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,.35);
+    background:transparent;color:#fff;font-size:24px;align-items:center;justify-content:center;cursor:pointer;}
+  .nav-toggle:hover{background:rgba(255,255,255,.12);}
+  @media (max-width: 1060px){
+    /* Opens as a plain list under the header, one option per line; it pushes the page down (doesn't cover it) */
+    .site-nav .wrap{flex-wrap:wrap;}
+    .nav-toggle{display:inline-flex;}
+    .nav-menu{display:none;flex-basis:100%;order:3;margin:0 0 10px;flex-direction:column;align-items:stretch;gap:10px;
+      border-top:1px solid rgba(255,255,255,.15);}
+    .nav-menu.open{display:flex;}
+    .nav-links{display:flex;flex-direction:column;gap:0;margin:0;}
+    .nav-links a{font-size:15px;padding:11px 4px;border-radius:0;border-bottom:1px solid rgba(255,255,255,.1);}
+    .nav-links a:hover{background:transparent;color:#fff;}
+    .nav-menu .lang-switch{align-self:flex-start;margin:0;}
+  }
   @media (max-width: 900px){
     .features, .split, .contacts{grid-template-columns:1fr;}
     .features{gap:16px;}
@@ -205,7 +222,7 @@
   @media (max-width: 560px){
     body{font-size:15px;}
     .wrap{padding:0 18px;}
-    .site-nav .wrap{height:68px;gap:10px;}
+    .site-nav .wrap{min-height:68px;gap:10px;}
     .brand{gap:9px;flex:1;}
     .brand img{width:42px;height:42px;}
     .brand .word{font-size:16.5px;}
@@ -248,14 +265,20 @@
             <div class="tagline">Adlay Water Augmentation System</div>
           </div>
         </a>
-        <div class="nav-links">
-          <a href="#features">{{ __('Features') }}</a>
-          <a href="#how">{{ __('Membership') }}</a>
-          <a href="#rates">{{ __('Rates & Payments') }}</a>
-          <a href="#faq">{{ __('FAQ') }}</a>
-          <a href="#contact">{{ __('Contact') }}</a>
+        {{-- Phones and tablets: the links and EN | TL open from this button. --}}
+        <button type="button" class="nav-toggle" id="navToggle" aria-controls="navMenu" aria-expanded="false" aria-label="{{ __('Menu') }}">
+          <i class="ph ph-list" aria-hidden="true"></i>
+        </button>
+        <div class="nav-menu" id="navMenu">
+          <div class="nav-links">
+            <a href="#features">{{ __('Features') }}</a>
+            <a href="#how">{{ __('Membership') }}</a>
+            <a href="#rates">{{ __('Rates & Payments') }}</a>
+            <a href="#faq">{{ __('FAQ') }}</a>
+            <a href="#contact">{{ __('Contact') }}</a>
+          </div>
+          @include('partials.lang-switch')
         </div>
-        @include('partials.lang-switch')
       </div>
     </nav>
 
@@ -479,6 +502,21 @@
     </div>
   </footer>
 
+<script>
+  // ☰ menu on phones: open/close, and close after choosing a section or tapping outside.
+  (function () {
+    var btn = document.getElementById('navToggle'), menu = document.getElementById('navMenu');
+    function set(open) {
+      menu.classList.toggle('open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.querySelector('i').className = 'ph ' + (open ? 'ph-x' : 'ph-list');
+    }
+    btn.addEventListener('click', function (e) { e.stopPropagation(); set(!menu.classList.contains('open')); });
+    menu.querySelectorAll('.nav-links a').forEach(function (a) { a.addEventListener('click', function () { set(false); }); });
+    document.addEventListener('click', function (e) { if (!menu.contains(e.target)) set(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') set(false); });
+  })();
+</script>
 <script src="{{ asset('assets/js/transitions.js') }}"></script>
 <script src="{{ asset('assets/js/offline.js') }}?v={{ @filemtime(public_path('assets/js/offline.js')) ?: '1' }}"></script>
 </body>
