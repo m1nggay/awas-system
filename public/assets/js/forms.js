@@ -119,6 +119,35 @@
     });
   }
 
+  /**
+   * <form data-loading-form>: once it really submits, its submit button shows a spinner
+   * (and data-loading-text) and is disabled, so it can't be sent twice. Listens on the
+   * document, so a form handler that cancels the submit (e.g. a confirm) runs first.
+   */
+  function initLoadingForms() {
+    document.addEventListener('submit', function (e) {
+      var form = e.target;
+      if (e.defaultPrevented || !form.hasAttribute || !form.hasAttribute('data-loading-form')) return;
+      var btn = form.querySelector('button[type="submit"], button:not([type])');
+      if (!btn || btn.disabled) return;
+      btn.dataset.label = btn.innerHTML;
+      btn.disabled = true;
+      btn.setAttribute('aria-busy', 'true');
+      btn.innerHTML = '<span class="spinner-border" role="status" aria-hidden="true"></span> '
+        + (btn.getAttribute('data-loading-text') || btn.textContent.trim());
+    });
+    // Back button: the browser may show the page as it was left — give the button back.
+    window.addEventListener('pageshow', function () {
+      document.querySelectorAll('form[data-loading-form] [aria-busy="true"]').forEach(function (btn) {
+        btn.disabled = false;
+        btn.removeAttribute('aria-busy');
+        if (btn.dataset.label) btn.innerHTML = btn.dataset.label;
+      });
+    });
+  }
+
+  initLoadingForms();
+
   document.addEventListener('DOMContentLoaded', function () {
     initPasswordToggles();
     initPasswordHints();

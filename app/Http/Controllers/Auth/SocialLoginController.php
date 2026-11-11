@@ -87,7 +87,8 @@ class SocialLoginController extends Controller
 
         if (!$user) {
             log_activity(null, 'login_failed', "$name sign-in with no matching AWAS account" . ($email ? " ($email)" : ''));
-            flash('danger', __('No AWAS account uses this :name account', ['name' => $name]) . ($email ? " ($email)" : '') . '. '
+            // Nothing is created: an unknown Google / Facebook account only gets this message.
+            flash('danger', __('This :name account isn\'t linked to an AWAS account.', ['name' => $name]) . ($email ? " ($email)" : '') . ' '
                 . __('Sign in with your username and password, then connect :name in your Profile — or apply for membership with Create an account.', ['name' => $name]));
             return redirect()->route('login');
         }
