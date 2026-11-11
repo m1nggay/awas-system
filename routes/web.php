@@ -41,6 +41,8 @@ Route::middleware('guest')->group(function () {
 
     Route::get('/activate', [Auth\RegisterController::class, 'show'])->name('activate');
     Route::post('/activate', [Auth\RegisterController::class, 'store'])->name('activate.store');
+    Route::get('/activate/username', [Auth\RegisterController::class, 'usernameAvailable'])
+        ->middleware('throttle:30,1')->name('activate.username');
     // Old address of the Activate Account page.
     Route::get('/register', fn () => redirect()->route('activate', status: 301));
 

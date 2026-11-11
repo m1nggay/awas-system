@@ -112,7 +112,7 @@
           btn.textContent = label;
           return;
         }
-        btn.textContent = label + ' in ' + left + (left === 1 ? ' second' : ' seconds');
+        btn.textContent = __t(left === 1 ? ':label in 1 second' : ':label in :n seconds', { label: label, n: left });
         left--;
         setTimeout(tick, 1000);
       })();
@@ -146,11 +146,35 @@
     });
   }
 
+  /**
+   * <input data-match="password">: a confirm-password field. Shows "✓ Passwords match" /
+   * "✗ Passwords don't match" in [data-match-status="<its id>"] and blocks submitting a mismatch.
+   */
+  function initPasswordMatch() {
+    document.querySelectorAll('[data-match]').forEach(function (confirm) {
+      var original = document.getElementById(confirm.getAttribute('data-match'));
+      var out = document.querySelector('[data-match-status="' + confirm.id + '"]');
+      if (!original) return;
+      function render() {
+        var match = confirm.value === original.value;
+        confirm.setCustomValidity(confirm.value === '' || match ? '' : __t('Passwords do not match.'));
+        if (!out) return;
+        if (confirm.value === '') { out.textContent = ''; out.className = 'field-status'; return; }
+        out.textContent = match ? '✓ ' + __t('Passwords match') : '✗ ' + __t('Passwords don\'t match');
+        out.className = 'field-status ' + (match ? 'ok' : 'bad');
+      }
+      confirm.addEventListener('input', render);
+      original.addEventListener('input', function () { if (confirm.value !== '') render(); });
+      render();
+    });
+  }
+
   initLoadingForms();
 
   document.addEventListener('DOMContentLoaded', function () {
     initPasswordToggles();
     initPasswordHints();
+    initPasswordMatch();
     initDigitsOnly();
     initCountdowns();
   });
