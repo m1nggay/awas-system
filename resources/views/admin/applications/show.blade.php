@@ -13,6 +13,7 @@
       $detail('Contact number', $app->contact_number),
       $detail('Email', $app->email),
       $detail('Complete address', $app->address),
+      $detail('Landmark', $app->landmark ?? null),
       $detail('Purok', $app->purok_name),
       $detail('Barangay', $app->barangay),
       $detail('Municipality', $app->municipality),

@@ -19,6 +19,12 @@ return [
        Emergency switch only (e.g. email is down): set AWAS_ADMIN_2FA=false in .env. */
     'admin_2fa' => filter_var(env('AWAS_ADMIN_2FA', true), FILTER_VALIDATE_BOOLEAN),
 
+    /* Membership applications: days the ID and face photos are kept after the application is
+       approved or rejected (then deleted by awas:purge-application-photos), and the usual review
+       time told to applicants after they submit. */
+    'application_photo_days' => (int)env('AWAS_APPLICATION_PHOTO_DAYS', 30),
+    'application_review_days' => (int)env('AWAS_APPLICATION_REVIEW_DAYS', 3),
+
     /* Outbound email via the Brevo transactional HTTP API (OTP codes, application updates). */
     'brevo' => [
         'api_key'    => env('BREVO_API_KEY', ''),
