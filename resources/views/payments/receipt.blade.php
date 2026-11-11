@@ -11,7 +11,7 @@
   /* Same look as the water billing statement (bills/print). */
   body{background:#fff;padding:30px;}
   .receipt{max-width:760px;margin:0 auto;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff;}
-  .receipt-head{background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:#fff;padding:24px 30px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+  .receipt-head{background:linear-gradient(135deg,#062a4a,#0b3b66);color:#fff;padding:24px 30px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
   .receipt-body{padding:26px 30px;}
   .info{display:grid;grid-template-columns:1fr 1fr;gap:4px 30px;}
   .row{display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;font-size:13.5px;}

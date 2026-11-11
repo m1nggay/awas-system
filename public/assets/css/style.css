@@ -356,8 +356,8 @@ table.data-table td.actions > form .btn{margin:0;}
 .chatbot-widget{position:fixed;right:22px;bottom:22px;z-index:999;}
 .chatbot-fab{
   width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;
-  background:linear-gradient(135deg,var(--primary-dark),var(--primary) 60%,var(--primary-light));
-  color:#fff;font-size:24px;box-shadow:0 8px 24px rgba(2,62,138,0.35);
+  background:linear-gradient(135deg,#062a4a,#0b3b66); /* same navy as the sidebar */
+  color:#fff;font-size:24px;box-shadow:0 8px 24px rgba(6,42,74,0.35);
   display:flex;align-items:center;justify-content:center;transition:transform .2s;
 }
 .chatbot-fab:hover{transform:scale(1.06);}
@@ -371,7 +371,7 @@ table.data-table td.actions > form .btn{margin:0;}
 }
 .chatbot-panel.open{opacity:1;visibility:visible;transform:translateY(0) scale(1);}
 .chatbot-header{
-  background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:#fff;
+  background:linear-gradient(135deg,#062a4a,#0b3b66);color:#fff;
   padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
 }
 .chatbot-header-info{display:flex;align-items:center;gap:10px;}
