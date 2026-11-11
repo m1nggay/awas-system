@@ -11,9 +11,10 @@
   .auth-card p.subtitle{margin-bottom:14px;}
   .auth-card .form-label{margin-bottom:4px;}
   .auth-card .auth-footer-link{margin-top:10px;}
-  .login-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px;font-size:13.5px;}
-  .login-row .form-check{margin:0;min-height:0;}
-  .login-row .form-check-label{color:var(--text-dark);}
+  .pw-label-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+  .pw-label-row a{font-size:13px;}
+  .login-remember{margin:4px 0 14px;font-size:13.5px;}
+  .login-remember .form-check-label{color:var(--text-dark);}
   .btn .spinner-border{width:16px;height:16px;border-width:2px;}
   .locked-help{display:flex;flex-direction:column;gap:6px;background:#f2f8fb;border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13.5px;}
   .locked-help a,.locked-help span{display:flex;align-items:center;gap:8px;color:var(--text-dark);}
@@ -59,17 +60,16 @@
              placeholder="{{ __('e.g. juan.delacruz or you@email.com') }}" value="{{ old('username') }}">
     </div>
     <div class="mb-2">
-      <label for="password" class="form-label">{{ __('Password') }}</label>
+      <div class="pw-label-row">
+        <label for="password" class="form-label">{{ __('Password') }}</label>
+        <a href="{{ route('password.forgot') }}">{{ __('Forgot password?') }}</a>
+      </div>
       <input type="password" id="password" name="password" class="form-control" required autocomplete="current-password"
              placeholder="{{ __('Enter your password') }}">
     </div>
-    <div class="login-row">
-      {{-- Remembers only the username on this device; the password is never saved. --}}
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="rememberUsername">
-        <label class="form-check-label" for="rememberUsername">{{ __('Remember my username') }}</label>
-      </div>
-      <a href="{{ route('password.forgot') }}">{{ __('Forgot your password?') }}</a>
+    <div class="form-check login-remember">
+      <input class="form-check-input" type="checkbox" id="remember" name="remember" value="1" @checked(old('remember'))>
+      <label class="form-check-label" for="remember">{{ __('Remember me for 30 days') }}</label>
     </div>
     <button type="submit" class="btn btn-primary w-100" data-loading-text="{{ __('Logging in…') }}">{{ __('Login') }}</button>
   </form>
