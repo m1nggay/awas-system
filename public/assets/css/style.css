@@ -238,9 +238,9 @@ select.form-control{appearance:auto;}
   padding:14px 26px;display:flex;align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:50;
 }
-.topbar-title{font-size:17px;font-weight:600;color:var(--primary-dark);}
+.topbar-title{font-size:17px;font-weight:600;color:#062a4a;} /* same navy as the sidebar */
 .topbar-right{display:flex;align-items:center;gap:16px;}
-.menu-toggle{display:inline-flex;align-items:center;justify-content:center;background:none;border:none;font-size:20px;color:var(--primary-dark);}
+.menu-toggle{display:inline-flex;align-items:center;justify-content:center;background:none;border:none;font-size:20px;color:#062a4a;}
 
 .notif-btn{position:relative;background:#eef7fb;border:none;width:38px;height:38px;border-radius:50%;font-size:16px;color:var(--primary-dark);display:flex;align-items:center;justify-content:center;}
 .notif-badge{
