@@ -20,6 +20,13 @@ class IdleTimeout
     public function handle(Request $request, Closure $next): Response
     {
         if (Auth::check()) {
+            // "Remember me for 30 days": no inactivity sign-out (also when the cookie signed them back in).
+            if (Auth::viaRemember()) {
+                $request->session()->put('remember_me', true);
+            }
+            if ($request->session()->get('remember_me')) {
+                return $next($request);
+            }
             $last = (int)$request->session()->get('last_activity', time());
             if (time() - $last > config('agas.idle_timeout_minutes') * 60) {
                 Auth::logout();

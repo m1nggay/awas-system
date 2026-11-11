@@ -21,7 +21,7 @@ class TwoFactorController extends Controller
     private const SESSION_TTL_SECONDS = 15 * 60;
 
     /** Step two begins: remember who passed step one, email the code, show the code page. */
-    public static function challenge(Request $request, User $user, string $logMessage)
+    public static function challenge(Request $request, User $user, string $logMessage, bool $remember = false)
     {
         if (!filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
             log_activity($user->user_id, 'login_blocked', 'Administrator sign-in stopped: no email address for the login code');
@@ -29,7 +29,7 @@ class TwoFactorController extends Controller
                 ->with('error', __('This administrator account has no email address to send the login code to. Ask another administrator to add one in Manage Users.'));
         }
 
-        $request->session()->put('two_factor', ['user_id' => $user->user_id, 'started_at' => time(), 'log' => $logMessage]);
+        $request->session()->put('two_factor', ['user_id' => $user->user_id, 'started_at' => time(), 'log' => $logMessage, 'remember' => $remember]);
         $result = app(CodeMailer::class)->sendLoginCode($user->user_id, $user->email, $user->full_name);
         log_activity($user->user_id, 'login_2fa_sent', $result === 'sent'
             ? 'Password accepted — login code emailed (two-factor)' : "Password accepted — login code not sent ($result)");
@@ -78,8 +78,9 @@ class TwoFactorController extends Controller
         $result = $otp->verify($user->user_id, $code);
         if ($result === 'ok') {
             $otp->invalidate($user->user_id);
-            $log = $request->session()->pull('two_factor')['log'] ?? __('User logged in');
-            return LoginController::finishLogin($request, $user, "$log (two-factor code verified)");
+            $pending = $request->session()->pull('two_factor');
+            $log = $pending['log'] ?? 'User logged in';
+            return LoginController::finishLogin($request, $user, "$log (two-factor code verified)", !empty($pending['remember']));
         }
 
         log_activity($user->user_id, 'login_2fa_failed', match ($result) {

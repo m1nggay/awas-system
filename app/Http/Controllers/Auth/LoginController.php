@@ -24,7 +24,7 @@ class LoginController extends Controller
         $password = (string)$request->input('password', '');
 
         if ($username === '' || $password === '') {
-            return back()->withInput($request->only('username'))->with('error', __('Please enter both username and password.'));
+            return back()->withInput($request->only('username', 'remember'))->with('error', __('Please enter both username and password.'));
         }
 
         $user = User::where('username', $username)->first();
@@ -78,27 +78,36 @@ class LoginController extends Controller
             return $this->failed($request);
         }
 
-        return self::startSession($request, $user, __('User logged in'));
+        return self::startSession($request, $user, 'User logged in', $request->boolean('remember'));
     }
 
     /**
      * The password (or Google / Facebook) checked out. Administrators then get
      * a second step — a code emailed to them; everyone else is signed in now.
      */
-    public static function startSession(Request $request, User $user, string $logMessage)
+    public static function startSession(Request $request, User $user, string $logMessage, bool $remember = false)
     {
         if ($user->isAdmin() && config('agas.admin_2fa')) {
-            return TwoFactorController::challenge($request, $user, $logMessage);
+            return TwoFactorController::challenge($request, $user, $logMessage, $remember);
         }
-        return self::finishLogin($request, $user, $logMessage);
+        return self::finishLogin($request, $user, $logMessage, $remember);
     }
 
+    /** "Remember me": how long the device stays signed in. */
+    public const REMEMBER_DAYS = 30;
+
     /** Signs the (fully checked) user in and opens their dashboard. */
-    public static function finishLogin(Request $request, User $user, string $logMessage)
+    public static function finishLogin(Request $request, User $user, string $logMessage, bool $remember = false)
     {
-        Auth::login($user);
+        // Remember me: a 30-day cookie signs this device back in, and the inactivity sign-out is skipped (IdleTimeout).
+        Auth::guard()->setRememberDuration(self::REMEMBER_DAYS * 24 * 60);
+        Auth::login($user, $remember);
         $request->session()->regenerate();
         $request->session()->put('last_activity', time());
+        $request->session()->put('remember_me', $remember);
+        if ($remember) {
+            $logMessage .= ' (remember me for ' . self::REMEMBER_DAYS . ' days)';
+        }
 
         $user->forceFill(['last_login' => now()])->save();
         log_activity($user->user_id, 'login_success', $logMessage);
@@ -127,6 +136,6 @@ class LoginController extends Controller
 
     private function failed(Request $request, string $message = 'Incorrect username or password.')
     {
-        return back()->withInput($request->only('username'))->with('error', __($message));
+        return back()->withInput($request->only('username', 'remember'))->with('error', __($message));
     }
 }

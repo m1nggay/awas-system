@@ -90,7 +90,8 @@ class PasswordResetController extends Controller
 
         if ($result === 'ok') {
             // A new password also unlocks an account locked by failed logins.
-            User::whereKey($userId)->update(['password_hash' => Hash::make($newPassword), 'failed_login_attempts' => 0, 'locked_at' => null]);
+            // remember_token: devices kept signed in ("Remember me") must sign in again.
+            User::whereKey($userId)->update(['password_hash' => Hash::make($newPassword), 'failed_login_attempts' => 0, 'locked_at' => null, 'remember_token' => null]);
             $otp->invalidate($userId);
             log_activity($userId, 'password_reset', 'Password reset via emailed OTP (account unlocked)');
             $request->session()->forget(['pwd_reset_user_id', 'pwd_reset_started_at']);

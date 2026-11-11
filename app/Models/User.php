@@ -38,10 +38,14 @@ class User extends BaseModel implements AuthenticatableContract
         return $this->password_hash;
     }
 
-    /** No "remember me" column in this schema. */
-    public function getRememberTokenName()
+    /** "Remember me for 30 days" (users.remember_token): a new password signs those devices out. */
+    protected static function booted(): void
     {
-        return null;
+        static::saving(function (User $user) {
+            if ($user->isDirty('password_hash') && !$user->isDirty('remember_token')) {
+                $user->remember_token = null;
+            }
+        });
     }
 
     public function consumer(): HasOne
