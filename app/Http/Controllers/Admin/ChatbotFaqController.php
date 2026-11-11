@@ -28,7 +28,7 @@ class ChatbotFaqController extends Controller
             'faqs'            => ChatbotFaq::orderByDesc('hit_count')->orderBy('question')->get(),
             'unanswered'      => DB::table('chatbot_unanswered as u')->leftJoin('users as us', 'us.user_id', '=', 'u.asked_by')
                 ->orderByDesc('u.created_at')->limit(20)->get(['u.*', 'us.full_name as asked_by_name']),
-            'categories'      => ChatbotFaq::CATEGORIES,
+            'categories'      => array_map(fn ($label) => __($label), ChatbotFaq::CATEGORIES),
         ];
     }
 
@@ -41,7 +41,7 @@ class ChatbotFaqController extends Controller
     {
         $data = $this->fields($request);
         if (!$data) {
-            flash('danger', 'Question and answer are both required.');
+            flash('danger', __('Question and answer are both required.'));
             return $this->toSection();
         }
         try {
@@ -54,7 +54,7 @@ class ChatbotFaqController extends Controller
             }
             flash('success', 'FAQ added.');
         } catch (QueryException $e) {
-            flash('danger', 'A FAQ with that exact question already exists.');
+            flash('danger', __('A FAQ with that exact question already exists.'));
         }
         return $this->toSection();
     }
@@ -63,7 +63,7 @@ class ChatbotFaqController extends Controller
     {
         $data = $this->fields($request);
         if (!$data) {
-            flash('danger', 'Question and answer are both required.');
+            flash('danger', __('Question and answer are both required.'));
             return $this->toSection();
         }
         try {
@@ -71,7 +71,7 @@ class ChatbotFaqController extends Controller
             log_activity($request->user()->user_id, 'faq_edit', "Edited chatbot FAQ #{$faq->id}");
             flash('success', 'FAQ updated.');
         } catch (QueryException $e) {
-            flash('danger', 'A FAQ with that exact question already exists.');
+            flash('danger', __('A FAQ with that exact question already exists.'));
         }
         return $this->toSection();
     }
@@ -79,7 +79,7 @@ class ChatbotFaqController extends Controller
     public function toggle(ChatbotFaq $faq)
     {
         $faq->update(['status' => $faq->status === 'active' ? 'inactive' : 'active']);
-        flash('success', 'FAQ status updated.');
+        flash('success', __('FAQ status updated.'));
         return $this->toSection();
     }
 

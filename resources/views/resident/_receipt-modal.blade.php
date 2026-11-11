@@ -4,14 +4,14 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3 class="h6 mb-0" id="receiptViewTitle"></h3>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"></button>
       </div>
       <div class="modal-body p-0">
-        <iframe id="receiptViewFrame" title="Payment receipt" style="width:100%;height:70vh;border:0;display:block;"></iframe>
+        <iframe id="receiptViewFrame" title="{{ __('Payment receipt') }}" style="width:100%;height:70vh;border:0;display:block;"></iframe>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" id="receiptViewDownload"><i class="ph ph-download-simple" aria-hidden="true"></i> Download Receipt</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
+        <button type="button" class="btn btn-primary" id="receiptViewDownload"><i class="ph ph-download-simple" aria-hidden="true"></i> {{ __('Download Receipt') }}</button>
       </div>
     </div>
   </div>

@@ -20,11 +20,11 @@ class PaymentReceiptController extends Controller
                 'b.consumption', 'b.due_date', 'c.full_name', 'c.meter_number', 'c.user_id', 'p.purok_name',
                 'mr.previous_reading', 'mr.current_reading']);
 
-        abort_if(!$row, 404, 'Payment not found.');
+        abort_if(!$row, 404, __('Payment not found.'));
 
         $user = $request->user();
         if (!$user->isAdmin() && (int)$row->user_id !== (int)$user->user_id) {
-            abort(403, 'You are not authorized to view this receipt.');
+            abort(403, __('You are not authorized to view this receipt.'));
         }
 
         return view('payments.receipt', [

@@ -31,18 +31,23 @@ class PaymentMailer
     public function toConsumer(int $paymentId, string $status): void
     {
         app()->terminating(function () use ($paymentId, $status) {
-            $details = $this->details($paymentId);
-            $user = $details ? DB::table('users')->where('user_id', $details['user_id'])->where('status', 'active')->first(['full_name', 'email']) : null;
-            if (!$user || !filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
-                return;
-            }
-            $this->mailer->send($user->email, $user->full_name, 'AWAS: ' . self::SUBJECTS[$status] . " ({$details['reference']})",
-                'emails.payment-status', $details + [
-                    'name'   => $user->full_name,
-                    'status' => $status,
-                    'admin'  => false,
-                    'url'    => $status === 'received' ? route('payments.receipt', $paymentId) : route('resident.bill'),
-                ]);
+            $userId = DB::table('payments as p')->join('consumers as c', 'c.consumer_id', '=', 'p.consumer_id')
+                ->where('p.payment_id', $paymentId)->value('c.user_id');
+            // In the consumer's language (the EN | TL switch they used).
+            inLocale(userLocale($userId ? (int)$userId : null), function () use ($paymentId, $status) {
+                $details = $this->details($paymentId);
+                $user = $details ? DB::table('users')->where('user_id', $details['user_id'])->where('status', 'active')->first(['full_name', 'email']) : null;
+                if (!$user || !filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+                    return;
+                }
+                $this->mailer->send($user->email, $user->full_name, 'AWAS: ' . __(self::SUBJECTS[$status]) . " ({$details['reference']})",
+                    'emails.payment-status', $details + [
+                        'name'   => $user->full_name,
+                        'status' => $status,
+                        'admin'  => false,
+                        'url'    => $status === 'received' ? route('payments.receipt', $paymentId) : route('resident.bill'),
+                    ]);
+            });
         });
     }
 
@@ -50,23 +55,27 @@ class PaymentMailer
     public function toAdmins(int $paymentId, string $status): void
     {
         app()->terminating(function () use ($paymentId, $status) {
-            $details = $this->details($paymentId);
-            if (!$details) {
-                return;
-            }
-            $subject = $status === 'submitted'
-                ? "AWAS: Payment to verify — {$details['consumer']} ({$details['reference']})"
-                : "AWAS: Online payment received — {$details['consumer']} ({$details['reference']})";
-            $admins = DB::table('users')->where('role', 'admin')->where('status', 'active')->get(['full_name', 'email']);
+            $admins = DB::table('users')->where('role', 'admin')->where('status', 'active')->get(['user_id', 'full_name', 'email']);
             foreach ($admins as $admin) {
-                if (filter_var($admin->email, FILTER_VALIDATE_EMAIL)) {
+                if (!filter_var($admin->email, FILTER_VALIDATE_EMAIL)) {
+                    continue;
+                }
+                // Each administrator gets it in their own language.
+                inLocale(userLocale((int)$admin->user_id), function () use ($admin, $paymentId, $status) {
+                    $details = $this->details($paymentId);
+                    if (!$details) {
+                        return;
+                    }
+                    $subject = 'AWAS: ' . __($status === 'submitted' ? 'Payment to verify — :consumer (:reference)' : 'Online payment received — :consumer (:reference)', [
+                        'consumer' => $details['consumer'], 'reference' => $details['reference'],
+                    ]);
                     $this->mailer->send($admin->email, $admin->full_name, $subject, 'emails.payment-status', $details + [
                         'name'   => $admin->full_name,
                         'status' => $status,
                         'admin'  => true,
                         'url'    => route('admin.payments.index', ['tab' => $status === 'submitted' ? 'pending' : 'paid']),
                     ]);
-                }
+                });
             }
         });
     }
@@ -92,7 +101,7 @@ class PaymentMailer
             'amount'    => formatCurrency($row->amount_paid),
             'method'    => paymentMethodLabel($row->payment_method, $row->wallet ?? null),
             'gatewayRef'=> $row->payment_method === 'gcash' ? $row->payment_gateway_txn_id : null,
-            'date'      => date('F j, Y g:i A', strtotime($row->verified_at ?? $row->payment_date)),
+            'date'      => localizeMonths(date('F j, Y g:i A', strtotime($row->verified_at ?? $row->payment_date))),
             'balance'   => formatCurrency(max(0, (float)$row->total_amount - (float)$row->bill_paid)),
             'billPaid'  => $row->bill_status === 'paid',
             'reason'    => $row->rejection_reason,

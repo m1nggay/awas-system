@@ -133,28 +133,28 @@ function brightness(canvas) {
 async function inspect(canvas, side) {
   const label = side === 'back' ? 'BACK' : 'FRONT';
   if (canvas.width <= canvas.height) {
-    return { ok: false, level: 'error', message: 'This photo is portrait (vertical). Please use a landscape (horizontal) photo of the ' + label + ' of your ID.' };
+    return { ok: false, level: 'error', message: __t('This photo is portrait (vertical). Please use a landscape (horizontal) photo of the :side of your ID.', { side: __t(label) }) };
   }
   if (brightness(canvas) < 45) {
-    return { ok: false, level: 'error', message: 'The photo is too dark. Move to a brighter place and capture the ' + label + ' of your ID again.' };
+    return { ok: false, level: 'error', message: __t('The photo is too dark. Move to a brighter place and capture the :side of your ID again.', { side: __t(label) }) };
   }
   const det = await detector();
-  if (!det) return { ok: true, level: 'good', message: '✓ ' + (side === 'back' ? 'Back' : 'Front') + ' of ID captured.' };
+  if (!det) return { ok: true, level: 'good', message: '✓ ' + (side === 'back' ? __t('Back of ID captured.') : __t('Front of ID captured.')) };
 
   const whole = facesIn(det, canvas);
   if (whole.some((f) => f.w > SELFIE_FACE_WIDTH)) {
-    return { ok: false, level: 'error', message: 'This looks like a photo of a person, not a valid ID. Please capture the ' + label + ' of your valid government ID.' };
+    return { ok: false, level: 'error', message: __t('This looks like a photo of a person, not a valid ID. Please capture the :side of your valid government ID.', { side: __t(label) }) };
   }
   if (side === 'front') {
     const found = whole.length > 0 || tiles(canvas).some((t) => facesIn(det, t).length > 0);
     if (!found) {
-      return { ok: true, level: 'warn', message: '⚠ We could not find the ID holder\'s photo. Please make sure this is the FRONT of a valid government ID, the whole card is inside the frame, and it is clear — or retake it.' };
+      return { ok: true, level: 'warn', message: __t('⚠ We could not find the ID holder\'s photo. Please make sure this is the FRONT of a valid government ID, the whole card is inside the frame, and it is clear — or retake it.') };
     }
   }
   if (side === 'back' && (await looksLikeIdBack(canvas)) === false) {
-    return { ok: true, level: 'warn', message: '⚠ We could not find the printed details or barcode of an ID. Please make sure this is the BACK of a valid government ID, the whole card is inside the frame, and the text is clear — or retake it.' };
+    return { ok: true, level: 'warn', message: __t('⚠ We could not find the printed details or barcode of an ID. Please make sure this is the BACK of a valid government ID, the whole card is inside the frame, and the text is clear — or retake it.') };
   }
-  return { ok: true, level: 'good', message: '✓ ' + (side === 'back' ? 'Back' : 'Front') + ' of ID looks good.' };
+  return { ok: true, level: 'good', message: '✓ ' + (side === 'back' ? __t('Back of ID looks good.') : __t('Front of ID looks good.')) };
 }
 
 function toCanvas(source, sx, sy, sw, sh) {
@@ -208,7 +208,7 @@ function initWidget(widget) {
   async function open() {
     say('');
     if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
-      say('The camera is not available in this browser. Please upload a photo instead.', 'error');
+      say(__t('The camera is not available in this browser. Please upload a photo instead.'), 'error');
       return;
     }
     try {
@@ -216,7 +216,7 @@ function initWidget(widget) {
         video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false,
       });
     } catch (e) {
-      say('Could not open the camera. Allow camera access in your browser, or upload a photo instead.', 'error');
+      say(__t('Could not open the camera. Allow camera access in your browser, or upload a photo instead.'), 'error');
       return;
     }
     els.video.srcObject = stream;
@@ -224,13 +224,13 @@ function initWidget(widget) {
     placeGuide();
     show(els.stage, true); show(els.preview, false);
     show(els.open, false); show(els.retake, false); show(els.snap, true); show(els.close, true);
-    say('Place the ' + (side === 'back' ? 'BACK' : 'FRONT') + ' of your ID inside the frame, hold steady, then tap Capture.');
+    say(__t('Place the :side of your ID inside the frame, hold steady, then tap Capture.', { side: __t(side === 'back' ? 'BACK' : 'FRONT') }));
     detector();   // start loading the checker while the user lines up the card
     if (side === 'back') ocr();
   }
 
   async function finish(canvas) {
-    say('Checking the photo…');
+    say(__t('Checking the photo…'));
     const result = await inspect(canvas, side);
     const url = canvas.toDataURL('image/jpeg', 0.88);
     els.preview.src = url;
@@ -242,7 +242,7 @@ function initWidget(widget) {
 
   async function snap() {
     const vw = els.video.videoWidth, vh = els.video.videoHeight;
-    if (!vw || !vh) { say('The camera is still starting — try again in a moment.'); return; }
+    if (!vw || !vh) { say(__t('The camera is still starting — try again in a moment.')); return; }
     const r = guideRect(vw, vh);
     const canvas = toCanvas(els.video, r.x * vw, r.y * vh, r.w * vw, r.h * vh);
     stop();
@@ -257,16 +257,16 @@ function initWidget(widget) {
     stop(); show(els.stage, false); show(els.snap, false); show(els.close, false);
     if (['image/jpeg', 'image/png', 'image/webp'].indexOf(f.type) === -1) {
       setResult('', 'error'); show(els.preview, false);
-      say('Please choose a JPG, PNG or WEBP photo of your ID.', 'error');
+      say(__t('Please choose a JPG, PNG or WEBP photo of your ID.'), 'error');
       els.file.value = '';
       return;
     }
-    if (typeof createImageBitmap !== 'function') { say('Photo selected.'); return; }  // old browser: the server checks it
+    if (typeof createImageBitmap !== 'function') { say(__t('Photo selected.')); return; }  // old browser: the server checks it
     let bmp;
     try {
       bmp = await createImageBitmap(f);   // applies the phone's rotation tag
     } catch (e) {
-      setResult('', 'error'); say('That photo could not be read. Please choose another one.', 'error');
+      setResult('', 'error'); say(__t('That photo could not be read. Please choose another one.'), 'error');
       els.file.value = '';
       return;
     }

@@ -40,7 +40,7 @@ class MaintenanceMode
         $message = (string)$settings->get('maintenance_message', '');
         $until = (string)$settings->get('maintenance_until', '');
         if ($request->expectsJson()) {
-            return response()->json(['error' => 'AWAS is under maintenance. Please try again later.'], 503);
+            return response()->json(['error' => __('AWAS is under maintenance. Please try again later.')], 503);
         }
         return response()->view('maintenance', [
             'message' => $message !== '' ? $message : 'AWAS is being updated to serve you better. Please check back soon.',

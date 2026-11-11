@@ -1,42 +1,42 @@
 @extends('layouts.app')
 
-@section('title', auth()->user()->isAdmin() ? 'Recorded Readings' : 'Meter Readings')
+@section('title', __(auth()->user()->isAdmin() ? 'Recorded Readings' : 'Meter Readings'))
 
 @section('content')
 @php $isReader = auth()->user()->isMeterReader(); $isAdmin = auth()->user()->isAdmin(); $canManage = $isReader; @endphp
 <div class="card">
   @if ($isReader)
     <div class="card-header justify-content-end">
-      <button class="btn btn-primary btn-sm btn-phone-block" data-bs-toggle="modal" data-bs-target="#addReadingModal">+ Record Reading</button>
+      <button class="btn btn-primary btn-sm btn-phone-block" data-bs-toggle="modal" data-bs-target="#addReadingModal">{{ __('+ Record Reading') }}</button>
     </div>
   @endif
   <div class="card-body">
     <form method="GET" action="{{ route('admin.readings.index') }}" class="d-flex flex-wrap gap-2 align-items-center mb-3 filter-bar" id="readingFilter">
       <div class="input-group flex-grow-1" style="min-width:200px;">
         <span class="input-group-text"><i class="ph ph-magnifying-glass" aria-hidden="true"></i></span>
-        <input type="search" name="q" class="form-control" placeholder="Search by Meter Number or Name..." value="{{ $search }}" aria-label="Search meter readings">
-        <button type="submit" class="btn btn-primary">Search</button>
+        <input type="search" name="q" class="form-control" placeholder="{{ __('Search by Meter Number or Name...') }}" value="{{ $search }}" aria-label="{{ __('Search meter readings') }}">
+        <button type="submit" class="btn btn-primary">{{ __('Search') }}</button>
       </div>
       <select name="purok" class="form-select w-auto" onchange="this.form.submit()">
-        <option value="0">All Puroks</option>
+        <option value="0">{{ __('All Puroks') }}</option>
         @foreach ($puroks as $pk)
           <option value="{{ $pk->purok_id }}" @selected($purokFil === (int)$pk->purok_id)>{{ $pk->purok_name }}</option>
         @endforeach
       </select>
       <select name="status" class="form-select w-auto" onchange="this.form.submit()">
-        <option value="">All Status</option>
+        <option value="">{{ __('All Status') }}</option>
         @foreach (['unpaid' => 'Unpaid', 'partially_paid' => 'Partially Paid', 'paid' => 'Paid', 'overdue' => 'Overdue', 'review' => 'Needs review (photo)'] as $v => $l)
-          <option value="{{ $v }}" @selected($statusFil === $v)>{{ $l }}</option>
+          <option value="{{ $v }}" @selected($statusFil === $v)>{{ __($l) }}</option>
         @endforeach
       </select>
       <select name="period" class="form-select w-auto" onchange="this.form.submit()">
-        <option value="">All Periods</option>
+        <option value="">{{ __('All Periods') }}</option>
         @foreach ($periods as $p)
           <option value="{{ $p }}" @selected($periodFil === $p)>{{ billingPeriodLabel($p) }}</option>
         @endforeach
       </select>
       @if ($search !== '' || $purokFil || $statusFil !== '' || $periodFil !== '')
-        <a href="{{ route('admin.readings.index') }}" class="btn btn-outline btn-sm">Clear</a>
+        <a href="{{ route('admin.readings.index') }}" class="btn btn-outline btn-sm">{{ __('Clear') }}</a>
       @endif
     </form>
 
@@ -44,16 +44,16 @@
       <table class="table table-hover align-middle mb-0 data-table {{ $isReader ? 'table-stack' : '' }}" @if ($isAdmin && $readings->currentPage() === 1 && $search === '' && !$purokFil && $statusFil === '' && $periodFil === '') data-live-readings @endif>
         <thead>
           <tr>
-            <th>No.</th><th>Meter Number</th><th>Name</th><th>Previous Reading</th><th>Present Reading</th>
-            <th>Consumption</th><th>Total</th><th>Balance</th><th>Status</th><th>Date</th>
-            @if ($canManage)<th>Actions</th>@endif
+            <th>{{ __('No.') }}</th><th>{{ __('Meter Number') }}</th><th>{{ __('Name') }}</th><th>{{ __('Previous Reading') }}</th><th>{{ __('Present Reading') }}</th>
+            <th>{{ __('Consumption') }}</th><th>{{ __('Total') }}</th><th>{{ __('Balance') }}</th><th>{{ __('Status') }}</th><th>{{ __('Date') }}</th>
+            @if ($canManage)<th>{{ __('Actions') }}</th>@endif
           </tr>
         </thead>
         <tbody>
         @forelse ($readings as $i => $r)
           @include('admin.readings._row', ['r' => $r, 'no' => $readings->firstItem() + $i, 'canManage' => $canManage])
         @empty
-          <tr class="empty-row"><td colspan="{{ $canManage ? 11 : 10 }}">No meter readings found{{ ($search !== '' || $purokFil || $statusFil !== '' || $periodFil !== '') ? ' for this filter' : '' }}.</td></tr>
+          <tr class="empty-row"><td colspan="{{ $canManage ? 11 : 10 }}">{{ __('No meter readings found:value.', ['value' => ($search !== '' || $purokFil || $statusFil !== '' || $periodFil !== '') ? __(' for this filter') : '']) }}</td></tr>
         @endforelse
         </tbody>
       </table>
@@ -69,7 +69,7 @@
   <div class="modal-dialog modal-fullscreen-sm-down">
     <div class="modal-content">
       <form method="POST" action="{{ route('admin.readings.store') }}" id="readingForm">
-        <div class="modal-header"><h3 class="h6 mb-0">Record Meter Reading</h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+        <div class="modal-header"><h3 class="h6 mb-0">{{ __('Record Meter Reading') }}</h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"></button></div>
         @csrf
         <input type="hidden" name="photo" id="photo">
         <input type="hidden" name="expect_meter" id="expect_meter">
@@ -80,75 +80,72 @@
           <div id="expectNote" class="alert alert-info py-2 small" hidden></div>
 
           <div class="meter-photo" data-photo="record">
-            <img alt="Photo of the meter" data-photo-preview hidden>
+            <img alt="{{ __('Photo of the meter') }}" data-photo-preview hidden>
             <div class="meter-photo-empty" data-photo-empty>
               <i class="ph ph-camera" aria-hidden="true"></i>
-              <span>Take a clear photo of the meter dial. The <strong>black numbers</strong> and the <strong>meter number</strong> must both show.</span>
+              <span>{{ __('Take a clear photo of the meter dial. The') }} <strong>{{ __('black numbers') }}</strong> {{ __('and the') }} <strong>{{ __('meter number') }}</strong> {{ __('must both show.') }}</span>
             </div>
-            <div class="meter-photo-busy" data-photo-busy hidden><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Reading the meter…</div>
+            <div class="meter-photo-busy" data-photo-busy hidden><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> {{ __('Reading the meter…') }}</div>
           </div>
           <input type="file" accept="image/*" capture="environment" hidden data-photo-input="record">
-          <button type="button" class="btn btn-primary btn-lg w-100 mt-2" data-photo-take="record"><i class="ph ph-camera" aria-hidden="true"></i> <span>Take Photo of Meter</span></button>
+          <button type="button" class="btn btn-primary btn-lg w-100 mt-2" data-photo-take="record"><i class="ph ph-camera" aria-hidden="true"></i> <span>{{ __('Take Photo of Meter') }}</span></button>
           <div class="meter-photo-msg" data-photo-msg="record" role="status"></div>
 
           {{-- Everything below is filled in from the photo and cannot be typed over. --}}
           <div class="meter-result" id="meterResult">
             <div class="row g-3 mb-3">
               <div class="col-6">
-                <label for="meterShown" class="form-label">Meter Number</label>
-                <input type="text" id="meterShown" class="form-control" readonly tabindex="-1" placeholder="From photo">
+                <label for="meterShown" class="form-label">{{ __('Meter Number') }}</label>
+                <input type="text" id="meterShown" class="form-control" readonly tabindex="-1" placeholder="{{ __('From photo') }}">
               </div>
               <div class="col-6">
-                <label for="consumerName" class="form-label">Consumer Name</label>
-                <input type="text" id="consumerName" class="form-control fw-bold" readonly tabindex="-1" placeholder="From photo">
+                <label for="consumerName" class="form-label">{{ __('Consumer Name') }}</label>
+                <input type="text" id="consumerName" class="form-control fw-bold" readonly tabindex="-1" placeholder="{{ __('From photo') }}">
               </div>
               <div class="col-12 small text-muted mt-1" id="consumerMeta"></div>
             </div>
             <div class="row g-3 mb-3">
               <div class="col-6">
-                <label for="previous_reading" class="form-label">Previous Reading</label>
-                <input type="text" id="previous_reading" class="form-control" readonly tabindex="-1" placeholder="From photo">
+                <label for="previous_reading" class="form-label">{{ __('Previous Reading') }}</label>
+                <input type="text" id="previous_reading" class="form-control" readonly tabindex="-1" placeholder="{{ __('From photo') }}">
               </div>
               <div class="col-6">
-                <label for="current_reading" class="form-label">Present Reading <i class="ph ph-camera text-muted" title="Read from the photo" aria-label="read from the photo"></i></label>
-                <input type="text" id="current_reading" class="form-control fw-bold" readonly tabindex="-1" placeholder="From photo">
+                <label for="current_reading" class="form-label">{{ __('Present Reading') }} <i class="ph ph-camera text-muted" title="{{ __('Read from the photo') }}" aria-label="{{ __('read from the photo') }}"></i></label>
+                <input type="text" id="current_reading" class="form-control fw-bold" readonly tabindex="-1" placeholder="{{ __('From photo') }}">
               </div>
             </div>
             <div class="p-3 mb-3" style="background:#f0fbff;border:1px solid var(--border);border-radius:10px;">
-              <div class="d-flex justify-content-between mb-1"><span class="text-muted">Consumption</span><strong id="calcConsumption">0.00 m³</strong></div>
-              <div class="d-flex justify-content-between mb-1"><span class="text-muted">Total</span><strong id="calcTotal" style="font-size:18px;color:var(--primary-dark);">₱0.00</strong></div>
-              <div class="d-flex justify-content-between"><span class="text-muted">Unpaid Balance</span><strong id="calcBalance">—</strong></div>
+              <div class="d-flex justify-content-between mb-1"><span class="text-muted">{{ __('Consumption') }}</span><strong id="calcConsumption">0.00 m³</strong></div>
+              <div class="d-flex justify-content-between mb-1"><span class="text-muted">{{ __('Total') }}</span><strong id="calcTotal" style="font-size:18px;color:var(--primary-dark);">₱0.00</strong></div>
+              <div class="d-flex justify-content-between"><span class="text-muted">{{ __('Unpaid Balance') }}</span><strong id="calcBalance">—</strong></div>
               <div class="text-muted mt-2" style="font-size:11.5px;">
-                Calculated automatically with the official water rate: {{ formatCurrency($tariff['minimumCharge']) }} minimum for the first
-                {{ rtrim(rtrim(number_format($tariff['includedCum'], 2), '0'), '.') }} m³, then
-                {{ collect($tariff['tiers'])->map(fn ($t) => formatCurrency($t['rate']) . '/m³ ' . ($t['to'] !== null
-                      ? 'up to ' . rtrim(rtrim(number_format($t['to'], 2), '0'), '.') . ' m³' : 'beyond'))->join(', ') }}
-                (senior citizens get {{ rtrim(rtrim(number_format($tariff['seniorPct'], 2), '0'), '.') }}% off).
+                {{ __('Calculated automatically with the official water rate: :amount minimum for the first :value m³, then :value2 (senior citizens get :value3% off).', ['amount' => formatCurrency($tariff['minimumCharge']), 'value' => rtrim(rtrim(number_format($tariff['includedCum'], 2), '0'), '.'), 'value2' => collect($tariff['tiers'])->map(fn ($t) => formatCurrency($t['rate']) . '/m³ ' . ($t['to'] !== null
+                      ? __('up to ') . rtrim(rtrim(number_format($t['to'], 2), '0'), '.') . ' m³' : __('beyond')))->join(', '), 'value3' => rtrim(rtrim(number_format($tariff['seniorPct'], 2), '0'), '.')]) }}
               </div>
             </div>
           </div>
 
           <div class="row g-3 mt-1">
             <div class="col-6">
-              <label class="form-label" for="periodShown">Month of</label>
+              <label class="form-label" for="periodShown">{{ __('Month of') }}</label>
               <input type="text" id="periodShown" class="form-control" value="{{ billingPeriodLabel(currentBillingPeriod()) }}" readonly tabindex="-1">
             </div>
             <div class="col-6">
-              <label class="form-label" for="dateShown">Reading Date</label>
+              <label class="form-label" for="dateShown">{{ __('Reading Date') }}</label>
               <input type="text" id="dateShown" class="form-control" value="{{ formatDate(date('Y-m-d')) }}" readonly tabindex="-1">
             </div>
           </div>
           <div class="mt-3">
-            <label for="remarks" class="form-label">Remarks</label>
-            <input type="text" id="remarks" name="remarks" class="form-control" maxlength="255" placeholder="Optional notes (e.g. meter leaking, gate locked)">
+            <label for="remarks" class="form-label">{{ __('Remarks') }}</label>
+            <input type="text" id="remarks" name="remarks" class="form-control" maxlength="255" placeholder="{{ __('Optional notes (e.g. meter leaking, gate locked)') }}">
           </div>
-          <p class="text-muted mt-3 mb-0" style="font-size:12px;">All fields are filled in automatically from the photo and cannot be typed. To change them, retake the photo.</p>
+          <p class="text-muted mt-3 mb-0" style="font-size:12px;">{{ __('All fields are filled in automatically from the photo and cannot be typed. To change them, retake the photo.') }}</p>
         </div>
         {{-- Opened from the Consumer List: go back there after saving. --}}
         <input type="hidden" name="back" value="{{ request('back') }}">
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="saveReadingBtn" disabled>Save Reading</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+          <button type="submit" class="btn btn-primary" id="saveReadingBtn" disabled>{{ __('Save Reading') }}</button>
         </div>
       </form>
     </div>
@@ -160,28 +157,28 @@
   <div class="modal-dialog modal-fullscreen-sm-down">
     <div class="modal-content">
       <form method="POST" action="" id="editReadingForm">
-        <div class="modal-header"><h3 class="h6 mb-0">Correct Reading — <span id="er_meter"></span></h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+        <div class="modal-header"><h3 class="h6 mb-0">{{ __('Correct Reading —') }} <span id="er_meter"></span></h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"></button></div>
         @csrf @method('PUT')
         <input type="hidden" name="photo" id="er_photo">
         <div class="modal-body">
-          <p class="small text-muted mb-2">Take a new photo of this meter. Its reading replaces the present reading; nothing is typed.</p>
+          <p class="small text-muted mb-2">{{ __('Take a new photo of this meter. Its reading replaces the present reading; nothing is typed.') }}</p>
           <div class="d-flex justify-content-between small mb-3 p-2" style="background:var(--bg);border-radius:8px;">
-            <span>Previous: <strong id="er_prev"></strong></span><span>Present now: <strong id="er_curr"></strong></span>
+            <span>{{ __('Previous:') }} <strong id="er_prev"></strong></span><span>{{ __('Present now:') }} <strong id="er_curr"></strong></span>
           </div>
           <div class="meter-photo" data-photo="correct">
-            <img alt="New photo of the meter" data-photo-preview hidden>
-            <div class="meter-photo-empty" data-photo-empty><i class="ph ph-camera" aria-hidden="true"></i><span>New photo of the meter dial</span></div>
-            <div class="meter-photo-busy" data-photo-busy hidden><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Reading the meter…</div>
+            <img alt="{{ __('New photo of the meter') }}" data-photo-preview hidden>
+            <div class="meter-photo-empty" data-photo-empty><i class="ph ph-camera" aria-hidden="true"></i><span>{{ __('New photo of the meter dial') }}</span></div>
+            <div class="meter-photo-busy" data-photo-busy hidden><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> {{ __('Reading the meter…') }}</div>
           </div>
           <input type="file" accept="image/*" capture="environment" hidden data-photo-input="correct">
-          <button type="button" class="btn btn-primary w-100 mt-2" data-photo-take="correct"><i class="ph ph-camera" aria-hidden="true"></i> <span>Take New Photo</span></button>
+          <button type="button" class="btn btn-primary w-100 mt-2" data-photo-take="correct"><i class="ph ph-camera" aria-hidden="true"></i> <span>{{ __('Take New Photo') }}</span></button>
           <div class="meter-photo-msg" data-photo-msg="correct" role="status"></div>
-          <div class="mb-3 mt-3"><label class="form-label" for="er_remarks">Remarks</label><input type="text" name="remarks" id="er_remarks" class="form-control" maxlength="255"></div>
-          <p class="text-muted mb-0" style="font-size:12px;">If the bill has no payments yet, it is re-calculated automatically.</p>
+          <div class="mb-3 mt-3"><label class="form-label" for="er_remarks">{{ __('Remarks') }}</label><input type="text" name="remarks" id="er_remarks" class="form-control" maxlength="255"></div>
+          <p class="text-muted mb-0" style="font-size:12px;">{{ __('If the bill has no payments yet, it is re-calculated automatically.') }}</p>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="er_save" disabled>Update Reading</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+          <button type="submit" class="btn btn-primary" id="er_save" disabled>{{ __('Update Reading') }}</button>
         </div>
       </form>
     </div>
@@ -203,7 +200,7 @@
   const num = n => Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const $ = id => document.getElementById(id);
-  const TIPS = 'Wipe the meter glass, avoid glare, and keep the black numbers and the meter number in the photo.';
+  const TIPS = {{ Js::from(__('Wipe the meter glass, avoid glare, and keep the black numbers and the meter number in the photo.')) }};
 
   // Same formula as the server (BillingService::computeBillAmount).
   function billTotal(consumption, isSenior) {
@@ -263,10 +260,10 @@
     const sharp = lapSq / m - (lap / m) * (lap / m);
     best.sharp = Math.max(best.sharp * 0.995, sharp);   // slowly forget, in case the light changes
 
-    if (mean < 55) return 'Too dark. Turn on the light or move out of the shadow.';
-    if (glare / n > 0.03) return 'Glare on the glass. Tilt the phone a little.';
-    if (contrast < 22) return 'Point the camera at the meter dial.';
-    if (sharp < 15 || sharp < best.sharp * 0.35) return 'Blurry. Hold the phone steady.';
+    if (mean < 55) return {{ Js::from(__('Too dark. Turn on the light or move out of the shadow.')) }};
+    if (glare / n > 0.03) return {{ Js::from(__('Glare on the glass. Tilt the phone a little.')) }};
+    if (contrast < 22) return {{ Js::from(__('Point the camera at the meter dial.')) }};
+    if (sharp < 15 || sharp < best.sharp * 0.35) return {{ Js::from(__('Blurry. Hold the phone steady.')) }};
     return '';
   }
 
@@ -379,7 +376,7 @@
       opts.onStart();
       say(''); mark(null);
       preview.hidden = true; empty.hidden = true;
-      btn.disabled = true; label.textContent = 'Starting camera…';
+      btn.disabled = true; label.textContent = {{ Js::from(__('Starting camera…')) }};
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: false,
           video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
@@ -388,7 +385,7 @@
         if (mine !== request) return;
         useCameraApp = true;
         empty.hidden = false; btn.disabled = false; label.textContent = opts.takeLabel;
-        say('The camera could not be opened here. Tap the button again to use the phone\'s camera app.', 'warn');
+        say({{ Js::from(__('The camera could not be opened here. Tap the button again to use the phone\'s camera app.')) }}, 'warn');
         return;
       }
       if (mine !== request) { stream.getTracks().forEach(t => t.stop()); stream = null; return; }
@@ -399,7 +396,7 @@
       video.srcObject = stream;
       video.hidden = false; square.hidden = false; hint.hidden = false;
       box.classList.add('is-live');
-      hint.textContent = 'Fit the whole meter dial inside the square.';
+      hint.textContent = {{ Js::from(__('Fit the whole meter dial inside the square.')) }};
       recent = []; good = false; redSince = 0; best.sharp = 0;
       ai = { ok: false, hint: '', at: 0, sent: 0, busy: false, off: false, fails: 0 };
       await video.play().catch(() => {});
@@ -433,7 +430,7 @@
       if (!file) return;
       opts.onStart();
       let dataUrl;
-      try { dataUrl = await shrink(file); } catch (e) { say('This picture could not be opened. Please take the photo again.', 'error'); return; }
+      try { dataUrl = await shrink(file); } catch (e) { say({{ Js::from(__('This picture could not be opened. Please take the photo again.')) }}, 'error'); return; }
       send(dataUrl);
     });
 
@@ -441,7 +438,7 @@
       const mine = ++request;
       say(''); mark(null);
       preview.src = dataUrl; preview.hidden = false; empty.hidden = true;
-      label.textContent = 'Retake Photo';
+      label.textContent = {{ Js::from(__('Retake Photo')) }};
       busy.hidden = false; btn.disabled = true;
       let res = null;
       if (navigator.onLine !== false) {
@@ -467,9 +464,9 @@
       if (offline && opts.onOffline && opts.onOffline(dataUrl, !res)) { mark(null); return; }
       mark('bad');
       opts.onFail && opts.onFail();
-      if (res && (res.status === 401 || res.status === 419)) { say('Your session ended. Please log in again.', 'error'); return; }
+      if (res && (res.status === 401 || res.status === 419)) { say({{ Js::from(__('Your session ended. Please log in again.')) }}, 'error'); return; }
       const why = res && res.status < 500 && res.data && res.data.message;
-      say('<i class="ph ph-warning" aria-hidden="true"></i> ' + esc(why || 'The photo could not be read right now. Please take the photo again.'), 'error');
+      say('<i class="ph ph-warning" aria-hidden="true"></i> ' + esc(why || {{ Js::from(__('The photo could not be read right now. Please take the photo again.')) }}), 'error');
     }
 
     // Closing the form turns the camera off.
@@ -507,7 +504,7 @@
   function clearResult() {
     scanned = null;
     typedPhoto = null;
-    ['meterShown', 'current_reading'].forEach(id => { $(id).readOnly = true; $(id).tabIndex = -1; $(id).placeholder = 'From photo'; });
+    ['meterShown', 'current_reading'].forEach(id => { $(id).readOnly = true; $(id).tabIndex = -1; $(id).placeholder = {{ Js::from(__('From photo')) }}; });
     $('meterResult').classList.remove('is-typed');
     $('photo').value = '';
     ['meterShown', 'consumerName', 'previous_reading', 'current_reading'].forEach(id => { $(id).value = ''; });
@@ -517,16 +514,16 @@
     $('calcBalance').textContent = '—';
     $('calcBalance').style.color = '';
     $('saveReadingBtn').disabled = true;
-    $('saveReadingBtn').textContent = 'Save Reading';
+    $('saveReadingBtn').textContent = {{ Js::from(__('Save Reading')) }};
   }
 
   function showConsumer(d) {
     $('consumerName').value = d.name;
     $('consumerMeta').innerHTML = esc(d.purok) + ' · ' + esc(d.consumer_type)
-      + (d.is_senior ? ' · <span class="badge badge-info">Senior</span>' : '')
-      + (d.last_period ? '<div class="text-muted">Last reading: ' + esc(d.last_period) + '</div>' : '');
+      + (d.is_senior ? ' · <span class="badge badge-info">' + {{ Js::from(__('Senior')) }} + '</span>' : '')
+      + (d.last_period ? '<div class="text-muted">' + {{ Js::from(__('Last reading:')) }} + ' ' + esc(d.last_period) + '</div>' : '');
     $('previous_reading').value = num(d.previous_reading);
-    $('calcBalance').textContent = d.balance > 0 ? peso(d.balance) : '₱0.00 (no unpaid bills)';
+    $('calcBalance').textContent = d.balance > 0 ? peso(d.balance) : {{ Js::from(__('₱0.00 (no unpaid bills)')) }};
     $('calcBalance').style.color = d.balance > 0 ? '#e5533d' : '';
   }
   function showTotals(d) {
@@ -541,15 +538,14 @@
    * the photo is kept with the typed reading and checked against it on the server once it is sent.
    */
   function startTyping(dataUrl, noAnswer) {
-    const why = navigator.onLine === false ? 'No internet' : noAnswer ? 'Weak internet' : 'The photo reader is busy';
+    const why = navigator.onLine === false ? {{ Js::from(__('No internet')) }} : noAnswer ? {{ Js::from(__('Weak internet')) }} : {{ Js::from(__('The photo reader is busy')) }};
     if (!outbox || !outbox.meterData()) {
-      record.say('<i class="ph ph-wifi-slash" aria-hidden="true"></i> ' + why + ', so the photo can\'t be read, and the meters of your puroks '
-        + 'aren\'t on this phone yet. Retake the photo when the signal is better.', 'error');
+      record.say('<i class="ph ph-wifi-slash" aria-hidden="true"></i> ' + {{ Js::from(__(':why, so the photo can\'t be read, and the meters of your puroks aren\'t on this phone yet. Retake the photo when the signal is better.')) }}.replace(':why', why), 'error');
       return true;
     }
-    record.say('<i class="ph ph-wifi-slash" aria-hidden="true"></i> <strong>' + why + '</strong> — the photo can\'t be read right now. Type the reading instead?'
-      + '<div class="d-flex gap-2 mt-2"><button type="button" class="btn btn-primary btn-sm flex-fill" data-type-yes>Yes, type it</button>'
-      + '<button type="button" class="btn btn-outline btn-sm flex-fill" data-type-no>No, retake photo</button></div>', 'warn');
+    record.say('<i class="ph ph-wifi-slash" aria-hidden="true"></i> <strong>' + why + '</strong> — ' + {{ Js::from(__('the photo can\'t be read right now. Type the reading instead?')) }}
+      + '<div class="d-flex gap-2 mt-2"><button type="button" class="btn btn-primary btn-sm flex-fill" data-type-yes>' + {{ Js::from(__('Yes, type it')) }} + '</button>'
+      + '<button type="button" class="btn btn-outline btn-sm flex-fill" data-type-no>' + {{ Js::from(__('No, retake photo')) }} + '</button></div>', 'warn');
     const msg = document.querySelector('[data-photo-msg="record"]');
     msg.querySelector('[data-type-yes]').addEventListener('click', () => enterTyping(dataUrl, why));
     msg.querySelector('[data-type-no]').addEventListener('click', () => record.retake());
@@ -560,11 +556,11 @@
     typedPhoto = dataUrl;
     $('meterResult').classList.add('is-typed');
     ['meterShown', 'current_reading'].forEach(id => { $(id).readOnly = false; $(id).tabIndex = 0; });
-    $('meterShown').placeholder = 'Type the meter number';
-    $('current_reading').placeholder = 'Black numbers';
+    $('meterShown').placeholder = {{ Js::from(__('Type the meter number')) }};
+    $('current_reading').placeholder = {{ Js::from(__('Black numbers')) }};
     if (expectMeter) $('meterShown').value = expectMeter;
-    record.say('<i class="ph ph-keyboard" aria-hidden="true"></i> <strong>' + why + '</strong> — type the meter number and the '
-      + '<strong>black numbers</strong>. The photo is kept and checked against them when the internet is better.', 'warn');
+    record.say('<i class="ph ph-keyboard" aria-hidden="true"></i> <strong>' + why + '</strong> — '
+      + {{ Js::from(__('type the meter number and the <strong>black numbers</strong>. The photo is kept and checked against them when the internet is better.')) }}, 'warn');
     typedChanged();
     $(expectMeter ? 'current_reading' : 'meterShown').focus();
   }
@@ -589,20 +585,20 @@
     if (!meter) { $('consumerMeta').innerHTML = ''; return; }
 
     const c = downloadedMeter(meter);
-    if (!c) return wrong('No meter ' + esc(meter) + ' in your puroks.');
-    if (expectMeter && c.meter.replace(/^0+/, '') !== expectMeter.replace(/^0+/, '')) return wrong('You are recording meter ' + esc(expectMeter) + '.');
+    if (!c) return wrong({{ Js::from(__('No meter :meter in your puroks.')) }}.replace(':meter', esc(meter)));
+    if (expectMeter && c.meter.replace(/^0+/, '') !== expectMeter.replace(/^0+/, '')) return wrong({{ Js::from(__('You are recording meter :meter.')) }}.replace(':meter', esc(expectMeter)));
     const period = $('billing_period').value;
     const d = { typed: true, meter: c.meter, name: c.name, purok: c.purok, consumer_type: c.consumer_type, is_senior: c.is_senior,
       previous_reading: Number(c.previous_reading), last_period: c.last_period, balance: c.balance, usual_consumption: c.usual_consumption };
     showConsumer(d);
-    if (!c.active) return wrong(esc(c.name) + '\'s account is not active.');
-    if (c.read_periods.includes(period)) return wrong(esc(c.name) + ' already has a reading for ' + esc(outbox.periodLabel(period)) + '.');
+    if (!c.active) return wrong({{ Js::from(__(':name\'s account is not active.')) }}.replace(':name', esc(c.name)));
+    if (c.read_periods.includes(period)) return wrong({{ Js::from(__(':name already has a reading for :period.')) }}.replace(':name', esc(c.name)).replace(':period', esc(outbox.periodLabel(period))));
 
     const typed = $('current_reading').value.replace(/,/g, '').trim();
     if (typed === '' || !/^\d+(\.\d{1,2})?$/.test(typed)) return;
     d.present_reading = Number(typed);
     if (d.present_reading < d.previous_reading) {
-      $('consumerMeta').insertAdjacentHTML('beforeend', '<div class="text-danger">Lower than the previous reading (' + num(d.previous_reading) + ').</div>');
+      $('consumerMeta').insertAdjacentHTML('beforeend', '<div class="text-danger">' + {{ Js::from(__('Lower than the previous reading (:reading).')) }}.replace(':reading', num(d.previous_reading)) + '</div>');
       return;
     }
     showTotals(d);
@@ -613,9 +609,9 @@
 
   function savedOnPhone(item, typed) {
     if (back && back.indexOf(location.origin + '/') === 0) { saving = true; location.href = back; return; }
-    $('savedNote').innerHTML = '<i class="ph ph-check-circle" aria-hidden="true"></i> Saved: <strong>Meter ' + esc(item.meter) + '</strong> ('
+    $('savedNote').innerHTML = '<i class="ph ph-check-circle" aria-hidden="true"></i> ' + {{ Js::from(__('Saved:')) }} + ' <strong>' + {{ Js::from(__('Meter')) }} + ' ' + esc(item.meter) + '</strong> ('
       + esc(item.name) + '), ' + (item.curr - item.prev).toFixed(2) + ' m³.'
-      + (typed ? ' It is sent, and its photo checked, when you\'re back online.' : '') + ' Take the next meter\'s photo.';
+      + (typed ? ' ' + {{ Js::from(__('It is sent, and its photo checked, when you\'re back online.')) }} : '') + ' ' + {{ Js::from(__('Take the next meter\'s photo.')) }};
     $('savedNote').hidden = false;
     $('remarks').value = '';
     record.reset();
@@ -623,7 +619,7 @@
   }
 
   const record = photoBox('record', {
-    takeLabel: 'Take Photo of Meter',
+    takeLabel: {{ Js::from(__('Take Photo of Meter')) }},
     extra: () => ({ billing_period: $('billing_period').value, expect_meter: expectMeter }),
     onStart: clearResult,
     onFail: clearResult,
@@ -637,10 +633,9 @@
       showTotals(d);
       $('saveReadingBtn').disabled = false;
       if (d.turning) {
-        record.say('<i class="ph ph-warning" aria-hidden="true"></i> A number wheel was turning between two digits. Check that the present reading <strong>'
-          + num(d.present_reading) + '</strong> matches the meter, then save. If not, retake the photo.', 'warn');
+        record.say('<i class="ph ph-warning" aria-hidden="true"></i> ' + {{ Js::from(__('A number wheel was turning between two digits. Check that the present reading <strong>:reading</strong> matches the meter, then save. If not, retake the photo.')) }}.replace(':reading', num(d.present_reading)), 'warn');
       } else {
-        record.say('<i class="ph ph-check-circle" aria-hidden="true"></i> Read from the photo. Check that this is <strong>' + esc(d.name) + '</strong>\'s meter, then save.', 'ok');
+        record.say('<i class="ph ph-check-circle" aria-hidden="true"></i> ' + {{ Js::from(__('Read from the photo. Check that this is <strong>:name</strong>\'s meter, then save.')) }}.replace(':name', esc(d.name)), 'ok');
       }
     },
   });
@@ -651,11 +646,11 @@
     // Unusual reading? Ask before saving: no water used at all, or far more than usual.
     const used = scanned.present_reading - scanned.previous_reading, usual = scanned.usual_consumption || 0;
     let ask = '';
-    if (used === 0) ask = 'This reading shows 0 m³ used (same as last time).';
+    if (used === 0) ask = {{ Js::from(__('This reading shows 0 m³ used (same as last time).')) }};
     else if (usual > 0 && used > Math.max(usual * 2, usual + 10)) {
-      ask = 'This reading shows ' + used.toFixed(2) + ' m³ used — much more than usual (about ' + usual.toFixed(2) + ' m³ a month).';
+      ask = {{ Js::from(__('This reading shows :used m³ used — much more than usual (about :usual m³ a month).')) }}.replace(':used', used.toFixed(2)).replace(':usual', usual.toFixed(2));
     }
-    if (ask && !confirm(ask + '\n\nCheck the meter (and for leaks). Save this reading anyway?')) { e.preventDefault(); return; }
+    if (ask && !confirm(ask + '\n\n' + {{ Js::from(__('Check the meter (and for leaks). Save this reading anyway?')) }})) { e.preventDefault(); return; }
 
     const reading = {
       meter: scanned.meter, name: scanned.name, period: $('billing_period').value, prev: scanned.previous_reading, curr: scanned.present_reading,
@@ -682,7 +677,7 @@
     }
     saving = true;
     $('saveReadingBtn').disabled = true;
-    $('saveReadingBtn').textContent = 'Saving…';
+    $('saveReadingBtn').textContent = {{ Js::from(__('Saving…')) }};
   });
 
   $('addReadingModal').addEventListener('hidden.bs.modal', () => { $('savedNote').hidden = true; });
@@ -698,7 +693,7 @@
   // ======================= Correct a reading =======================
   let correcting = null;
   const correct = photoBox('correct', {
-    takeLabel: 'Take New Photo',
+    takeLabel: {{ Js::from(__('Take New Photo')) }},
     extra: () => ({ reading_id: correcting ? correcting.reading_id : null }),
     onStart: () => { $('er_photo').value = ''; $('er_save').disabled = true; },
     onFail: () => { $('er_photo').value = ''; $('er_save').disabled = true; },

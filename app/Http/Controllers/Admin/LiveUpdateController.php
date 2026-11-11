@@ -39,7 +39,7 @@ class LiveUpdateController extends Controller
             'unread'   => DB::table('notifications')->where('user_id', $user->user_id)->where('is_read', false)->count(),
             'readings' => $readings->map(fn ($r) => [
                 'id'    => (int)$r->reading_id,
-                'text'  => "Meter {$r->meter_number} — {$r->full_name} ({$r->purok_name}): "
+                'text'  => __('Meter :meter_number — :full_name (:purok_name): ', ['meter_number' => $r->meter_number, 'full_name' => $r->full_name, 'purok_name' => $r->purok_name])
                     . number_format((float)$r->consumption, 2) . ' m³'
                     . ($r->bill_total !== null ? ', bill ' . formatCurrency($r->bill_total) : '')
                     . ($r->reader_name ? " · by {$r->reader_name}" : ''),
@@ -48,7 +48,7 @@ class LiveUpdateController extends Controller
                 ])->render(),
             ])->values(),
             'notifications' => $notifications->map(fn ($n) => [
-                'title' => $n->title, 'message' => $n->message, 'time' => formatDateTime($n->created_at),
+                'title' => translateStored($n->title), 'message' => translateStored($n->message), 'time' => formatDateTime($n->created_at),
             ])->values(),
         ], 200, ['Cache-Control' => 'no-store']);
     }

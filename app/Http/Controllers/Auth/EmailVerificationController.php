@@ -63,16 +63,16 @@ class EmailVerificationController extends Controller
 
         $code = clean($request->input('otp'));
         if ($code === '') {
-            return back()->with('error', 'Please enter the 6-digit code.');
+            return back()->with('error', __('Please enter the 6-digit code.'));
         }
 
         $otp = OtpService::emailVerification();
         $result = $otp->verify($user->user_id, $code);
         if ($result !== 'ok') {
             return back()->with('error', match ($result) {
-                'expired' => 'That code has expired or is no longer valid. Please request a new one.',
-                'locked'  => 'Too many incorrect attempts. Please request a new code.',
-                default   => 'Incorrect code. Please try again.',
+                'expired' => __('That code has expired or is no longer valid. Please request a new one.'),
+                'locked'  => __('Too many incorrect attempts. Please request a new code.'),
+                default   => __('Incorrect code. Please try again.'),
             });
         }
 
@@ -100,13 +100,13 @@ class EmailVerificationController extends Controller
 
                 $staffIds = DB::table('users')->where('role', 'admin')->where('status', 'active')->pluck('user_id');
                 foreach ($staffIds as $staffId) {
-                    $billing->createNotification(
-                        (int)$staffId, null, 'New membership application',
-                        "{$application->full_name} submitted a membership application ($applicationRef) for review."
-                    );
+                    inLocale(userLocale((int)$staffId), fn () => $billing->createNotification(
+                        (int)$staffId, null, __('New membership application'),
+                        __(':name submitted a membership application (:reference) for review.', ['name' => $application->full_name, 'reference' => $applicationRef])
+                    ));
                 }
 
-                $mailer->send($user->email, $user->full_name, "AWAS membership application received — $applicationRef",
+                $mailer->send($user->email, $user->full_name, __('AWAS membership application received — :reference', ['reference' => $applicationRef]),
                     'emails.application-received', ['name' => $user->full_name, 'reference' => $applicationRef]);
             }
         }
@@ -150,11 +150,11 @@ class EmailVerificationController extends Controller
         return $codes->sendEmailVerification(
             $user->user_id, (string)$user->email, $user->full_name,
             $isApplicant
-                ? 'Enter this code to verify your email address for your AWAS membership:'
-                : 'Enter this code to verify your email address and activate your AWAS account:',
+                ? __('Enter this code to verify your email address for your AWAS membership:')
+                : __('Enter this code to verify your email address and activate your AWAS account:'),
             $isApplicant
-                ? 'Go back to the verification page you were on and type the 6-digit code. '
-                    . 'Your application only goes to the barangay water office for review after your email is verified.'
+                ? __('Go back to the verification page you were on and type the 6-digit code.') . ' '
+                    . __('Your application only goes to the barangay water office for review after your email is verified.')
                 : null
         );
     }

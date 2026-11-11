@@ -146,36 +146,36 @@ class ApplicationFiles
         if ($upload !== null) {
             if (!$upload->isValid()) {
                 $errors[] = match ($upload->getError()) {
-                    UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => "The $label file is too large. The maximum size is 5 MB.",
-                    UPLOAD_ERR_PARTIAL => "The $label file was only partially uploaded. Please try again.",
-                    default => "The $label could not be uploaded (upload error {$upload->getError()}). Please try again.",
+                    UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => __('The :label file is too large. The maximum size is 5 MB.', ['label' => $label]),
+                    UPLOAD_ERR_PARTIAL => __('The :label file was only partially uploaded. Please try again.', ['label' => $label]),
+                    default => __('The :label could not be uploaded (upload error :geterror). Please try again.', ['label' => $label, 'geterror' => $upload->getError()]),
                 };
                 return null;
             }
             if ($upload->getSize() > self::MAX_BYTES) {
-                $errors[] = "The $label file is too large. The maximum size is 5 MB.";
+                $errors[] = __('The :label file is too large. The maximum size is 5 MB.', ['label' => $label]);
                 return null;
             }
             $tmpPath = $upload->getRealPath();
         } elseif ($dataUrl !== '') {
             if (!preg_match('#^data:image/(jpeg|png|webp);base64,([A-Za-z0-9+/=\s]+)$#', $dataUrl, $m)) {
-                $errors[] = "The captured $label photo was not in a valid format. Please capture it again.";
+                $errors[] = __('The captured :label photo was not in a valid format. Please capture it again.', ['label' => $label]);
                 return null;
             }
             $bytes = base64_decode($m[2], true);
             if ($bytes === false || $bytes === '') {
-                $errors[] = "The captured $label photo could not be read. Please capture it again.";
+                $errors[] = __('The captured :label photo could not be read. Please capture it again.', ['label' => $label]);
                 return null;
             }
             if (strlen($bytes) > self::MAX_BYTES) {
-                $errors[] = "The captured $label photo is too large. The maximum size is 5 MB.";
+                $errors[] = __('The captured :label photo is too large. The maximum size is 5 MB.', ['label' => $label]);
                 return null;
             }
         } else {
             if ($required) {
                 $errors[] = $label === 'face verification'
-                    ? 'Please take a selfie for face verification.'
-                    : "Please upload or capture a photo of the $label.";
+                    ? __('Please take a selfie for face verification.')
+                    : __('Please upload or capture a photo of the :label.', ['label' => $label]);
             }
             return null;
         }
@@ -184,22 +184,22 @@ class ApplicationFiles
         $finfo = new finfo(FILEINFO_MIME_TYPE);
         $mime = $tmpPath !== null ? $finfo->file($tmpPath) : $finfo->buffer($bytes);
         if (!isset(self::ALLOWED_TYPES[$mime])) {
-            $errors[] = "The $label must be a JPG, PNG or WEBP image. Other file types are not accepted.";
+            $errors[] = __('The :label must be a JPG, PNG or WEBP image. Other file types are not accepted.', ['label' => $label]);
             return null;
         }
         $imageInfo = $tmpPath !== null ? @getimagesize($tmpPath) : @getimagesizefromstring($bytes);
         if ($imageInfo === false) {
-            $errors[] = "The $label file is not a readable image. Please choose a different photo.";
+            $errors[] = __('The :label file is not a readable image. Please choose a different photo.', ['label' => $label]);
             return null;
         }
         if ($orientation !== '') {
             [$width, $height] = $this->displayedSize($imageInfo, $tmpPath ?? null, $mime);
             if ($orientation === 'landscape' && $width <= $height) {
-                $errors[] = "The $label must be a landscape (horizontal) photo. Hold the ID sideways so the whole card fills the frame.";
+                $errors[] = __('The :label must be a landscape (horizontal) photo. Hold the ID sideways so the whole card fills the frame.', ['label' => $label]);
                 return null;
             }
             if ($orientation === 'portrait' && $height <= $width) {
-                $errors[] = "The $label photo must be portrait (vertical). Please do the face verification again.";
+                $errors[] = __('The :label photo must be portrait (vertical). Please do the face verification again.', ['label' => $label]);
                 return null;
             }
         }
@@ -209,7 +209,7 @@ class ApplicationFiles
             $this->put($name, $bytes ?? file_get_contents($tmpPath));
         } catch (\Throwable $e) {
             Log::error("ApplicationFiles: could not save $name: " . $e->getMessage());
-            $errors[] = "The $label could not be saved. Please try again.";
+            $errors[] = __('The :label could not be saved. Please try again.', ['label' => $label]);
             return null;
         }
         return $name;

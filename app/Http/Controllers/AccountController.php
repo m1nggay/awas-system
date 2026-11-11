@@ -35,11 +35,11 @@ class AccountController extends Controller
     {
         $user = $request->user();
         if (empty($user->email)) {
-            return back()->with('error', 'There is no email address on your account. Please ask the administrator to add one first.');
+            return back()->with('error', __('There is no email address on your account. Please ask the administrator to add one first.'));
         }
 
         $result = $codes->sendPasswordCode($user->user_id, $user->email, $user->full_name,
-            'Your AWAS change-password code', 'Use this code to confirm that you want to change your AWAS password:');
+            __('Your AWAS change-password code'), __('Use this code to confirm that you want to change your AWAS password:'));
         [$type, $message] = OtpService::resultMessage($result, OtpService::passwordReset()->secondsUntilResend($user->user_id));
 
         if (in_array($result, ['sent', 'cooldown'], true)) {
@@ -56,7 +56,7 @@ class AccountController extends Controller
         $user = $request->user();
         $code = clean($request->input('otp'));
         if (!preg_match('/^\d{6}$/', $code)) {
-            return back()->with('error', 'Please enter the 6-digit code from your email.');
+            return back()->with('error', __('Please enter the 6-digit code from your email.'));
         }
 
         $result = OtpService::passwordReset()->verify($user->user_id, $code);
@@ -65,29 +65,29 @@ class AccountController extends Controller
                 $request->session()->forget('pwd_change_code_sent');
             }
             return back()->with('error', match ($result) {
-                'expired' => 'That code has expired or is no longer valid. Please request a new one.',
-                'locked'  => 'Too many incorrect attempts. Please request a new code.',
-                default   => 'Incorrect code. Please try again.',
+                'expired' => __('That code has expired or is no longer valid. Please request a new one.'),
+                'locked'  => __('Too many incorrect attempts. Please request a new code.'),
+                default   => __('Incorrect code. Please try again.'),
             });
         }
 
         $request->session()->put('pwd_change_verified_at', time());
         $request->session()->forget('pwd_change_code_sent');
-        return $this->stepPage($request)->with('success', 'Code verified. You can now choose a new password.');
+        return $this->stepPage($request)->with('success', __('Code verified. You can now choose a new password.'));
     }
 
     public function update(Request $request)
     {
         if (!$this->isVerified($request)) {
-            return $this->stepPage($request)->with('error', 'Please verify the code sent to your email first.');
+            return $this->stepPage($request)->with('error', __('Please verify the code sent to your email first.'));
         }
 
         $user = $request->user();
         $new = (string)$request->input('new_password', '');
         $error = match (true) {
             ($policy = passwordPolicyError($new)) !== null => $policy,
-            $new !== (string)$request->input('confirm_password', '') => 'New password and confirmation do not match.',
-            Hash::check($new, $user->password_hash) => 'Please choose a password different from your current one.',
+            $new !== (string)$request->input('confirm_password', '') => __('New password and confirmation do not match.'),
+            Hash::check($new, $user->password_hash) => __('Please choose a password different from your current one.'),
             default => null,
         };
         if ($error) {
@@ -99,7 +99,7 @@ class AccountController extends Controller
         $request->session()->forget(['pwd_change_verified_at', 'pwd_change_code_sent']);
         log_activity($user->user_id, 'password_change', 'Changed own password (verified by email code)');
 
-        flash('success', 'Your password was changed.');
+        flash('success', __('Your password was changed.'));
         return redirect()->route(match (true) {
             $user->role === 'resident' => 'resident.profile',
             $request->input('from') === 'profile' => 'admin.profile',

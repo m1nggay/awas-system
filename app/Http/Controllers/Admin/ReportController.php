@@ -64,7 +64,7 @@ class ReportController extends Controller
                 foreach ($billing->getPurokReport($period, $purokId, $allowed) as $group) {
                     fputcsv($out, []);
                     fputcsv($out, [mb_strtoupper($group['purok'])]);
-                    fputcsv($out, ['No.', 'Meter Number', 'Name', 'Present Reading', 'Previous Reading', 'Consumption (m3)', 'Total', 'Balance', 'Status', 'Date Paid']);
+                    fputcsv($out, ['No.', __('Meter Number'), 'Name', __('Present Reading'), __('Previous Reading'), __('Consumption (m3)'), 'Total', 'Balance', 'Status', __('Date Paid')]);
                     foreach ($group['rows'] as $i => $r) {
                         fputcsv($out, [
                             $i + 1, $r->meter_number, $r->full_name,
@@ -73,7 +73,7 @@ class ReportController extends Controller
                             $r->consumption !== null ? number_format($r->consumption, 2, '.', '') : '',
                             $r->total !== null ? number_format($r->total, 2, '.', '') : '',
                             number_format($r->balance, 2, '.', ''),
-                            $r->status === 'disconnected' ? 'Disconnected (unpaid before disconnection)' : ucwords(str_replace('_', ' ', $r->status)),
+                            $r->status === 'disconnected' ? __('Disconnected (unpaid before disconnection)') : ucwords(str_replace('_', ' ', $r->status)),
                             $r->date_paid ?? 'N/A',
                         ]);
                     }
@@ -92,13 +92,13 @@ class ReportController extends Controller
     /** @return array{0: array, 1: string, 2: string, 3: int} [allowed types, type, period, purok id] */
     private function params(Request $request): array
     {
-        $types = BillingService::REPORT_TYPES;
+        $types = array_map(fn ($label) => __($label), BillingService::REPORT_TYPES);
         if ($request->user()->isMeterReader()) {
             $types = array_intersect_key($types, array_flip(BillingService::METER_READER_REPORTS));
         }
 
         $type = clean($request->query('type')) ?: 'purok';
-        abort_unless(isset($types[$type]), 403, 'This report is not available to your account.');
+        abort_unless(isset($types[$type]), 403, __('This report is not available to your account.'));
 
         $period = clean($request->query('period'));
         if (!preg_match('/^\d{4}-\d{2}$/', $period)) {

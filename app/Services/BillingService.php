@@ -72,7 +72,7 @@ class BillingService
         $lower = $includedCum;
         foreach (array_values($saved) as $i => $tier) {
             $to = isset($tier['to']) && $tier['to'] !== '' ? (float)$tier['to'] : null;
-            $tiers[] = ['name' => 'Tier ' . ($i + 2), 'lower' => $lower, 'to' => $to, 'rate' => (float)($tier['rate'] ?? 0)];
+            $tiers[] = ['name' => __('Tier :n', ['n' => $i + 2]), 'lower' => $lower, 'to' => $to, 'rate' => (float)($tier['rate'] ?? 0)];
             if ($to === null) {
                 break;   // nothing comes after "no limit"
             }
@@ -209,26 +209,27 @@ class BillingService
         $previousBalance = $this->unpaidBalance((int)$reading->consumer_id, $billId);
 
         if ($consumer && $consumer->user_id) {
-            $this->createNotification(
-                (int)$consumer->user_id, $billId, 'New Water Bill Available',
-                "Your water bill for $period (" . formatCurrency($computed['total_amount'])
-                    . ') is now available. Due on ' . formatDate($computed['due_date']) . '.'
-                    . ($previousBalance > 0 ? ' You also have an unpaid balance of ' . formatCurrency($previousBalance) . '.' : ''),
+            inLocale(userLocale((int)$consumer->user_id), fn () => $this->createNotification(
+                (int)$consumer->user_id, $billId, __('New Water Bill Available'),
+                __('Your water bill for :period (:amount) is now available. Due on :date.', [
+                    'period' => billingPeriodLabel($reading->billing_period), 'amount' => formatCurrency($computed['total_amount']),
+                    'date' => formatDate($computed['due_date']),
+                ]) . ($previousBalance > 0 ? ' ' . __('You also have an unpaid balance of :amount.', ['amount' => formatCurrency($previousBalance)]) : ''),
                 'bill_due'
-            );
+            ));
         }
 
         $recordedBy = DB::table('users')->where('user_id', $generatedBy)->value('full_name');
         foreach (DB::table('users')->where('role', 'admin')->where('status', 'active')->pluck('user_id') as $adminId) {
-            $this->createNotification(
-                (int)$adminId, $billId, 'New Water Bill Generated',
-                "Meter {$consumer->meter_number} — {$consumer->full_name}, $period: "
+            inLocale(userLocale((int)$adminId), fn () => $this->createNotification(
+                (int)$adminId, $billId, __('New Water Bill Generated'),
+                __('Meter') . " {$consumer->meter_number} — {$consumer->full_name}, " . billingPeriodLabel($reading->billing_period) . ': '
                     . number_format((float)$reading->previous_reading, 2) . ' → ' . number_format((float)$reading->current_reading, 2)
-                    . ' (' . number_format((float)$reading->consumption, 2) . ' m³), total ' . formatCurrency($computed['total_amount'])
-                    . ($previousBalance > 0 ? ', previous balance ' . formatCurrency($previousBalance) : '')
-                    . ". Recorded by $recordedBy.",
+                    . ' (' . number_format((float)$reading->consumption, 2) . ' m³), ' . __('total') . ' ' . formatCurrency($computed['total_amount'])
+                    . ($previousBalance > 0 ? ', ' . __('previous balance') . ' ' . formatCurrency($previousBalance) : '')
+                    . '. ' . __('Recorded by :name.', ['name' => $recordedBy]),
                 'bill_due'
-            );
+            ));
         }
 
         log_activity($generatedBy, 'bill_generate', "Generated the $period bill for meter {$consumer->meter_number} (" . formatCurrency($computed['total_amount']) . ')');
@@ -292,9 +293,9 @@ class BillingService
             ]);
 
             $this->notifyBillOnce((int)$bill->consumer_id, (int)$bill->bill_id, 'bill_overdue', 'Bill Overdue',
-                'Your ' . billingPeriodLabel($bill->billing_period) . ' water bill is now overdue.'
-                    . ($penalty > 0 ? ' A penalty of ' . formatCurrency($penalty) . ' was added.' : '')
-                    . ' Amount to pay: ' . formatCurrency(max(0, $total - (float)$bill->amount_paid)) . '. Please pay as soon as possible to avoid disconnection.');
+                fn () => __('Your :period water bill is now overdue.', ['period' => billingPeriodLabel($bill->billing_period)])
+                    . ($penalty > 0 ? ' ' . __('A penalty of :amount was added.', ['amount' => formatCurrency($penalty)]) : '')
+                    . ' ' . __('Amount to pay: :amount. Please pay as soon as possible to avoid disconnection.', ['amount' => formatCurrency(max(0, $total - (float)$bill->amount_paid))]));
         }
     }
 
@@ -313,9 +314,11 @@ class BillingService
             ->get(['bill_id', 'consumer_id', 'billing_period', 'due_date', 'total_amount', 'amount_paid']);
         foreach ($dueSoon as $bill) {
             $this->notifyBillOnce((int)$bill->consumer_id, (int)$bill->bill_id, 'bill_due', 'Bill Due Soon',
-                'Your ' . billingPeriodLabel($bill->billing_period) . ' water bill of '
-                    . formatCurrency(max(0, (float)$bill->total_amount - (float)$bill->amount_paid))
-                    . ' is due on ' . formatDate($bill->due_date) . '. Pay on time to avoid a penalty.');
+                fn () => __('Your :period water bill of :amount is due on :date. Pay on time to avoid a penalty.', [
+                    'period' => billingPeriodLabel($bill->billing_period),
+                    'amount' => formatCurrency(max(0, (float)$bill->total_amount - (float)$bill->amount_paid)),
+                    'date'   => formatDate($bill->due_date),
+                ]));
         }
 
         $disconnection = DB::table('water_bills')->whereIn('status', ['unpaid', 'partially_paid', 'overdue'])
@@ -324,21 +327,26 @@ class BillingService
             ->get(['bill_id', 'consumer_id', 'billing_period', 'disconnection_date', 'total_amount', 'amount_paid']);
         foreach ($disconnection as $bill) {
             $this->notifyBillOnce((int)$bill->consumer_id, (int)$bill->bill_id, 'disconnection', 'Disconnection Warning',
-                'Your water service may be disconnected on ' . formatDate($bill->disconnection_date) . ' because your '
-                    . billingPeriodLabel($bill->billing_period) . ' bill of '
-                    . formatCurrency(max(0, (float)$bill->total_amount - (float)$bill->amount_paid))
-                    . ' is unpaid. Please pay before that date or visit the barangay water office.');
+                fn () => __('Your water service may be disconnected on :date because your :period bill of :amount is unpaid. Please pay before that date or visit the barangay water office.', [
+                    'date'   => formatDate($bill->disconnection_date),
+                    'period' => billingPeriodLabel($bill->billing_period),
+                    'amount' => formatCurrency(max(0, (float)$bill->total_amount - (float)$bill->amount_paid)),
+                ]));
         }
     }
 
-    /** Notifies a consumer's account about a bill, once per bill and kind of notice. */
-    private function notifyBillOnce(int $consumerId, int $billId, string $type, string $title, string $message): void
+    /**
+     * Notifies a consumer's account about a bill, once per bill and kind of notice,
+     * in the consumer's language ($title is the English title; $message builds the text).
+     */
+    private function notifyBillOnce(int $consumerId, int $billId, string $type, string $title, callable $message): void
     {
         $userId = DB::table('consumers')->where('consumer_id', $consumerId)->value('user_id');
-        if (!$userId || DB::table('notifications')->where('bill_id', $billId)->where('type', $type)->where('title', $title)->exists()) {
+        $titles = array_unique([$title, __($title, [], 'tl')]);   // sent before in either language
+        if (!$userId || DB::table('notifications')->where('bill_id', $billId)->where('type', $type)->whereIn('title', $titles)->exists()) {
             return;
         }
-        $this->createNotification((int)$userId, $billId, $title, $message, $type);
+        inLocale(userLocale((int)$userId), fn () => $this->createNotification((int)$userId, $billId, __($title), $message(), $type));
     }
 
     public function createNotification(int $userId, ?int $billId, string $title, string $message, string $type = 'general', ?bool $email = null): void
@@ -363,10 +371,11 @@ class BillingService
             return;
         }
         $url = route('login');
-        app()->terminating(function () use ($user, $title, $message, $url) {
-            app(Mailer::class)->send($user->email, $user->full_name, "AWAS: $title", 'emails.notification', [
+        $locale = userLocale($userId);
+        app()->terminating(function () use ($user, $title, $message, $url, $locale) {
+            inLocale($locale, fn () => app(Mailer::class)->send($user->email, $user->full_name, "AWAS: $title", 'emails.notification', [
                 'name' => $user->full_name, 'title' => $title, 'body' => $message, 'url' => $url,
-            ]);
+            ]));
         });
     }
 
@@ -392,13 +401,15 @@ class BillingService
 
         $userId = DB::table('consumers')->where('consumer_id', $bill->consumer_id)->value('user_id');
         if ($userId) {
-            $this->createNotification(
-                (int)$userId, $billId, 'Payment Received',
-                'We received your payment of ' . formatCurrency($amount) . ' for your ' . billingPeriodLabel($bill->billing_period) . ' water bill. Thank you!',
+            inLocale(userLocale((int)$userId), fn () => $this->createNotification(
+                (int)$userId, $billId, __('Payment Received'),
+                __('We received your payment of :amount for your :period water bill. Thank you!', [
+                    'amount' => formatCurrency($amount), 'period' => billingPeriodLabel($bill->billing_period),
+                ]),
                 'payment_received',
                 // With the payment known, the email is the detailed one from PaymentMailer instead.
                 $paymentId ? false : null
-            );
+            ));
         }
         if ($paymentId) {
             app(PaymentMailer::class)->toConsumer($paymentId, 'received');
@@ -501,7 +512,7 @@ class BillingService
 
         switch ($type) {
             case 'consumption':
-                $columns = ['Meter Number', 'Name', 'Purok', 'Previous Reading', 'Present Reading', 'Consumption (m3)', 'Reading Date'];
+                $columns = [__('Meter Number'), __('Name'), __('Purok'), __('Previous Reading'), __('Present Reading'), __('Consumption (m3)'), __('Reading Date')];
                 $rows = DB::table('meter_readings as mr')
                     ->join('consumers as c', 'c.consumer_id', '=', 'mr.consumer_id')
                     ->join('puroks as p', 'p.purok_id', '=', 'c.purok_id')
@@ -512,7 +523,7 @@ class BillingService
                 break;
 
             case 'billing_history':
-                $columns = ['Meter Number', 'Name', 'Period', 'Consumption', 'Total', 'Balance', 'Status', 'Due Date'];
+                $columns = [__('Meter Number'), __('Name'), __('Period'), __('Consumption'), __('Total'), __('Balance'), __('Status'), __('Due Date')];
                 $rows = DB::table('water_bills as b')
                     ->join('consumers as c', 'c.consumer_id', '=', 'b.consumer_id')
                     ->orderByDesc('b.billing_period')->orderBy('c.full_name')
@@ -523,7 +534,7 @@ class BillingService
             case 'paid':
             case 'unpaid':
             case 'overdue':
-                $columns = ['Meter Number', 'Name', 'Period', 'Total', 'Amount Paid', 'Balance', 'Due Date'];
+                $columns = [__('Meter Number'), __('Name'), __('Period'), __('Total'), __('Amount Paid'), __('Balance'), __('Due Date')];
                 $rows = DB::table('water_bills as b')
                     ->join('consumers as c', 'c.consumer_id', '=', 'b.consumer_id')
                     ->where('b.status', $type)
@@ -533,7 +544,7 @@ class BillingService
                 break;
 
             case 'collection':
-                $columns = ['Reference', 'Meter Number', 'Name', 'Period', 'Amount', 'Method', 'Paid At', 'GCash Ref. No.', 'Status', 'Date'];
+                $columns = [__('Reference'), __('Meter Number'), __('Name'), __('Period'), __('Amount'), __('Method'), __('Paid At'), __('GCash Ref. No.'), __('Status'), __('Date')];
                 $rows = DB::table('payments as p')
                     ->join('consumers as c', 'c.consumer_id', '=', 'p.consumer_id')
                     ->join('water_bills as b', 'b.bill_id', '=', 'p.bill_id')
@@ -550,7 +561,7 @@ class BillingService
                 break;
 
             case 'consumers':
-                $columns = ['Meter Number', 'Name', 'Purok', 'Type of Consumer', 'Address', 'Contact', 'Status', 'Connection Date'];
+                $columns = [__('Meter Number'), __('Name'), __('Purok'), __('Type of Consumer'), __('Address'), __('Contact'), __('Status'), __('Connection Date')];
                 $rows = DB::table('consumers as c')
                     ->join('puroks as p', 'p.purok_id', '=', 'c.purok_id')
                     ->orderBy('c.full_name')
@@ -562,7 +573,7 @@ class BillingService
                 break;
 
             case 'meter_readings':
-                $columns = ['Meter Number', 'Name', 'Period', 'Previous Reading', 'Present Reading', 'Consumption', 'Reading Date', 'Recorded By'];
+                $columns = [__('Meter Number'), __('Name'), __('Period'), __('Previous Reading'), __('Present Reading'), __('Consumption'), __('Reading Date'), __('Recorded By')];
                 $rows = DB::table('meter_readings as mr')
                     ->join('consumers as c', 'c.consumer_id', '=', 'mr.consumer_id')
                     ->join('users as u', 'u.user_id', '=', 'mr.recorded_by')

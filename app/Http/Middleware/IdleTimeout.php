@@ -27,7 +27,7 @@ class IdleTimeout
                 $request->session()->regenerateToken();
 
                 return $request->expectsJson()
-                    ? response()->json(['error' => 'Your session has expired. Please refresh the page and log in again.'], 401)
+                    ? response()->json(['error' => __('Your session has expired. Please refresh the page and log in again.')], 401)
                     : redirect()->route('login', ['timeout' => 1]);
             }
             if (!$request->headers->has(self::BACKGROUND_HEADER)) {

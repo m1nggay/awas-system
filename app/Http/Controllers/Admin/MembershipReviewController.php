@@ -53,7 +53,7 @@ class MembershipReviewController extends Controller
 
             return view('admin.applications.index', [
                 'accounts'      => $accounts,
-                'statusOptions' => self::STATUS_OPTIONS,
+                'statusOptions' => array_map(fn ($label) => __($label), self::STATUS_OPTIONS),
                 'search'        => $search,
                 'statusFil'     => $statusFil,
             ]);
@@ -72,7 +72,7 @@ class MembershipReviewController extends Controller
 
         return view('admin.applications.index', [
             'applications'  => $applications,
-            'statusOptions' => self::STATUS_OPTIONS,
+            'statusOptions' => array_map(fn ($label) => __($label), self::STATUS_OPTIONS),
             'search'        => $search,
             'statusFil'     => $statusFil,
         ]);
@@ -86,7 +86,7 @@ class MembershipReviewController extends Controller
     {
         $account = DB::table('users')->where('user_id', $user)->where('role', 'resident')->first(['user_id', 'username', 'full_name']);
         if (!$account) {
-            flash('danger', 'Account not found.');
+            flash('danger', __('Account not found.'));
             return back();
         }
         $meter = DB::table('consumers')->where('user_id', $account->user_id)->value('meter_number');
@@ -94,7 +94,7 @@ class MembershipReviewController extends Controller
         DB::table('users')->where('user_id', $account->user_id)->delete();
         log_activity($request->user()->user_id, 'user_delete', "Deleted self-registered account {$account->username} ({$account->full_name}"
             . ($meter ? ", meter $meter" : '') . ')');
-        flash('success', "Account {$account->username} was deleted. The consumer's water account and bills were kept.");
+        flash('success', __('Account :username was deleted. The consumer\'s water account and bills were kept.', ['username' => $account->username]));
         return back();
     }
 
@@ -117,7 +117,7 @@ class MembershipReviewController extends Controller
         }
 
         log_activity($request->user()->user_id, 'application_delete', "Deleted membership application {$application->reference_code} ({$application->full_name})");
-        flash('success', "Application {$application->reference_code} was deleted.");
+        flash('success', __('Application :reference_code was deleted.', ['reference_code' => $application->reference_code]));
         return redirect()->route('admin.applications.index', $request->only('status', 'q'));
     }
 
@@ -139,9 +139,9 @@ class MembershipReviewController extends Controller
         if (in_array($idStatus, ['submitted', 'verified', 'failed'], true) && in_array($faceStatus, ['for_review', 'verified', 'failed'], true)) {
             $application->update(['id_status' => $idStatus, 'face_status' => $faceStatus]);
             log_activity($request->user()->user_id, 'application_verification', "Set ID=$idStatus, face=$faceStatus on {$application->reference_code}");
-            flash('success', 'Verification statuses updated.');
+            flash('success', __('Verification statuses updated.'));
         } else {
-            flash('danger', 'Invalid verification status.');
+            flash('danger', __('Invalid verification status.'));
         }
         return redirect()->route('admin.applications.show', $application);
     }
@@ -158,16 +158,17 @@ class MembershipReviewController extends Controller
         log_activity($request->user()->user_id, 'application_approve', "Approved application {$application->reference_code} — awaiting meter assignment");
 
         // Tell the applicant: approved, and no new account is needed — they log in with the one they applied with.
+        // Written in the applicant's language (the EN | TL switch they used).
+        $locale = userLocale($application->user_id ? (int)$application->user_id : null);
         if (!empty($application->user_id)) {
-            $billing->createNotification((int)$application->user_id, null, 'Membership application approved',
-                'Your application has been approved. The water office is assigning your water meter. '
-                . 'You do not need to create a new account — log in with the username and password you chose when you applied.');
+            inLocale($locale, fn () => $billing->createNotification((int)$application->user_id, null, __('Membership application approved'),
+                __('Your application has been approved. The water office is assigning your water meter. You do not need to create a new account — log in with the username and password you chose when you applied.')));
         }
-        $emailed = !empty($application->email) && $mailer->send($application->email, $application->full_name,
-            'AWAS Membership Application Approved', 'emails.application-approved-review', [
+        $emailed = !empty($application->email) && inLocale($locale, fn () => $mailer->send($application->email, $application->full_name,
+            __('AWAS Membership Application Approved'), 'emails.application-approved-review', [
                 'name' => $application->full_name, 'reference' => $application->reference_code, 'loginUrl' => route('login'),
-            ]);
-        flash('success', 'Application approved' . ($emailed ? ' and the applicant was notified by email' : '') . '. Now assign a water meter to activate the account.');
+            ]));
+        flash('success', __($emailed ? 'Application approved and the applicant was notified by email.' : 'Application approved.') . ' ' . __('Now assign a water meter to activate the account.'));
         return redirect()->route('admin.applications.show', $application);
     }
 
@@ -179,7 +180,7 @@ class MembershipReviewController extends Controller
 
         $reason = clean($request->input('rejection_reason'));
         if ($reason === '') {
-            flash('danger', 'Please provide the reason for rejecting this application.');
+            flash('danger', __('Please provide the reason for rejecting this application.'));
             return redirect()->route('admin.applications.show', $application);
         }
         $reason = mb_substr($reason, 0, 500);
@@ -190,11 +191,12 @@ class MembershipReviewController extends Controller
         log_activity($request->user()->user_id, 'application_reject', "Rejected application {$application->reference_code}");
 
         if (!empty($application->email)) {
-            $mailer->send($application->email, $application->full_name, 'AWAS Membership Application Update', 'emails.application-rejected', [
-                'name' => $application->full_name, 'reference' => $application->reference_code, 'reason' => $reason,
-            ]);
+            inLocale(userLocale($application->user_id ? (int)$application->user_id : null), fn () => $mailer->send($application->email, $application->full_name,
+                __('AWAS Membership Application Update'), 'emails.application-rejected', [
+                    'name' => $application->full_name, 'reference' => $application->reference_code, 'reason' => $reason,
+                ]));
         }
-        flash('success', 'Application rejected and the applicant was notified by email.');
+        flash('success', __('Application rejected and the applicant was notified by email.'));
         return redirect()->route('admin.applications.show', $application);
     }
 
@@ -212,20 +214,20 @@ class MembershipReviewController extends Controller
 
         $errors = [];
         if (!isValidMeterNumber($meter['meter_number'])) {
-            $errors[] = 'Meter Number must contain numbers only (e.g. 1001) — no letters, spaces, or "ADL-" prefix.';
+            $errors[] = __('Meter Number must contain numbers only (e.g. 1001) — no letters, spaces, or "ADL-" prefix.');
         }
         $inst = DateTime::createFromFormat('!Y-m-d', $meter['installation_date']);
         if (!$inst || $inst->format('Y-m-d') !== $meter['installation_date']) {
-            $errors[] = 'Enter a valid installation date.';
+            $errors[] = __('Enter a valid installation date.');
         }
         if ($meter['initial_reading'] === '' || !is_numeric($meter['initial_reading']) || (float)$meter['initial_reading'] < 0 || (float)$meter['initial_reading'] > 99999999) {
-            $errors[] = 'Enter a valid initial meter reading (0 or more).';
+            $errors[] = __('Enter a valid initial meter reading (0 or more).');
         }
         if (!in_array($meter['meter_status'], ['active', 'inactive', 'maintenance'], true)) {
-            $errors[] = 'Select a valid meter status.';
+            $errors[] = __('Select a valid meter status.');
         }
         if ($meter['household_number'] !== '' && !preg_match('/^[A-Za-z0-9\-\/ ]{1,30}$/', $meter['household_number'])) {
-            $errors[] = 'Household number may only contain letters, numbers, spaces, "-" and "/".';
+            $errors[] = __('Household number may only contain letters, numbers, spaces, "-" and "/".');
         }
         if ($errors) {
             return back()->withErrors($errors, 'meter')->withInput();
@@ -263,30 +265,31 @@ class MembershipReviewController extends Controller
             });
         } catch (\RuntimeException $e) {
             if ($e->getMessage() === 'duplicate-meter') {
-                return back()->withErrors(['That meter number is already assigned to another consumer. Meter numbers must be unique.'], 'meter')->withInput();
+                return back()->withErrors([__('That meter number is already assigned to another consumer. Meter numbers must be unique.')], 'meter')->withInput();
             }
             if ($e->getMessage() === 'not-approved') {
-                flash('danger', 'This application is no longer waiting for a meter assignment.');
+                flash('danger', __('This application is no longer waiting for a meter assignment.'));
                 return redirect()->route('admin.applications.show', $application);
             }
             throw $e;
         } catch (\Throwable $e) {
             Log::error('Meter assignment error: ' . $e->getMessage());
-            return back()->withErrors(['A system error occurred while activating the account. Please try again.'], 'meter')->withInput();
+            return back()->withErrors([__('A system error occurred while activating the account. Please try again.')], 'meter')->withInput();
         }
 
         log_activity($request->user()->user_id, 'application_activate', "Activated {$application->reference_code} — meter {$meter['meter_number']}");
+        $locale = userLocale($application->user_id ? (int)$application->user_id : null);
         if (!empty($application->user_id)) {
-            $billing->createNotification((int)$application->user_id, null, 'Membership approved',
-                "Your AWAS account is active. Meter Number: {$meter['meter_number']}. No need to create a new account — keep logging in with your username and password.");
+            inLocale($locale, fn () => $billing->createNotification((int)$application->user_id, null, __('Membership approved'),
+                __('Your AWAS account is active. Meter Number: :meter. No need to create a new account — keep logging in with your username and password.', ['meter' => $meter['meter_number']])));
         }
         if (!empty($application->email)) {
-            $mailer->send($application->email, $application->full_name, 'AWAS Membership Application Approved', 'emails.application-approved', [
+            inLocale($locale, fn () => $mailer->send($application->email, $application->full_name, __('AWAS Membership Application Approved'), 'emails.application-approved', [
                 'name' => $application->full_name, 'reference' => $application->reference_code,
                 'meterNumber' => $meter['meter_number'], 'loginUrl' => route('login'),
-            ]);
+            ]));
         }
-        flash('success', "Meter assigned and account activated. Meter Number: {$meter['meter_number']}");
+        flash('success', __('Meter assigned and account activated. Meter Number: :meter_number', ['meter_number' => $meter['meter_number']]));
         return redirect()->route('admin.applications.show', $application);
     }
 
@@ -298,7 +301,7 @@ class MembershipReviewController extends Controller
             'id_back' => $application->id_back_file,
             default   => $application->face_file,
         };
-        abort_unless($files->exists($name), 404, 'File not found.');
+        abort_unless($files->exists($name), 404, __('File not found.'));
 
         log_activity($request->user()->user_id, 'application_file_view', "Viewed $type image of application {$application->reference_code}");
 
@@ -311,7 +314,7 @@ class MembershipReviewController extends Controller
 
     private function unavailable(MembershipApplication $application)
     {
-        flash('danger', 'That action is not available for this application in its current status.');
+        flash('danger', __('That action is not available for this application in its current status.'));
         return redirect()->route('admin.applications.show', $application);
     }
 }

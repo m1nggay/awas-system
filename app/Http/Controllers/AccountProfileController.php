@@ -18,9 +18,9 @@ class AccountProfileController extends Controller
     {
         $name = preg_replace('/\s+/', ' ', clean($request->input('full_name')));
         $error = match (true) {
-            mb_strlen($name) < 2 => 'Please enter your full name.',
-            mb_strlen($name) > 150 => 'The name is too long (150 characters at most).',
-            !preg_match("/^[\p{L}][\p{L}\s.'\-]*$/u", $name) => 'The name can only have letters, spaces, periods, hyphens and apostrophes.',
+            mb_strlen($name) < 2 => __('Please enter your full name.'),
+            mb_strlen($name) > 150 => __('The name is too long (150 characters at most).'),
+            !preg_match("/^[\p{L}][\p{L}\s.'\-]*$/u", $name) => __('The name can only have letters, spaces, periods, hyphens and apostrophes.'),
             default => null,
         };
         if ($error) {
@@ -40,7 +40,7 @@ class AccountProfileController extends Controller
         });
 
         log_activity($user->user_id, 'profile_update', "Changed name from \"$old\" to \"$name\"");
-        flash('success', 'Your name was updated.');
+        flash('success', __('Your name was updated.'));
         return back();
     }
 
@@ -49,14 +49,14 @@ class AccountProfileController extends Controller
     {
         return $files->in('profile-photos')->response($request->user()->profile_photo, [
             'Cache-Control' => 'private, max-age=86400',
-        ], 'No profile picture.');
+        ], __('No profile picture.'));
     }
 
     /** Upload or replace it (JPG, PNG or WEBP, up to 5 MB). */
     public function update(Request $request, ApplicationFiles $files)
     {
         $errors = [];
-        $name = $files->in('profile-photos')->store($request->file('photo'), '', 'Profile picture', true, $errors);
+        $name = $files->in('profile-photos')->store($request->file('photo'), '', __('Profile picture'), true, $errors);
         if ($errors) {
             return back()->withErrors($errors);
         }
@@ -67,7 +67,7 @@ class AccountProfileController extends Controller
         $files->in('profile-photos')->delete($old);
 
         log_activity($user->user_id, 'profile_update', 'Changed profile picture');
-        flash('success', 'Profile picture updated.');
+        flash('success', __('Profile picture updated.'));
         return back();
     }
 
@@ -78,7 +78,7 @@ class AccountProfileController extends Controller
         DB::table('users')->where('user_id', $user->user_id)->update(['profile_photo' => null]);
 
         log_activity($user->user_id, 'profile_update', 'Removed profile picture');
-        flash('success', 'Profile picture removed.');
+        flash('success', __('Profile picture removed.'));
         return back();
     }
 }

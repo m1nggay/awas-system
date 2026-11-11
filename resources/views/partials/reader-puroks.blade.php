@@ -5,8 +5,8 @@
         ->where('a.user_id', auth()->user()->user_id)->orderBy('p.purok_name')->pluck('p.purok_name');
   @endphp
   @if ($myPuroks->isEmpty())
-    <div class="alert alert-warning">No puroks are assigned to your account yet, so there are no consumers to read. Please ask the administrator to assign your puroks.</div>
+    <div class="alert alert-warning">{{ __('No puroks are assigned to your account yet, so there are no consumers to read. Please ask the administrator to assign your puroks.') }}</div>
   @else
-    <div class="alert alert-info py-2" style="font-size:13.5px;"><i class="ph ph-map-pin" aria-hidden="true"></i> Assigned puroks: <strong>{{ $myPuroks->implode(', ') }}</strong></div>
+    <div class="alert alert-info py-2" style="font-size:13.5px;"><i class="ph ph-map-pin" aria-hidden="true"></i> {{ __('Assigned puroks:') }} <strong>{{ $myPuroks->implode(', ') }}</strong></div>
   @endif
 @endif

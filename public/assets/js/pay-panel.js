@@ -14,7 +14,7 @@ window.initPayPanel = function (root) {
     if (show && !detailsFrame.src) detailsFrame.src = detailsBtn.dataset.src;
     detailsFrame.hidden = !show;
     detailsBtn.setAttribute('aria-expanded', String(show));
-    detailsBtn.textContent = show ? 'Hide bill details' : 'View bill details';
+    detailsBtn.textContent = show ? __t('Hide bill details') : __t('View bill details');
   });
 
   // Payment method dropdowns: tap one to open its options, tap again to close; one open at a time.
@@ -35,7 +35,7 @@ window.initPayPanel = function (root) {
     const paidBtn = receiptForm.querySelector('[data-paid-btn]');
     file.addEventListener('change', function () {
       const f = this.files && this.files[0];
-      if (f && f.size > 5 * 1024 * 1024) { alert('The screenshot is larger than 5 MB. Please choose a smaller image.'); this.value = ''; }
+      if (f && f.size > 5 * 1024 * 1024) { alert(__t('The screenshot is larger than 5 MB. Please choose a smaller image.')); this.value = ''; }
       const ok = this.files && this.files[0];
       preview.hidden = !ok;
       if (ok) preview.src = URL.createObjectURL(this.files[0]);
@@ -48,7 +48,7 @@ window.initPayPanel = function (root) {
         return;
       }
       paidBtn.disabled = true;
-      paidBtn.textContent = 'Checking the screenshot…';
+      paidBtn.textContent = __t('Checking the screenshot…');
     });
   }
 
@@ -85,22 +85,22 @@ window.initPayPanel = function (root) {
             q('[data-qr-state]').innerHTML = '<i class="ph-fill ph-check-circle text-success" aria-hidden="true"></i> <strong>Paid!</strong> Opening your receipt…';
             setTimeout(() => { location.href = d.redirect; }, 1200);
           } else if (d.status === 'expired' || d.status === 'gone') {
-            reset('The QR code expired before it was paid. Tap Show QR code to make a new one.');
+            reset(__t('The QR code expired before it was paid. Tap Show QR code to make a new one.'));
           }
         })
         .catch(() => { /* try again on the next check */ });
     };
 
     startBtn.addEventListener('click', () => {
-      startBtn.disabled = true; startBtn.textContent = 'Making your QR…'; err.hidden = true;
+      startBtn.disabled = true; startBtn.textContent = __t('Making your QR…'); err.hidden = true;
       post(qrBox.dataset.startUrl)
         .then(r => r.json().then(d => ({ ok: r.ok, d })))
         .then(({ ok, d }) => {
-          if (!ok || !d.image) { reset(d.error || 'The QR code could not be created. Please try again.'); return; }
+          if (!ok || !d.image) { reset(d.error || __t('The QR code could not be created. Please try again.')); return; }
           current = d;
           q('[data-qr-img]').src = d.image;
           q('[data-qr-save]').href = d.image;
-          q('[data-qr-amount]').textContent = 'Pay exactly ' + peso(d.amount);
+          q('[data-qr-amount]').textContent = __t('Pay exactly :amount', { amount: peso(d.amount) });
           const test = q('[data-qr-test]');
           test.hidden = !d.test_url; if (d.test_url) test.href = d.test_url;
           intro.hidden = true; show.hidden = false;
@@ -109,13 +109,13 @@ window.initPayPanel = function (root) {
             const end = new Date(d.expires_at).getTime(), out = q('[data-qr-countdown]');
             const count = () => {
               const left = Math.max(0, Math.round((end - Date.now()) / 1000));
-              out.textContent = 'This QR code works for ' + Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0') + ' more.';
+              out.textContent = __t('This QR code works for :time more.', { time: Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0') });
               if (left === 0) checkStatus();
             };
             count(); tick = setInterval(count, 1000);
           }
         })
-        .catch(() => reset('Could not connect. Please check your internet and try again.'));
+        .catch(() => reset(__t('Could not connect. Please check your internet and try again.')));
     });
 
     cancelBtn.addEventListener('click', () => {
@@ -139,6 +139,6 @@ window.initPayPanel = function (root) {
     field.type = 'hidden'; field.name = 'wallet'; field.value = chosen.value;
     this.appendChild(field);
     this.querySelectorAll('.wallet-btn').forEach(b => { b.disabled = true; });
-    chosen.lastChild.textContent = 'Opening…';
+    chosen.lastChild.textContent = __t('Opening…');
   });
 };

@@ -1,6 +1,6 @@
 @extends('layouts.auth', ['video' => true, 'cardStyle' => 'max-width:680px;'])
 
-@section('title', 'Apply for Membership')
+@section('title', __('Apply for Membership'))
 
 @push('styles')
 <style>
@@ -36,13 +36,13 @@
 @endpush
 
 @section('content')
-  <h1>Apply for Membership</h1>
-  <p class="subtitle">Don't have a water account yet? Fill in the form below. We'll email you a code to verify your email, then the barangay water office will review your application.</p>
+  <h1>{{ __('Apply for Membership') }}</h1>
+  <p class="subtitle">{{ __('Don\'t have a water account yet? Fill in the form below. We\'ll email you a code to verify your email, then the barangay water office will review your application.') }}</p>
 
   @if ($errors->any())
     <div class="alert alert-danger">
       @foreach ($errors->all() as $err){{ $err }}<br>@endforeach
-      @if (session('filesDiscarded'))<span style="font-size:12px;">Your ID photos and face check were not kept — please capture the front and back of your ID and do the face check again.</span>@endif
+      @if (session('filesDiscarded'))<span style="font-size:12px;">{{ __('Your ID photos and face check were not kept — please capture the front and back of your ID and do the face check again.') }}</span>@endif
     </div>
   @endif
 
@@ -50,83 +50,83 @@
     @csrf
 
     <div class="apply-section mb-4">
-      <h2>1. Personal Information</h2>
+      <h2>{{ __('1. Personal Information') }}</h2>
       <div class="mb-3">
-        <label for="full_name" class="form-label">Full Name *</label>
+        <label for="full_name" class="form-label">{{ __('Full Name *') }}</label>
         <input type="text" id="full_name" name="full_name" class="form-control" required maxlength="150" value="{{ old('full_name') }}">
       </div>
       <div class="row gx-3">
         <div class="col-md-6 mb-3">
-          <label for="birth_date" class="form-label">Date of Birth *</label>
+          <label for="birth_date" class="form-label">{{ __('Date of Birth *') }}</label>
           <input type="date" id="birth_date" name="birth_date" class="form-control" required max="{{ date('Y-m-d') }}" value="{{ old('birth_date') }}">
         </div>
         <div class="col-md-6 mb-3">
-          <label for="sex" class="form-label">Sex *</label>
+          <label for="sex" class="form-label">{{ __('Sex *') }}</label>
           <select id="sex" name="sex" class="form-select" required>
-            <option value="">Select</option>
-            <option value="male" @selected(old('sex') === 'male')>Male</option>
-            <option value="female" @selected(old('sex') === 'female')>Female</option>
+            <option value="">{{ __('Select') }}</option>
+            <option value="male" @selected(old('sex') === 'male')>{{ __('Male') }}</option>
+            <option value="female" @selected(old('sex') === 'female')>{{ __('Female') }}</option>
           </select>
         </div>
       </div>
       <div class="row gx-3">
         <div class="col-md-6 mb-3">
-          <label for="contact_number" class="form-label">Contact Number *</label>
+          <label for="contact_number" class="form-label">{{ __('Contact Number *') }}</label>
           <input type="text" id="contact_number" name="contact_number" class="form-control" required maxlength="20" inputmode="tel" value="{{ old('contact_number') }}">
         </div>
         <div class="col-md-6 mb-3">
-          <label for="email" class="form-label">Email Address *</label>
+          <label for="email" class="form-label">{{ __('Email Address *') }}</label>
           <input type="email" id="email" name="email" class="form-control" required maxlength="150" value="{{ old('email') }}">
-          <div class="hint">We'll send a verification code here.</div>
+          <div class="hint">{{ __('We\'ll send a verification code here.') }}</div>
         </div>
       </div>
 
-      <label class="form-label" style="font-weight:600;">Complete Address *</label>
+      <label class="form-label" style="font-weight:600;">{{ __('Complete Address *') }}</label>
       <div class="row gx-3">
         <div class="col-md-6 mb-3">
-          <label for="purok_id" class="form-label">Purok *</label>
+          <label for="purok_id" class="form-label">{{ __('Purok *') }}</label>
           <select id="purok_id" name="purok_id" class="form-select" required>
-            <option value="">Select purok</option>
+            <option value="">{{ __('Select purok') }}</option>
             @foreach ($puroks as $pk)
               <option value="{{ $pk->purok_id }}" @selected((string)old('purok_id') === (string)$pk->purok_id)>{{ $pk->purok_name }}</option>
             @endforeach
           </select>
         </div>
         <div class="col-md-6 mb-3">
-          <label for="barangay" class="form-label">Barangay</label>
+          <label for="barangay" class="form-label">{{ __('Barangay') }}</label>
           <input type="text" id="barangay" class="form-control" value="{{ $barangay }}" readonly tabindex="-1">
         </div>
       </div>
       <div class="row gx-3">
         <div class="col-md-6 mb-3">
-          <label for="municipality" class="form-label">Municipality</label>
+          <label for="municipality" class="form-label">{{ __('Municipality') }}</label>
           <input type="text" id="municipality" class="form-control" value="{{ $municipality }}" readonly tabindex="-1">
         </div>
         <div class="col-md-6 mb-3">
-          <label for="province" class="form-label">Province</label>
+          <label for="province" class="form-label">{{ __('Province') }}</label>
           <input type="text" id="province" class="form-control" value="{{ $province }}" readonly tabindex="-1">
         </div>
       </div>
     </div>
 
     <div class="apply-section mb-4">
-      <h2>2. Account Information</h2>
+      <h2>{{ __('2. Account Information') }}</h2>
       <div class="mb-3">
         <div class="username-note" id="username_note" style="margin-bottom:12px;">
           <i class="ph ph-info" aria-hidden="true"></i>
-          <span>You'll use this username to log in. Write it down or save it somewhere safe.</span>
+          <span>{{ __('You\'ll use this username to log in. Write it down or save it somewhere safe.') }}</span>
         </div>
-        <label for="username" class="form-label">Username *</label>
+        <label for="username" class="form-label">{{ __('Username *') }}</label>
         <input type="text" id="username" name="username" class="form-control" required aria-describedby="username_note" maxlength="50"
                autocomplete="username" autocapitalize="none" spellcheck="false" value="{{ old('username') }}">
       </div>
       <div class="row gx-3">
         <div class="col-md-6 mb-3">
-          <label for="password" class="form-label">Password *</label>
+          <label for="password" class="form-label">{{ __('Password *') }}</label>
           <input type="password" id="password" name="password" class="form-control" required minlength="8" autocomplete="new-password">
         </div>
         <div class="col-md-6 mb-3">
-          <label for="confirm_password" class="form-label">Confirm Password *</label>
+          <label for="confirm_password" class="form-label">{{ __('Confirm Password *') }}</label>
           <input type="password" id="confirm_password" name="confirm_password" class="form-control" required minlength="8" autocomplete="new-password">
         </div>
       </div>
@@ -134,16 +134,16 @@
     </div>
 
     <div class="apply-section mb-4">
-      <h2>3. Household Information</h2>
+      <h2>{{ __('3. Household Information') }}</h2>
       <div class="row gx-3">
         <div class="col-md-6 mb-3">
-          <label for="household_number" class="form-label">Household Number (if applicable)</label>
+          <label for="household_number" class="form-label">{{ __('Household Number (if applicable)') }}</label>
           <input type="text" id="household_number" name="household_number" class="form-control" maxlength="30" value="{{ old('household_number') }}">
         </div>
         <div class="col-md-6 mb-3">
-          <label for="household_members" class="form-label">Number of Household Members *</label>
+          <label for="household_members" class="form-label">{{ __('Number of Household Members *') }}</label>
           <select id="household_members" name="household_members" class="form-select" required>
-            <option value="">Select</option>
+            <option value="">{{ __('Select') }}</option>
             @for ($n = 1; $n <= 30; $n++)
               <option value="{{ $n }}" @selected((string)old('household_members') === (string)$n)>{{ $n }} {{ $n === 1 ? 'person' : 'persons' }}</option>
             @endfor
@@ -153,21 +153,21 @@
       <div class="row gx-3">
         <div class="col-md-6 mb-3">
           <label for="residence_type" class="form-label d-flex align-items-center gap-1">
-            Type of Residence *
+            {{ __('Type of Residence *') }}
             <button type="button" class="btn btn-link p-0 ms-auto" style="font-size:14px;line-height:1;text-decoration:none;"
                     data-bs-toggle="collapse" data-bs-target="#residenceHelp" aria-expanded="false" aria-controls="residenceHelp"
-                    title="What do these mean?">ⓘ</button>
+                    title="{{ __('What do these mean?') }}">ⓘ</button>
           </label>
           <select id="residence_type" name="residence_type" class="form-select" required>
-            <option value="">Select</option>
+            <option value="">{{ __('Select') }}</option>
             @foreach (\App\Models\MembershipApplication::RESIDENCE_TYPES as $value => $label)
-              <option value="{{ $value }}" @selected(old('residence_type') === $value)>{{ $label }}</option>
+              <option value="{{ $value }}" @selected(old('residence_type') === $value)>{{ __($label) }}</option>
             @endforeach
           </select>
           <div class="collapse" id="residenceHelp">
             <div class="apply-note mt-2" style="font-size:12px;">
               @foreach (\App\Models\MembershipApplication::RESIDENCE_HELP as $value => $text)
-                <div><strong>{{ \App\Models\MembershipApplication::RESIDENCE_TYPES[$value] }}</strong> – {{ $text }}</div>
+                <div><strong>{{ __(\App\Models\MembershipApplication::RESIDENCE_TYPES[$value]) }}</strong> – {{ __($text) }}</div>
               @endforeach
             </div>
           </div>
@@ -179,34 +179,34 @@
     </div>
 
     <div class="apply-section mb-4">
-      <h2>4. Valid ID (Front and Back)</h2>
-      <div class="apply-note">Take a clear <strong>landscape (horizontal)</strong> photo of the <strong>front</strong> and the <strong>back</strong> of one valid government-issued ID. Place the whole card inside the frame in good light so all details are readable. Your ID is stored privately and only seen by barangay water office administrators.</div>
+      <h2>{{ __('4. Valid ID (Front and Back)') }}</h2>
+      <div class="apply-note">{{ __('Take a clear') }} <strong>{{ __('landscape (horizontal)') }}</strong> {{ __('photo of the') }} <strong>{{ __('front') }}</strong> {{ __('and the') }} <strong>{{ __('back') }}</strong> {{ __('of one valid government-issued ID. Place the whole card inside the frame in good light so all details are readable. Your ID is stored privately and only seen by barangay water office administrators.') }}</div>
       <div class="mb-3">
-        <label for="id_type" class="form-label">Type of ID *</label>
+        <label for="id_type" class="form-label">{{ __('Type of ID *') }}</label>
         <select id="id_type" name="id_type" class="form-select" required>
-          <option value="">Select the government-issued ID you are submitting</option>
+          <option value="">{{ __('Select the government-issued ID you are submitting') }}</option>
           @foreach (\App\Models\MembershipApplication::ID_TYPES as $t)
-            <option value="{{ $t }}" @selected(old('id_type') === $t)>{{ $t }}</option>
+            <option value="{{ $t }}" @selected(old('id_type') === $t)>{{ __($t) }}</option>
           @endforeach
         </select>
       </div>
 
       @foreach (['front' => ['Front of ID', 'id_file', 'id_capture'], 'back' => ['Back of ID', 'id_back_file', 'id_back_capture']] as $side => [$title, $fileName, $captureName])
         <div class="id-widget" data-id-widget data-side="{{ $side }}">
-          <label for="{{ $fileName }}">{{ $title }} *</label>
+          <label for="{{ $fileName }}">{{ __($title) }} *</label>
           <div class="cam-actions">
-            <button type="button" class="btn btn-primary btn-sm" data-role="open"><i class="ph ph-camera" aria-hidden="true"></i> Capture {{ strtolower($title) }}</button>
-            <button type="button" class="btn btn-success btn-sm" data-role="snap" hidden>Capture</button>
-            <button type="button" class="btn btn-secondary btn-sm" data-role="retake" hidden>Retake</button>
-            <button type="button" class="btn btn-secondary btn-sm" data-role="close" hidden>Cancel</button>
+            <button type="button" class="btn btn-primary btn-sm" data-role="open"><i class="ph ph-camera" aria-hidden="true"></i> {{ __('Capture :value', ['value' => mb_strtolower(__($title))]) }}</button>
+            <button type="button" class="btn btn-success btn-sm" data-role="snap" hidden>{{ __('Capture') }}</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-role="retake" hidden>{{ __('Retake') }}</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-role="close" hidden>{{ __('Cancel') }}</button>
           </div>
           <div class="id-stage" data-role="stage" hidden>
             <video data-role="video" playsinline muted></video>
             <div class="id-guide" data-role="guide"></div>
           </div>
-          <img class="id-preview" data-role="preview" alt="Preview of the {{ strtolower($title) }}" hidden>
+          <img class="id-preview" data-role="preview" alt="{{ __('Preview of the :side', ['side' => mb_strtolower(__($title))]) }}" hidden>
           <div class="cam-status" data-role="status" aria-live="polite"></div>
-          <div class="hint mt-2">Or upload a landscape photo (JPG, PNG or WEBP, up to 5 MB):</div>
+          <div class="hint mt-2">{{ __('Or upload a landscape photo (JPG, PNG or WEBP, up to 5 MB):') }}</div>
           <input type="file" id="{{ $fileName }}" name="{{ $fileName }}" class="form-control form-control-sm mt-1" accept="image/jpeg,image/png,image/webp" data-role="file">
           <input type="hidden" name="{{ $captureName }}" data-role="data">
         </div>
@@ -214,8 +214,8 @@
     </div>
 
     <div class="apply-section mb-4">
-      <h2>5. Face Verification</h2>
-      <div class="apply-note">A quick live check that a real person is applying: position your face inside the oval, then blink when asked. The photo is taken in <strong>portrait</strong>. Use good lighting and remove sunglasses or masks.</div>
+      <h2>{{ __('5. Face Verification') }}</h2>
+      <div class="apply-note">{{ __('A quick live check that a real person is applying: position your face inside the oval, then blink when asked. The photo is taken in') }} <strong>{{ __('portrait') }}</strong>{{ __('. Use good lighting and remove sunglasses or masks.') }}</div>
       <div id="liveness" class="liveness">
         <input type="hidden" name="selfie_capture" id="selfie_capture">
         <input type="hidden" name="liveness_passed" id="liveness_passed" value="0">
@@ -224,30 +224,30 @@
           <div class="liveness-guide" id="livenessGuide"></div>
         </div>
         <div class="liveness-prompt" id="livenessPrompt" aria-live="polite"></div>
-        <img id="livenessResult" alt="Face captured during the blink check" hidden>
+        <img id="livenessResult" alt="{{ __('Face captured during the blink check') }}" hidden>
         <div class="cam-actions" style="justify-content:center;">
-          <button type="button" class="btn btn-outline btn-sm" id="livenessStart"><i class="ph ph-camera" aria-hidden="true"></i> Start face verification</button>
-          <button type="button" class="btn btn-secondary btn-sm" id="livenessRetry" hidden>Try again</button>
+          <button type="button" class="btn btn-outline btn-sm" id="livenessStart"><i class="ph ph-camera" aria-hidden="true"></i> {{ __('Start face verification') }}</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="livenessRetry" hidden>{{ __('Try again') }}</button>
         </div>
         <div class="form-check mt-2">
           <input class="form-check-input" type="checkbox" id="verify_in_person" name="verify_in_person" value="1" @checked(old('verify_in_person'))>
-          <label class="form-check-label" for="verify_in_person" style="font-size:12.5px;">I can't use a camera — I will verify my face in person at the barangay water office.</label>
+          <label class="form-check-label" for="verify_in_person" style="font-size:12.5px;">{{ __('I can\'t use a camera — I will verify my face in person at the barangay water office.') }}</label>
         </div>
       </div>
     </div>
 
-    <p class="text-muted text-center mb-0" style="font-size:12px;margin-top:14px;">By submitting, you agree to the AWAS <a href="{{ route('terms') }}" target="_blank" rel="noopener">Terms of Service</a> and <a href="{{ route('privacy') }}" target="_blank" rel="noopener">Privacy Policy</a>.</p>
-    <button type="submit" class="btn btn-primary w-100" style="margin-top:10px;">Submit &amp; Verify Email</button>
+    <p class="text-muted text-center mb-0" style="font-size:12px;margin-top:14px;">{{ __('By submitting, you agree to the AWAS') }} <a href="{{ route('terms') }}" target="_blank" rel="noopener">{{ __('Terms of Service') }}</a> {{ __('and') }} <a href="{{ route('privacy') }}" target="_blank" rel="noopener">{{ __('Privacy Policy') }}</a>.</p>
+    <button type="submit" class="btn btn-primary w-100" style="margin-top:10px;">{{ __('Submit & Verify Email') }}</button>
   </form>
 
   <div class="auth-footer-link">
-    Already have a water account? <a href="{{ route('activate') }}">Activate your account</a>
+    {{ __('Already have a water account?') }} <a href="{{ route('activate') }}">{{ __('Activate your account') }}</a>
   </div>
   <div class="auth-footer-link">
-    Already applied? <a href="{{ route('login') }}">Log in to check your status</a>
+    {{ __('Already applied?') }} <a href="{{ route('login') }}">{{ __('Log in to check your status') }}</a>
   </div>
   <div class="auth-footer-link">
-    <a href="{{ route('home') }}">&larr; Back to Home</a>
+    <a href="{{ route('home') }}">{{ __('← Back to Home') }}</a>
   </div>
 @endsection
 
@@ -263,25 +263,25 @@ document.getElementById('applyForm').addEventListener('submit', function (ev) {
   form.querySelectorAll('[data-id-widget]').forEach(function (w) {
     var side = w.getAttribute('data-side') === 'back' ? 'BACK' : 'FRONT';
     var hasPhoto = w.querySelector('[data-role="data"]').value !== '' || w.querySelector('[data-role="file"]').files.length > 0;
-    if (!hasPhoto) msgs.push('Please capture or upload a valid photo of the ' + side + ' of your ID.');
-    else if (w.dataset.warn === '1') warnings.push('The ' + side + ' of your ID may not show a valid ID.');
+    if (!hasPhoto) msgs.push(side === 'BACK' ? {{ Js::from(__('Please capture or upload a valid photo of the BACK of your ID.')) }} : {{ Js::from(__('Please capture or upload a valid photo of the FRONT of your ID.')) }});
+    else if (w.dataset.warn === '1') warnings.push(side === 'BACK' ? {{ Js::from(__('The BACK of your ID may not show a valid ID.')) }} : {{ Js::from(__('The FRONT of your ID may not show a valid ID.')) }});
   });
 
   var livenessPassed = document.getElementById('liveness_passed').value === '1';
   if (!livenessPassed && !document.getElementById('verify_in_person').checked) {
-    msgs.push('Please complete the face verification (blink when asked), or tick "I will verify my face in person".');
+    msgs.push({{ Js::from(__('Please complete the face verification (blink when asked), or tick "I will verify my face in person".')) }});
   }
   var pw = form.querySelector('[name="password"]').value;
   if (!(pw.length >= 8 && /[A-Z]/.test(pw) && /\d/.test(pw) && /[^A-Za-z0-9]/.test(pw))) {
-    msgs.push('Password must contain at least 8 characters, including an uppercase letter, a number, and a symbol.');
-  } else if (pw !== form.querySelector('[name="confirm_password"]').value) msgs.push('Passwords do not match.');
+    msgs.push({{ Js::from(__('Password must contain at least 8 characters, including an uppercase letter, a number, and a symbol.')) }});
+  } else if (pw !== form.querySelector('[name="confirm_password"]').value) msgs.push({{ Js::from(__('Passwords do not match.')) }});
 
   if (msgs.length) {
     ev.preventDefault();
     alert(msgs.join('\n'));
     return;
   }
-  if (warnings.length && !confirm(warnings.join('\n') + '\n\nPlease use a valid government-issued ID. Submit anyway?')) {
+  if (warnings.length && !confirm(warnings.join('\n') + '\n\n' + {{ Js::from(__('Please use a valid government-issued ID. Submit anyway?')) }})) {
     ev.preventDefault();
   }
 });

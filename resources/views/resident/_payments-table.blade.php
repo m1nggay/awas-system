@@ -1,5 +1,5 @@
 <table class="table table-hover align-middle mb-0 data-table table-stack">
-  <thead><tr><th>Reference</th><th>Billing Period</th><th>Amount</th><th>Method</th><th>GCash Ref. No.</th><th>Status</th><th>Date</th><th>Receipt</th></tr></thead>
+  <thead><tr><th>{{ __('Reference') }}</th><th>{{ __('Billing Period') }}</th><th>{{ __('Amount') }}</th><th>{{ __('Method') }}</th><th>{{ __('GCash Ref. No.') }}</th><th>{{ __('Status') }}</th><th>{{ __('Date') }}</th><th>{{ __('Receipt') }}</th></tr></thead>
   <tbody>
   @forelse ($payments as $p)
     <tr>
@@ -15,11 +15,11 @@
       <td>{{ formatDateTime($p->payment_date) }}</td>
       <td class="text-nowrap actions">
         @if ($receiptPopup ?? false)
-          <button type="button" class="btn btn-outline btn-sm" title="View Receipt"
+          <button type="button" class="btn btn-outline btn-sm" title="{{ __('View Receipt') }}"
                   data-receipt-view="{{ route('payments.receipt', ['payment' => $p->payment_id, 'embed' => 1]) }}"
-                  data-receipt-title="Payment Receipt — {{ billingPeriodLabel($p->billing_period) }}"><i class="ph ph-receipt" aria-hidden="true"></i> View</button>
+                  data-receipt-title="Payment Receipt — {{ billingPeriodLabel($p->billing_period) }}"><i class="ph ph-receipt" aria-hidden="true"></i> {{ __('View') }}</button>
         @else
-          <a href="{{ route('payments.receipt', $p->payment_id) }}" class="btn btn-outline btn-sm" title="View Receipt"><i class="ph ph-receipt" aria-hidden="true"></i> View</a>
+          <a href="{{ route('payments.receipt', $p->payment_id) }}" class="btn btn-outline btn-sm" title="{{ __('View Receipt') }}"><i class="ph ph-receipt" aria-hidden="true"></i> {{ __('View') }}</a>
         @endif
       </td>
     </tr>

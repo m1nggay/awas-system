@@ -24,9 +24,9 @@
 
   /** Weak: misses a rule. Medium: meets the rules. Strong: meets them with 12+ characters. */
   function strength(v) {
-    if (!passwordOk(v)) return { level: 'weak', label: 'Weak password', width: Math.max(10, Object.keys(RULES).filter(function (k) { return RULES[k](v); }).length * 15) };
-    if (v.length >= 12) return { level: 'strong', label: 'Strong password', width: 100 };
-    return { level: 'medium', label: 'Medium password — use 12 or more characters to make it strong', width: 66 };
+    if (!passwordOk(v)) return { level: 'weak', label: __t('Weak password'), width: Math.max(10, Object.keys(RULES).filter(function (k) { return RULES[k](v); }).length * 15) };
+    if (v.length >= 12) return { level: 'strong', label: __t('Strong password'), width: 100 };
+    return { level: 'medium', label: __t('Medium password — use 12 or more characters to make it strong'), width: 66 };
   }
 
   function initPasswordHints() {
@@ -52,7 +52,7 @@
           li.style.color = ok ? '#1a7a68' : '';
         });
         input.setCustomValidity(input.value === '' || passwordOk(input.value)
-          ? '' : 'Password must contain at least 8 characters, including an uppercase letter, a number, and a symbol.');
+          ? '' : __t('Password must contain at least 8 characters, including an uppercase letter, a number, and a symbol.'));
       }
       input.addEventListener('input', render);
       render();
@@ -70,14 +70,14 @@
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'pw-toggle';
-      btn.setAttribute('aria-label', 'Show password');
-      btn.title = 'Show password';
+      btn.setAttribute('aria-label', __t('Show password'));
+      btn.title = __t('Show password');
       btn.innerHTML = EYE;
       btn.addEventListener('click', function () {
         var show = input.type === 'password';
         input.type = show ? 'text' : 'password';
         btn.innerHTML = show ? EYE_OFF : EYE;
-        btn.title = show ? 'Hide password' : 'Show password';
+        btn.title = show ? __t('Hide password') : __t('Show password');
         btn.setAttribute('aria-label', btn.title);
         input.focus();
       });

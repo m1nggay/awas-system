@@ -9,12 +9,12 @@ document.addEventListener('DOMContentLoaded', function () {
   // ---- Confirm before destructive actions ----------------------------
   document.querySelectorAll('[data-confirm]').forEach(el => {
     el.addEventListener('submit', function (e) {
-      if (!confirm(el.getAttribute('data-confirm') || 'Are you sure?')) {
+      if (!confirm(el.getAttribute('data-confirm') || __t('Are you sure?'))) {
         e.preventDefault();
       }
     });
     el.addEventListener('click', function (e) {
-      if (el.tagName === 'A' && !confirm(el.getAttribute('data-confirm') || 'Are you sure?')) {
+      if (el.tagName === 'A' && !confirm(el.getAttribute('data-confirm') || __t('Are you sure?'))) {
         e.preventDefault();
       }
     });

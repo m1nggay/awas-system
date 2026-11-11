@@ -18,7 +18,7 @@ class LegalController extends Controller
     private function details(): array
     {
         return [
-            'effective' => 'October 15, 2026',
+            'effective' => __('October 15, 2026'),
             'barangay'  => setting('barangay_name', 'Barangay Adlay'),
             'email'     => setting('contact_email'),
             'phone'     => setting('contact_number'),

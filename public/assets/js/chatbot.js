@@ -70,12 +70,13 @@
     if (row) row.remove();
   }
 
-  async function sendMessage(rawText) {
+  /** shownText: what the chat shows (a quick reply's label in the page's language); rawText is what is asked. */
+  async function sendMessage(rawText, shownText) {
     const text = (rawText || '').trim();
     if (!text || sending) return;
 
     sending = true;
-    appendMessage(text, 'user');
+    appendMessage((shownText || text).trim(), 'user');
     input.value = '';
     showTyping();
 
@@ -96,11 +97,11 @@
       } else if (data && data.error) {
         appendMessage(data.error, 'bot');
       } else {
-        appendMessage("Sorry, something went wrong. Please try again.", 'bot');
+        appendMessage(__t('Sorry, something went wrong. Please try again.'), 'bot');
       }
     } catch (err) {
       hideTyping();
-      appendMessage("I'm having trouble connecting right now. Please try again in a moment.", 'bot');
+      appendMessage(__t('I\'m having trouble connecting right now. Please try again in a moment.'), 'bot');
     } finally {
       sending = false;
     }
@@ -112,6 +113,6 @@
   });
 
   quickReplies.querySelectorAll('.chatbot-chip').forEach((chip) => {
-    chip.addEventListener('click', () => sendMessage(chip.getAttribute('data-q')));
+    chip.addEventListener('click', () => sendMessage(chip.getAttribute('data-q'), chip.textContent));
   });
 })();

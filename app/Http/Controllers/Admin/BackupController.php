@@ -41,10 +41,10 @@ class BackupController extends Controller
         try {
             $name = $backups->create('manual', $request->user()->full_name);
             log_activity($request->user()->user_id, 'backup_create', "Created backup $name");
-            flash('success', "Backup created: $name. Download it to keep a copy outside the server.");
+            flash('success', __('Backup created: :name. Download it to keep a copy outside the server.', ['name' => $name]));
         } catch (\Throwable $e) {
             Log::error('Backup failed: ' . $e->getMessage());
-            flash('danger', 'The backup could not be created: ' . $e->getMessage());
+            flash('danger', __('The backup could not be created: ') . $e->getMessage());
         }
         return redirect()->to(self::back());
     }
@@ -72,7 +72,7 @@ class BackupController extends Controller
     {
         $file = $request->file('backup_file');
         if (!$file || !$file->isValid()) {
-            flash('danger', 'Please choose a backup file (.json.gz). If you did, it may be larger than the server allows.');
+            flash('danger', __('Please choose a backup file (.json.gz). If you did, it may be larger than the server allows.'));
             return redirect()->to(self::back());
         }
         if ($error = $this->confirmError($request)) {
@@ -95,8 +95,8 @@ class BackupController extends Controller
     {
         abort_unless($backups->isValidName($name), 404);
         $backups->delete($name)
-            ? flash('success', "Backup $name deleted.")
-            : flash('warning', 'That backup no longer exists.');
+            ? flash('success', __('Backup :name deleted.', ['name' => $name]))
+            : flash('warning', __('That backup no longer exists.'));
         log_activity($request->user()->user_id, 'backup_delete', "Deleted backup $name");
         return redirect()->to(self::back());
     }
@@ -104,10 +104,10 @@ class BackupController extends Controller
     private function confirmError(Request $request): ?string
     {
         if (strtoupper(trim((string)$request->input('confirm_text'))) !== 'RESTORE') {
-            return 'Type RESTORE to confirm. Nothing was changed.';
+            return __('Type RESTORE to confirm. Nothing was changed.');
         }
         if (!Hash::check((string)$request->input('password'), (string)$request->user()->password_hash)) {
-            return 'Your password is incorrect. Nothing was changed.';
+            return __('Your password is incorrect. Nothing was changed.');
         }
         return null;
     }
@@ -119,14 +119,14 @@ class BackupController extends Controller
             [$safety, $counts] = $backups->restore($path, $user->full_name);
         } catch (\Throwable $e) {
             Log::error("Restore of $label failed: " . $e->getMessage());
-            flash('danger', 'The restore did not finish, so nothing was changed. ' . $e->getMessage());
+            flash('danger', __('The restore did not finish, so nothing was changed. ') . $e->getMessage());
             return redirect()->to(self::back());
         }
         // Written after the restore, so the restored activity log keeps this entry.
         log_activity($user->user_id, 'backup_restore', "Restored backup $label — " . number_format(array_sum($counts))
             . " records. The data from before is saved as $safety");
-        flash('success', 'Restore complete: ' . number_format(array_sum($counts)) . " records restored from $label. "
-            . "The data from before the restore was saved as $safety — restore it to undo.");
+        flash('success', __('Restore complete: :count records restored from :label.', ['count' => number_format(array_sum($counts)), 'label' => $label]) . ' '
+            . __('The data from before the restore was saved as :safety — restore it to undo.', ['safety' => $safety]));
         return redirect()->to(self::back());
     }
 

@@ -48,11 +48,11 @@ class MeterPhotoCheck
 
             $bytes = $r->photo_file ? $this->files->in(MeterReadingController::PHOTO_FOLDER)->contents($r->photo_file) : null;
             if (!$bytes) {
-                return $this->flag($r, 'unreadable', null, null, 'its photo is missing');
+                return $this->flag($r, 'unreadable', null, null, fn () => __('its photo is missing'));
             }
             [$read, $error] = $this->reader->read((string)$bytes);
             if (!$read) {
-                return $error === null ? 'pending' : $this->flag($r, 'unreadable', null, null, 'the photo could not be read: ' . rtrim($error, '.'));
+                return $error === null ? 'pending' : $this->flag($r, 'unreadable', null, null, fn () => __('the photo could not be read: :error', ['error' => rtrim($error, '.')]));
             }
 
             $sameMeter = ltrim($read['meter'], '0') === ltrim((string)$r->meter_number, '0');
@@ -65,28 +65,30 @@ class MeterPhotoCheck
                 return 'match';
             }
             $why = $sameMeter
-                ? 'the photo shows ' . number_format((float)$read['reading'], 0, '.', '') . ' m³'
-                : 'the photo shows meter number ' . $read['meter'];
+                ? fn () => __('the photo shows :reading m³', ['reading' => number_format((float)$read['reading'], 0, '.', '')])
+                : fn () => __('the photo shows meter number :meter', ['meter' => $read['meter']]);
             return $this->flag($r, 'mismatch', $read['meter'], (float)$read['reading'], $why);
         } finally {
             $lock->release();
         }
     }
 
-    private function flag(object $r, string $status, ?string $meter, ?float $reading, string $why): string
+    /** $why: builds the reason, in the language it's called in (each administrator's, and English for the log). */
+    private function flag(object $r, string $status, ?string $meter, ?float $reading, callable $why): string
     {
         DB::table('meter_readings')->where('reading_id', $r->reading_id)
             ->update(['photo_check' => $status, 'photo_meter' => $meter, 'photo_reading' => $reading]);
 
         $billId = DB::table('water_bills')->where('reading_id', $r->reading_id)->value('bill_id');
         $recordedBy = DB::table('users')->where('user_id', $r->recorded_by)->value('full_name');
-        $message = "Meter {$r->meter_number} — {$r->full_name}, " . billingPeriodLabel($r->billing_period) . ': '
-            . number_format((float)$r->current_reading, 2) . " m³ was typed without internet by $recordedBy, but $why. "
-            . 'Open Meter Readings → Needs review to keep or correct it.';
         foreach (DB::table('users')->where('role', 'admin')->where('status', 'active')->pluck('user_id') as $adminId) {
-            $this->billing->createNotification((int)$adminId, $billId, 'Meter Reading Needs Review', $message, 'general', false);
+            inLocale(userLocale((int)$adminId), fn () => $this->billing->createNotification((int)$adminId, $billId, __('Meter Reading Needs Review'),
+                __('Meter :meter — :name, :period: :reading m³ was typed without internet by :by, but :why. Open Meter Readings → Needs review to keep or correct it.', [
+                    'meter' => $r->meter_number, 'name' => $r->full_name, 'period' => billingPeriodLabel($r->billing_period),
+                    'reading' => number_format((float)$r->current_reading, 2), 'by' => $recordedBy, 'why' => $why(),
+                ]), 'general', false));
         }
-        log_activity(null, 'meter_reading_flag', "Flagged the " . billingPeriodLabel($r->billing_period) . " reading of meter {$r->meter_number}: $why");
+        inLocale('en', fn () => log_activity(null, 'meter_reading_flag', "Flagged the " . billingPeriodLabel($r->billing_period) . " reading of meter {$r->meter_number}: " . $why()));
         return $status;
     }
 }

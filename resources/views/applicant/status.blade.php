@@ -1,6 +1,6 @@
 @extends('layouts.auth', ['video' => true, 'cardStyle' => 'max-width:520px;'])
 
-@section('title', 'Application Status')
+@section('title', __('Application Status'))
 
 @push('styles')
 <style>
@@ -23,34 +23,34 @@
     $stepText  = ['done' => 'Completed', 'pending' => 'Pending', 'failed' => 'Rejected', 'waiting' => ''];
   @endphp
 
-  <h1>Application Status</h1>
+  <h1>{{ __('Application Status') }}</h1>
 
   @if (!$app)
-    <p class="subtitle">We couldn't find a membership application for this account.</p>
+    <p class="subtitle">{{ __('We couldn\'t find a membership application for this account.') }}</p>
   @else
-    <p class="subtitle">Hi {{ $app->full_name }} — here is where your AWAS membership application stands.</p>
+    <p class="subtitle">{{ __('Hi :fullname — here is where your AWAS membership application stands.', ['fullname' => $app->full_name]) }}</p>
 
-    <div class="d-flex justify-content-between mb-2"><span class="text-muted">Application ID</span><strong>{{ $app->reference_code }}</strong></div>
-    <div class="d-flex justify-content-between mb-2"><span class="text-muted">Date applied</span><strong>{{ formatDateTime($app->created_at) }}</strong></div>
+    <div class="d-flex justify-content-between mb-2"><span class="text-muted">{{ __('Application ID') }}</span><strong>{{ $app->reference_code }}</strong></div>
+    <div class="d-flex justify-content-between mb-2"><span class="text-muted">{{ __('Date applied') }}</span><strong>{{ formatDateTime($app->created_at) }}</strong></div>
     <div class="d-flex justify-content-between mb-2">
-      <span class="text-muted">Application Status</span>
-      <span class="badge {{ applicationStatusBadgeClass($app->status) }}">{{ $app->status === 'rejected' ? 'REJECTED' : applicationStatusLabel($app->status) }}</span>
+      <span class="text-muted">{{ __('Application Status') }}</span>
+      <span class="badge {{ applicationStatusBadgeClass($app->status) }}">{{ $app->status === 'rejected' ? __('REJECTED') : applicationStatusLabel($app->status) }}</span>
     </div>
 
     @if ($app->status === 'rejected')
       <div class="alert alert-danger" style="margin-top:14px;">
-        <strong>Your application was not approved.</strong><br>
-        Reason from the administrator: {{ $app->review_notes ?: 'No reason was recorded.' }}<br>
-        <span style="font-size:12.5px;">If you have questions, please contact the barangay water office.</span>
+        <strong>{{ __('Your application was not approved.') }}</strong><br>
+        {{ __('Reason from the administrator: :value', ['value' => $app->review_notes ?: __('No reason was recorded.')]) }}<br>
+        <span style="font-size:12.5px;">{{ __('If you have questions, please contact the barangay water office.') }}</span>
       </div>
     @elseif ($app->status === 'pending_review')
       <div class="alert alert-info" style="margin-top:14px;">
-        Your application is waiting for administrator review. You will receive an email once it has been approved or rejected.
+        {{ __('Your application is waiting for administrator review. You will receive an email once it has been approved or rejected.') }}
       </div>
     @elseif ($app->status === 'approved')
       <div class="alert alert-success" style="margin-top:14px;">
-        <strong>Your application was approved!</strong> The water office is now assigning your water meter — your account will be activated right after.<br>
-        <span style="font-size:12.5px;">You do <strong>not</strong> need to create a new account. Keep logging in with the username and password you chose when you applied.</span>
+        <strong>{{ __('Your application was approved!') }}</strong> {{ __('The water office is now assigning your water meter — your account will be activated right after.') }}<br>
+        <span style="font-size:12.5px;">{{ __('You do') }} <strong>{{ __('not') }}</strong> {{ __('need to create a new account. Keep logging in with the username and password you chose when you applied.') }}</span>
       </div>
     @endif
 
@@ -58,8 +58,8 @@
       @foreach ($app->progress() as $step)
         <li class="{{ $step['state'] }}">
           <span class="mark"><i class="ph {{ $stepIcons[$step['state']] }}" aria-hidden="true"></i></span>
-          <span>{{ $step['label'] }}</span>
-          <span class="state">{{ $stepText[$step['state']] }}</span>
+          <span>{{ __($step['label']) }}</span>
+          <span class="state">{{ __($stepText[$step['state']]) }}</span>
         </li>
       @endforeach
     </ul>
@@ -68,7 +68,7 @@
   <div class="auth-footer-link">
     <form method="POST" action="{{ route('logout') }}" class="d-inline">
       @csrf
-      <button type="submit" class="btn btn-link p-0">Log out</button>
+      <button type="submit" class="btn btn-link p-0">{{ __('Log out') }}</button>
     </form>
   </div>
 @endsection

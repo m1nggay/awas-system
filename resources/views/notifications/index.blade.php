@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Notifications')
+@section('title', __('Notifications'))
 
 @push('styles')
 <style>
@@ -25,8 +25,8 @@
           'bill_due' => 'ph-invoice', 'bill_overdue' => 'ph-warning', 'disconnection' => 'ph-drop-slash', 'payment_received' => 'ph-check-circle', 'announcement' => 'ph-megaphone-simple', default => 'ph-bell-simple',
         } }}"></i></div>
         <div class="notif-list-body">
-          <div class="notif-list-title">{{ $n->title }} @unless ($n->is_read)<span class="badge badge-info ms-1">New</span>@endunless</div>
-          <div class="notif-list-msg">{{ $n->message }}</div>
+          <div class="notif-list-title">{{ translateStored($n->title) }} @unless ($n->is_read)<span class="badge badge-info ms-1">{{ __('New') }}</span>@endunless</div>
+          <div class="notif-list-msg">{{ translateStored($n->message) }}</div>
           <div class="notif-list-time">{{ formatDateTime($n->created_at) }}</div>
         </div>
         @if ($n->link)
@@ -34,7 +34,7 @@
         @endif
       </div>
     @empty
-      <div class="text-center text-muted p-5">No notifications yet.</div>
+      <div class="text-center text-muted p-5">{{ __('No notifications yet.') }}</div>
     @endforelse
   </div>
 </div>

@@ -8,7 +8,7 @@
         <input class="form-check-input" type="checkbox" name="puroks[]" value="{{ $pk->purok_id }}" id="{{ $prefix }}_purok_{{ $pk->purok_id }}" data-purok>
         <label class="form-check-label" for="{{ $prefix }}_purok_{{ $pk->purok_id }}">
           {{ $pk->purok_name }}
-          @if ($owner)<span class="text-muted" style="font-size:11px;" data-owner="{{ $owner }}">({{ $readerNames[$owner] ?? 'another reader' }})</span>@endif
+          @if ($owner)<span class="text-muted" style="font-size:11px;" data-owner="{{ $owner }}">({{ $readerNames[$owner] ?? __('another reader') }})</span>@endif
         </label>
       </div>
     </div>

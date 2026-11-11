@@ -27,21 +27,21 @@ class PasswordResetController extends Controller
         $request->validate([
             'email' => ['required', 'email:rfc,dns', 'regex:/^[a-z0-9](\.?[a-z0-9]){5,29}@gmail\.com$/i', 'exists:users,email'],
         ], [
-            'email.required' => 'Please enter your Gmail address.',
-            'email.email'    => 'Please enter a valid Gmail address (e.g. juan.delacruz@gmail.com).',
-            'email.regex'    => 'Please enter a valid Gmail address (e.g. juan.delacruz@gmail.com).',
-            'email.exists'   => 'No AWAS account is registered with this Gmail address.',
+            'email.required' => __('Please enter your Gmail address.'),
+            'email.email'    => __('Please enter a valid Gmail address (e.g. juan.delacruz@gmail.com).'),
+            'email.regex'    => __('Please enter a valid Gmail address (e.g. juan.delacruz@gmail.com).'),
+            'email.exists'   => __('No AWAS account is registered with this Gmail address.'),
         ]);
 
         $user = User::where('status', 'active')->where('email', $request->input('email'))->first();
 
         // The email exists, but not on an active account (e.g. deactivated).
         if (!$user) {
-            return back()->withInput()->withErrors(['email' => 'This account is not active. Please contact the AWAS administrator.']);
+            return back()->withInput()->withErrors(['email' => __('This account is not active. Please contact the AWAS administrator.')]);
         }
 
         $result = $codes->sendPasswordCode($user->user_id, $user->email, $user->full_name,
-            'Your AWAS password reset code', 'Your AWAS password reset code is:');
+            __('Your AWAS password reset code'), __('Your AWAS password reset code is:'));
 
         // Never claim a code was sent when the email actually failed.
         if (in_array($result, ['failed', 'limit'], true)) {
@@ -76,13 +76,13 @@ class PasswordResetController extends Controller
         $confirm = (string)$request->input('confirm_password', '');
 
         if ($code === '' || $newPassword === '') {
-            return back()->with('error', 'Please enter the code and a new password.');
+            return back()->with('error', __('Please enter the code and a new password.'));
         }
         if ($policy = passwordPolicyError($newPassword)) {
             return back()->with('error', $policy);
         }
         if ($newPassword !== $confirm) {
-            return back()->with('error', 'Passwords do not match.');
+            return back()->with('error', __('Passwords do not match.'));
         }
 
         $otp = OtpService::passwordReset();
@@ -103,8 +103,8 @@ class PasswordResetController extends Controller
         }
 
         return back()->with('error', $result === 'expired'
-            ? 'That code has expired or is no longer valid. Please request a new one.'
-            : 'Incorrect code. Please try again.');
+            ? __('That code has expired or is no longer valid. Please request a new one.')
+            : __('Incorrect code. Please try again.'));
     }
 
     private function resetUserId(Request $request): ?int

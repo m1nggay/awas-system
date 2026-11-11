@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
@@ -20,16 +20,16 @@
 </head>
 <body>
   <div class="actions-bar">
-    <button class="btn btn-primary" onclick="window.print()"><i class="ph ph-printer" aria-hidden="true"></i> Print / Save as PDF</button>
-    <span class="text-muted ms-2" style="font-size:12px;">In the print window, choose <strong>Save as PDF</strong> to download.</span>
+    <button class="btn btn-primary" onclick="window.print()"><i class="ph ph-printer" aria-hidden="true"></i> {{ __('Print / Save as PDF') }}</button>
+    <span class="text-muted ms-2" style="font-size:12px;">{{ __('In the print window, choose') }} <strong>{{ __('Save as PDF') }}</strong> {{ __('to download.') }}</span>
   </div>
 
   <div class="report-head">
-    <img src="{{ asset('assets/img/logo-round.png') }}" alt="AWAS logo">
+    <img src="{{ asset('assets/img/logo-round.png') }}" alt="{{ __('AWAS logo') }}">
     <div>
-      <div style="font-weight:700;font-size:18px;">AWAS — {{ $barangay }}</div>
+      <div style="font-weight:700;font-size:18px;">{{ __('AWAS — :barangay', ['barangay' => $barangay]) }}</div>
       <div>{{ $reportTypes[$reportType] }}{{ in_array($reportType, ['purok', 'consumption'], true) ? ' — ' . billingPeriodLabel($period) : '' }}</div>
-      <div class="text-muted" style="font-size:12px;">Generated {{ formatDateTime(now()->toDateTimeString()) }}</div>
+      <div class="text-muted" style="font-size:12px;">{{ __('Generated :date', ['date' => formatDateTime(now()->toDateTimeString())]) }}</div>
     </div>
   </div>
 
@@ -42,7 +42,7 @@
       @forelse ($rows as $row)
         <tr>@foreach ($row as $val)<td>{{ $val }}</td>@endforeach</tr>
       @empty
-        <tr><td colspan="{{ count($columns) }}" class="text-center text-muted">No records found for this report.</td></tr>
+        <tr><td colspan="{{ count($columns) }}" class="text-center text-muted">{{ __('No records found for this report.') }}</td></tr>
       @endforelse
       </tbody>
     </table>

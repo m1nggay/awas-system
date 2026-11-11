@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Pay Bill')
+@section('title', __('Pay Bill'))
 
 @push('styles')
 @include('resident._pay-styles')

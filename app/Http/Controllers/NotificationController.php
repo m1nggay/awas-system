@@ -41,13 +41,13 @@ class NotificationController extends Controller
     {
         if ($user->role === 'resident' && $n->bill_id) {
             return $n->type === 'payment_received'
-                ? [route('resident.payment-history'), 'View Payments']
-                : [route('resident.bill'), 'View Bill'];
+                ? [route('resident.payment-history'), __('View Payments')]
+                : [route('resident.bill'), __('View Bill')];
         }
         if ($user->isAdmin() && $n->bill_id) {
             return str_contains($n->title, 'GCash')
-                ? [route('admin.payments.index', ['tab' => 'pending']), 'View Payment']
-                : [route('admin.bills.index'), 'View Bills'];
+                ? [route('admin.payments.index', ['tab' => 'pending']), __('View Payment')]
+                : [route('admin.bills.index'), __('View Bills')];
         }
         return null;
     }

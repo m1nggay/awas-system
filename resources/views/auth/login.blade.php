@@ -1,6 +1,6 @@
 @extends('layouts.auth', ['video' => true])
 
-@section('title', 'Login')
+@section('title', __('Login'))
 
 @push('styles')
 <style>
@@ -23,19 +23,19 @@
 @endpush
 
 @section('content')
-  <h1>AWAS Login</h1>
-  <p class="subtitle">Smart Water Management &amp; Billing System<br>Barangay Adlay</p>
+  <h1>{{ __('AWAS Login') }}</h1>
+  <p class="subtitle">{{ __('Smart Water Management & Billing System') }}<br>{{ __('Barangay Adlay') }}</p>
 
-  @if (setting('maintenance_mode', '0') === '1')<div class="alert alert-warning"><i class="ph ph-wrench" aria-hidden="true"></i> AWAS is under maintenance — only administrators can sign in right now.</div>@endif
+  @if (setting('maintenance_mode', '0') === '1')<div class="alert alert-warning"><i class="ph ph-wrench" aria-hidden="true"></i> {{ __('AWAS is under maintenance — only administrators can sign in right now.') }}</div>@endif
   @if (session('error'))<div class="alert alert-danger">{{ session('error') }}</div>@endif
   @if (session('locked'))
     {{-- Locked account: how to reach the water office (System Settings → Support email / number). --}}
     @php $phone = setting('contact_number'); $mail = setting('contact_email'); @endphp
     <div class="locked-help mb-3">
-      <strong>Contact the AWAS administrator</strong>
+      <strong>{{ __('Contact the AWAS administrator') }}</strong>
       @if ($phone)<a href="tel:{{ preg_replace('/[^\d+]/', '', $phone) }}"><i class="ph ph-phone" aria-hidden="true"></i> {{ $phone }}</a>@endif
       @if ($mail)<a href="mailto:{{ $mail }}?subject={{ rawurlencode('AWAS account locked: ' . old('username')) }}"><i class="ph ph-envelope-simple" aria-hidden="true"></i> {{ $mail }}</a>@endif
-      <span><i class="ph ph-map-pin" aria-hidden="true"></i> Or visit the AWAS water office in {{ setting('barangay_name', 'Barangay Adlay') }}</span>
+      <span><i class="ph ph-map-pin" aria-hidden="true"></i> {{ __('Or visit the AWAS water office in :value', ['value' => setting('barangay_name', 'Barangay Adlay')]) }}</span>
     </div>
   @endif
   @if ($timeoutMsg)<div class="alert alert-warning">{{ $timeoutMsg }}</div>@endif
@@ -44,40 +44,40 @@
   <form method="POST" action="{{ route('login.attempt') }}">
     @csrf
     <div class="mb-3">
-      <label for="username" class="form-label">Username or Email</label>
+      <label for="username" class="form-label">{{ __('Username or Email') }}</label>
       <input type="text" id="username" name="username" class="form-control" required autofocus value="{{ old('username') }}">
     </div>
     <div class="mb-3">
-      <label for="password" class="form-label">Password</label>
+      <label for="password" class="form-label">{{ __('Password') }}</label>
       <input type="password" id="password" name="password" class="form-control" required>
     </div>
     <div class="text-end mb-3">
-      <a href="{{ route('password.forgot') }}">Forgot your password?</a>
+      <a href="{{ route('password.forgot') }}">{{ __('Forgot your password?') }}</a>
     </div>
-    <button type="submit" class="btn btn-primary w-100">Login</button>
+    <button type="submit" class="btn btn-primary w-100">{{ __('Login') }}</button>
   </form>
 
   {{-- Google / Facebook: only the ones set up in .env (GOOGLE_CLIENT_ID, FACEBOOK_CLIENT_ID, ...) --}}
   @php $socials = \App\Http\Controllers\Auth\SocialLoginController::enabled(); @endphp
   @if ($socials)
-    <div class="social-or"><span>or</span></div>
+    <div class="social-or"><span>{{ __('or') }}</span></div>
     <div class="social-btns">
       @isset($socials['google'])
-        <a href="{{ route('social.redirect', 'google') }}" class="social-btn google">@include('partials.google-logo') Continue with Google</a>
+        <a href="{{ route('social.redirect', 'google') }}" class="social-btn google">@include('partials.google-logo') {{ __('Continue with Google') }}</a>
       @endisset
       @isset($socials['facebook'])
-        <a href="{{ route('social.redirect', 'facebook') }}" class="social-btn facebook"><i class="ph-fill ph-facebook-logo" aria-hidden="true"></i> Continue with Facebook</a>
+        <a href="{{ route('social.redirect', 'facebook') }}" class="social-btn facebook"><i class="ph-fill ph-facebook-logo" aria-hidden="true"></i> {{ __('Continue with Facebook') }}</a>
       @endisset
     </div>
   @endif
 
   <div class="auth-footer-link">
-    Already a member? <a href="{{ route('activate') }}">Activate your account</a>
+    {{ __('Already a member?') }} <a href="{{ route('activate') }}">{{ __('Activate your account') }}</a>
   </div>
   <div class="auth-footer-link">
-    <a href="{{ url('/') }}"><i class="ph ph-arrow-left" aria-hidden="true"></i> Back to Home</a>
+    <a href="{{ url('/') }}"><i class="ph ph-arrow-left" aria-hidden="true"></i> {{ __('Back to Home') }}</a>
   </div>
   <div class="auth-footer-link" style="font-size:12px;margin-top:10px;">
-    <a href="{{ route('privacy') }}" style="font-weight:500;">Privacy Policy</a> · <a href="{{ route('terms') }}" style="font-weight:500;">Terms of Service</a>
+    <a href="{{ route('privacy') }}" style="font-weight:500;">{{ __('Privacy Policy') }}</a> · <a href="{{ route('terms') }}" style="font-weight:500;">{{ __('Terms of Service') }}</a>
   </div>
 @endsection

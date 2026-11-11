@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Water Bill — Meter {{ $bill->meter_number }} — {{ billingPeriodLabel($bill->billing_period) }}</title>
+<title>{{ __('Water Bill — Meter :meternumber — :period', ['meternumber' => $bill->meter_number, 'period' => billingPeriodLabel($bill->billing_period)]) }}</title>
 <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}?v={{ @filemtime(public_path('assets/css/style.css')) ?: '1' }}">
 <style>
   body{background:#fff;padding:30px;}
@@ -39,43 +39,43 @@
 </head>
 <body @class(['embed' => request()->boolean('embed')])>
   <div class="actions-bar no-print">
-    <a href="{{ $backUrl }}" class="btn btn-secondary" id="backBtn">&larr; Back</a>
+    <a href="{{ $backUrl }}" class="btn btn-secondary" id="backBtn">{{ __('← Back') }}</a>
     {{-- Consumers download their bill; printing is done by the water office. --}}
     @if (auth()->user()->role === 'resident')
-      <button class="btn btn-primary" id="downloadBtn"><i class="ph ph-download-simple" aria-hidden="true"></i> Download Bill (PDF)</button>
+      <button class="btn btn-primary" id="downloadBtn"><i class="ph ph-download-simple" aria-hidden="true"></i> {{ __('Download Bill (PDF)') }}</button>
     @else
-      <button class="btn btn-primary" onclick="window.print()"><i class="ph ph-printer" aria-hidden="true"></i> Print / Save as PDF</button>
+      <button class="btn btn-primary" onclick="window.print()"><i class="ph ph-printer" aria-hidden="true"></i> {{ __('Print / Save as PDF') }}</button>
     @endif
   </div>
   <div class="invoice" id="invoice">
     <div class="invoice-head">
       <div>
         <div style="display:flex;align-items:center;gap:8px;font-size:20px;font-weight:700;">
-          <img src="{{ asset('assets/img/logo-round.png') }}" alt="AWAS logo" style="width:34px;height:34px;object-fit:contain;">AWAS
+          <img src="{{ asset('assets/img/logo-round.png') }}" alt="{{ __('AWAS logo') }}" style="width:34px;height:34px;object-fit:contain;">{{ __('AWAS') }}
         </div>
-        <div style="font-size:12px;opacity:.85;">Adlay Water Augmentation System</div>
+        <div style="font-size:12px;opacity:.85;">{{ __('Adlay Water Augmentation System') }}</div>
       </div>
       <div style="text-align:right;">
-        <div style="font-size:16px;font-weight:700;">Water Billing Statement</div>
+        <div style="font-size:16px;font-weight:700;">{{ __('Water Billing Statement') }}</div>
         <div style="font-size:12px;opacity:.85;">{{ $barangayName }}</div>
       </div>
     </div>
     <div class="invoice-body">
       <div class="info">
         <div>
-          <div class="row"><span class="text-muted">Meter Number</span><strong>{{ $bill->meter_number ?: '—' }}</strong></div>
-          <div class="row"><span class="text-muted">Name</span><strong>{{ $bill->full_name }}</strong></div>
-          <div class="row"><span class="text-muted">Purok</span><strong>{{ $bill->purok_name }}</strong></div>
+          <div class="row"><span class="text-muted">{{ __('Meter Number') }}</span><strong>{{ $bill->meter_number ?: '—' }}</strong></div>
+          <div class="row"><span class="text-muted">{{ __('Name') }}</span><strong>{{ $bill->full_name }}</strong></div>
+          <div class="row"><span class="text-muted">{{ __('Purok') }}</span><strong>{{ $bill->purok_name }}</strong></div>
         </div>
         <div>
-          <div class="row"><span class="text-muted">Type of Consumer</span><strong>{{ consumerTypeLabel($bill->consumer_type) }}</strong></div>
-          <div class="row"><span class="text-muted">Month of</span><strong>{{ billingPeriodLabel($bill->billing_period) }}</strong></div>
-          <div class="row"><span class="text-muted">Status</span><span class="badge {{ billStatusBadgeClass($bill->status) }}">{{ str_replace('_', ' ', $bill->status) }}</span></div>
+          <div class="row"><span class="text-muted">{{ __('Type of Consumer') }}</span><strong>{{ consumerTypeLabel($bill->consumer_type) }}</strong></div>
+          <div class="row"><span class="text-muted">{{ __('Month of') }}</span><strong>{{ billingPeriodLabel($bill->billing_period) }}</strong></div>
+          <div class="row"><span class="text-muted">{{ __('Status') }}</span><span class="badge {{ billStatusBadgeClass($bill->status) }}">{{ str_replace('_', ' ', $bill->status) }}</span></div>
         </div>
       </div>
 
       <table class="bill-table">
-        <thead><tr><th>Previous Reading</th><th>Present Reading</th><th>Consumption</th><th class="num">Total</th></tr></thead>
+        <thead><tr><th>{{ __('Previous Reading') }}</th><th>{{ __('Present Reading') }}</th><th>{{ __('Consumption') }}</th><th class="num">{{ __('Total') }}</th></tr></thead>
         <tbody>
           <tr>
             <td>{{ $bill->previous_reading !== null ? number_format($bill->previous_reading, 2) : '—' }}</td>
@@ -87,10 +87,10 @@
       </table>
 
       <table class="bill-table">
-        <thead><tr><th>Charges</th><th>Consumption</th><th>Rate</th><th class="num">Amount</th></tr></thead>
+        <thead><tr><th>{{ __('Charges') }}</th><th>{{ __('Consumption') }}</th><th>{{ __('Rate') }}</th><th class="num">{{ __('Amount') }}</th></tr></thead>
         <tbody>
           <tr>
-            <td>Minimum Charge (first {{ rtrim(rtrim(number_format($includedCum, 2), '0'), '.') }} m³)</td>
+            <td>{{ __('Minimum Charge (first :value m³)', ['value' => rtrim(rtrim(number_format($includedCum, 2), '0'), '.')]) }}</td>
             <td>{{ number_format(min((float)$bill->consumption, $includedCum), 2) }} m³</td>
             <td>—</td>
             <td class="num">{{ formatCurrency($minCharge) }}</td>
@@ -106,37 +106,36 @@
             @endforeach
           @elseif ($excessCum > 0)
           <tr>
-            <td>Excess Consumption</td>
+            <td>{{ __('Excess Consumption') }}</td>
             <td>{{ number_format($excessCum, 2) }} m³</td>
             <td>—</td>
             <td class="num">{{ formatCurrency($excessCharge) }}</td>
           </tr>
           @endif
           @if ($bill->discount_amount > 0)
-          <tr><td colspan="3">Senior Citizen Discount</td><td class="num">− {{ formatCurrency($bill->discount_amount) }}</td></tr>
+          <tr><td colspan="3">{{ __('Senior Citizen Discount') }}</td><td class="num">− {{ formatCurrency($bill->discount_amount) }}</td></tr>
           @endif
           @if ($bill->penalty_amount > 0)
-          <tr><td colspan="3">Overdue Penalty</td><td class="num">{{ formatCurrency($bill->penalty_amount) }}</td></tr>
+          <tr><td colspan="3">{{ __('Overdue Penalty') }}</td><td class="num">{{ formatCurrency($bill->penalty_amount) }}</td></tr>
           @endif
         </tbody>
       </table>
 
       <div class="totals">
-        <div class="row grand total-highlight"><span>Total Amount</span><span>{{ formatCurrency($bill->total_amount) }}</span></div>
+        <div class="row grand total-highlight"><span>{{ __('Total Amount') }}</span><span>{{ formatCurrency($bill->total_amount) }}</span></div>
         <div class="row">
-          <span>Balance<br><small class="text-muted">Unpaid from the previous bill (not paid in full)</small></span>
+          <span>{{ __('Balance') }}<br><small class="text-muted">{{ __('Unpaid from the previous bill (not paid in full)') }}</small></span>
           <span class="{{ $previousBalance > 0 ? 'text-danger' : '' }}">{{ formatCurrency($previousBalance) }}</span>
         </div>
-        <div class="row"><span>Due Date</span><strong>{{ formatDate($bill->due_date) }}</strong></div>
-        <div class="row"><span>Disconnection Date</span><strong class="text-danger">{{ $bill->disconnection_date ? formatDate($bill->disconnection_date) : '—' }}</strong></div>
+        <div class="row"><span>{{ __('Due Date') }}</span><strong>{{ formatDate($bill->due_date) }}</strong></div>
+        <div class="row"><span>{{ __('Disconnection Date') }}</span><strong class="text-danger">{{ $bill->disconnection_date ? formatDate($bill->disconnection_date) : '—' }}</strong></div>
         @if ((float)$bill->amount_paid > 0)
-          <div class="row"><span>Amount Paid{{ $datePaid ? ' (' . formatDate($datePaid) . ')' : '' }}</span><span>− {{ formatCurrency($bill->amount_paid) }}</span></div>
+          <div class="row"><span>{{ __('Amount Paid:value', ['value' => $datePaid ? ' (' . formatDate($datePaid) . ')' : '']) }}</span><span>− {{ formatCurrency($bill->amount_paid) }}</span></div>
         @endif
       </div>
 
       <p class="text-muted" style="margin-top:24px;font-size:11.5px;">
-        This is a system-generated water billing statement from AWAS — Adlay Water Augmentation System of {{ $barangayName }}.
-        Please settle your bill on or before the due date to avoid penalties or service disconnection.
+        {{ __('This is a system-generated water billing statement from AWAS — Adlay Water Augmentation System of :barangayname. Please settle your bill on or before the due date to avoid penalties or service disconnection.', ['barangayname' => $barangayName]) }}
       </p>
     </div>
   </div>
@@ -159,7 +158,7 @@ document.getElementById('backBtn').addEventListener('click', function (e) {
     // Without the PDF libraries (e.g. offline), fall back to the browser's "Save as PDF".
     if (!window.html2canvas || !window.jspdf) { window.print(); return; }
     btn.disabled = true;
-    btn.textContent = 'Preparing PDF…';
+    btn.textContent = {{ Js::from(__('Preparing PDF…')) }};
     html2canvas(document.getElementById('invoice'), { scale: 2, backgroundColor: '#ffffff', useCORS: true })
       .then(function (canvas) {
         const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });

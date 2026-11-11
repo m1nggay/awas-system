@@ -90,7 +90,7 @@ class UserController extends Controller
         $password = (string)$request->input('password', '');
 
         if ($username === '' || $fullName === '' || !in_array($role, self::ROLES, true)) {
-            flash('danger', 'Please fill all required fields.');
+            flash('danger', __('Please fill all required fields.'));
             return back();
         }
         if ($policy = passwordPolicyError($password)) {
@@ -98,7 +98,7 @@ class UserController extends Controller
             return back();
         }
         if (User::where('username', $username)->exists()) {
-            flash('danger', 'That username already exists.');
+            flash('danger', __('That username already exists.'));
             return back();
         }
 
@@ -121,14 +121,14 @@ class UserController extends Controller
     public function updatePuroks(Request $request, User $user)
     {
         if (!$user->isMeterReader()) {
-            flash('danger', 'Puroks can only be assigned to Meter Reader accounts.');
+            flash('danger', __('Puroks can only be assigned to Meter Reader accounts.'));
             return back();
         }
         $moved = $this->assignPuroks($user, (array)$request->input('puroks', []), $request->user()->user_id);
         $names = DB::table('meter_reader_puroks as a')->join('puroks as p', 'p.purok_id', '=', 'a.purok_id')
             ->where('a.user_id', $user->user_id)->orderBy('p.purok_name')->pluck('p.purok_name');
-        flash('success', "Puroks for {$user->username}: " . ($names->isEmpty() ? 'none' : $names->implode(', ')) . '.'
-            . ($moved ? ' Moved from another meter reader: ' . implode(', ', $moved) . '.' : ''));
+        flash('success', __('Puroks for :username: :puroks.', ['username' => $user->username, 'puroks' => $names->isEmpty() ? __('none') : $names->implode(', ')])
+            . ($moved ? ' ' . __('Moved from another meter reader: :puroks.', ['puroks' => implode(', ', $moved)]) : ''));
         return back();
     }
 
@@ -157,12 +157,12 @@ class UserController extends Controller
     public function toggleStatus(Request $request, User $user)
     {
         if ((int)$user->user_id === (int)$request->user()->user_id) {
-            flash('danger', 'You cannot deactivate your own account.');
+            flash('danger', __('You cannot deactivate your own account.'));
             return back();
         }
         $user->update(['status' => $user->status === 'active' ? 'inactive' : 'active']);
         log_activity($request->user()->user_id, 'user_toggle_status', ($user->status === 'active' ? 'Activated ' : 'Deactivated ') . "user {$user->username} (" . roleLabel($user->role) . ')');
-        flash('success', 'User status updated.');
+        flash('success', __('User status updated.'));
         return back();
     }
 
@@ -174,7 +174,7 @@ class UserController extends Controller
     public function destroy(Request $request, User $user)
     {
         if ($user->role !== 'resident') {
-            flash('danger', 'Only Consumer accounts can be deleted. Deactivate administrators and meter readers instead.');
+            flash('danger', __('Only Consumer accounts can be deleted. Deactivate administrators and meter readers instead.'));
             return back();
         }
 
@@ -184,7 +184,7 @@ class UserController extends Controller
             || DB::table('water_bills')->where('consumer_id', $consumer->consumer_id)->exists()
             || DB::table('payments')->where('consumer_id', $consumer->consumer_id)->exists());
         if ($hasRecords) {
-            flash('danger', "{$user->full_name} already has meter readings, bills or payments, so the account cannot be deleted — that history must be kept. Use Deactivate instead.");
+            flash('danger', __(':full_name already has meter readings, bills or payments, so the account cannot be deleted — that history must be kept. Use Deactivate instead.', ['full_name' => $user->full_name]));
             return back();
         }
 
@@ -197,7 +197,7 @@ class UserController extends Controller
         });
         log_activity($request->user()->user_id, 'user_delete', "Deleted consumer account {$user->username} ({$user->full_name}"
             . ($consumer && $consumer->meter_number ? ", meter {$consumer->meter_number}" : '') . ')');
-        flash('success', "{$user->full_name}'s account was deleted.");
+        flash('success', __(':full_name\'s account was deleted.', ['full_name' => $user->full_name]));
         return back();
     }
 
@@ -210,7 +210,7 @@ class UserController extends Controller
         }
         $user->update(['password_hash' => Hash::make($newPassword), 'failed_login_attempts' => 0, 'locked_at' => null]);
         log_activity($request->user()->user_id, 'user_reset_password', "Reset the password of {$user->username} (" . roleLabel($user->role) . ')');
-        flash('success', 'Password reset successfully.');
+        flash('success', __('Password reset successfully.'));
         return back();
     }
 
@@ -219,7 +219,7 @@ class UserController extends Controller
     {
         $user->clearLockout();
         log_activity($request->user()->user_id, 'account_unlock', "Unlocked the account of {$user->username} (" . roleLabel($user->role) . ')');
-        flash('success', "{$user->full_name}'s account is unlocked. They can sign in again with their password.");
+        flash('success', __(':full_name\'s account is unlocked. They can sign in again with their password.', ['full_name' => $user->full_name]));
         return back();
     }
 }

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'System Settings')
+@section('title', __('System Settings'))
 
 @push('styles')
 <style>
@@ -37,14 +37,14 @@
 @endphp
 
 {{-- One tab per area; the URL's #… opens a tab (e.g. #maintenance, #backup), so saves land back on the same tab. --}}
-<nav class="settings-tabs" role="tablist" aria-label="System Settings">
-  <a href="#billing" role="tab" data-tab="billing"><i class="ph ph-receipt" aria-hidden="true"></i> Billing &amp; Rates</a>
-  <a href="#puroks" role="tab" data-tab="puroks"><i class="ph ph-map-pin" aria-hidden="true"></i> Puroks</a>
-  <a href="#chatbot-faqs" role="tab" data-tab="chatbot-faqs"><i class="ph ph-robot" aria-hidden="true"></i> Chatbot FAQs
+<nav class="settings-tabs" role="tablist" aria-label="{{ __('System Settings') }}">
+  <a href="#billing" role="tab" data-tab="billing"><i class="ph ph-receipt" aria-hidden="true"></i> {{ __('Billing & Rates') }}</a>
+  <a href="#puroks" role="tab" data-tab="puroks"><i class="ph ph-map-pin" aria-hidden="true"></i> {{ __('Puroks') }}</a>
+  <a href="#chatbot-faqs" role="tab" data-tab="chatbot-faqs"><i class="ph ph-robot" aria-hidden="true"></i> {{ __('Chatbot FAQs') }}
     @if (count($unanswered ?? []) > 0)<span class="tab-count">{{ count($unanswered) }}</span>@endif</a>
-  <a href="#maintenance" role="tab" data-tab="maintenance"><i class="ph ph-wrench" aria-hidden="true"></i> Maintenance
-    @if ($maintOn)<span class="tab-count warn">ON</span>@endif</a>
-  <a href="#backup" role="tab" data-tab="backup"><i class="ph ph-database" aria-hidden="true"></i> Backup &amp; Restore</a>
+  <a href="#maintenance" role="tab" data-tab="maintenance"><i class="ph ph-wrench" aria-hidden="true"></i> {{ __('Maintenance') }}
+    @if ($maintOn)<span class="tab-count warn">{{ __('ON') }}</span>@endif</a>
+  <a href="#backup" role="tab" data-tab="backup"><i class="ph ph-database" aria-hidden="true"></i> {{ __('Backup & Restore') }}</a>
 </nav>
 
 <div class="settings-pane" data-pane="billing" role="tabpanel">
@@ -55,16 +55,16 @@
   {{-- 1. General --}}
   <div class="card set-card">
     <div class="card-body">
-      <h3 class="set-title">1. General</h3>
-      <p class="set-sub">Shown on printed bills and the consumer portal.</p>
+      <h3 class="set-title">{{ __('1. General') }}</h3>
+      <p class="set-sub">{{ __('Shown on printed bills and the consumer portal.') }}</p>
       <div class="row g-3">
-        <div class="col-md-3 col-sm-6"><label class="form-label" for="barangay_name">Barangay name</label>
+        <div class="col-md-3 col-sm-6"><label class="form-label" for="barangay_name">{{ __('Barangay name') }}</label>
           <input type="text" class="form-control" id="barangay_name" name="barangay_name" value="{{ $v('barangay_name') }}" required maxlength="100"></div>
-        <div class="col-md-3 col-sm-6"><label class="form-label" for="contact_email">Support email</label>
+        <div class="col-md-3 col-sm-6"><label class="form-label" for="contact_email">{{ __('Support email') }}</label>
           <input type="email" class="form-control" id="contact_email" name="contact_email" value="{{ $v('contact_email') }}" maxlength="150"></div>
-        <div class="col-md-3 col-sm-6"><label class="form-label" for="contact_number">Support contact number</label>
+        <div class="col-md-3 col-sm-6"><label class="form-label" for="contact_number">{{ __('Support contact number') }}</label>
           <input type="text" class="form-control" id="contact_number" name="contact_number" value="{{ $v('contact_number') }}" maxlength="20" inputmode="tel"></div>
-        <div class="col-md-3 col-sm-6"><label class="form-label" for="currency_symbol">Currency label</label>
+        <div class="col-md-3 col-sm-6"><label class="form-label" for="currency_symbol">{{ __('Currency label') }}</label>
           <input type="text" class="form-control" id="currency_symbol" name="currency_symbol" value="{{ $v('currency_symbol') }}" required maxlength="10"></div>
       </div>
     </div>
@@ -73,51 +73,51 @@
   {{-- 2. Water Rates --}}
   <div class="card set-card">
     <div class="card-body">
-      <h3 class="set-title">2. Water Rates</h3>
-      <p class="set-sub">Minimum charge covers the first block. Each tier charges only the cubic meters that fall inside it.</p>
+      <h3 class="set-title">{{ __('2. Water Rates') }}</h3>
+      <p class="set-sub">{{ __('Minimum charge covers the first block. Each tier charges only the cubic meters that fall inside it.') }}</p>
 
       <div class="set-box mb-3">
         <div class="row g-3">
-          <div class="col-sm-4"><label class="form-label" for="minimum_charge">Minimum charge (₱, always charged)</label>
+          <div class="col-sm-4"><label class="form-label" for="minimum_charge">{{ __('Minimum charge (₱, always charged)') }}</label>
             <input type="number" step="0.01" min="0" class="form-control" id="minimum_charge" name="minimum_charge" value="{{ $n($v('minimum_charge')) }}" required></div>
-          <div class="col-sm-4"><label class="form-label" for="minimum_cubic_meters">Covers the first (m³)</label>
+          <div class="col-sm-4"><label class="form-label" for="minimum_cubic_meters">{{ __('Covers the first (m³)') }}</label>
             <input type="number" step="0.01" min="0.01" class="form-control" id="minimum_cubic_meters" name="minimum_cubic_meters" value="{{ $n($v('minimum_cubic_meters')) }}" required></div>
-          <div class="col-sm-4"><label class="form-label" for="rates_effective_from">Rates effective from</label>
+          <div class="col-sm-4"><label class="form-label" for="rates_effective_from">{{ __('Rates effective from') }}</label>
             <input type="date" class="form-control" id="rates_effective_from" name="rates_effective_from" value="{{ $v('rates_effective_from') }}" required></div>
         </div>
       </div>
 
-      <div class="form-label">Excess rate tiers</div>
+      <div class="form-label">{{ __('Excess rate tiers') }}</div>
       <div class="table-responsive">
         <table class="tier-table">
-          <thead><tr><th>Tier</th><th>From (m³)</th><th>To (m³)</th><th>Rate per m³ (₱)</th><th></th></tr></thead>
+          <thead><tr><th>{{ __('Tier') }}</th><th>{{ __('From (m³)') }}</th><th>{{ __('To (m³)') }}</th><th>{{ __('Rate per m³ (₱)') }}</th><th></th></tr></thead>
           <tbody id="tierRows">
             @foreach ($tierRows as $i => $t)
               <tr>
-                <td class="tier-name">Tier {{ $i + 2 }}</td>
+                <td class="tier-name">{{ __('Tier :value', ['value' => $i + 2]) }}</td>
                 <td class="tier-from"></td>
-                <td><input type="number" step="0.01" min="0" class="form-control form-control-sm" name="tier_to[]" value="{{ $t['to'] }}" placeholder="No limit" aria-label="To (m³)"></td>
-                <td><input type="number" step="0.01" min="0" class="form-control form-control-sm" name="tier_rate[]" value="{{ $t['rate'] }}" required aria-label="Rate per m³"></td>
-                <td class="text-end"><button type="button" class="btn btn-outline btn-sm tier-del text-danger" title="Remove this tier" aria-label="Remove this tier"><i class="ph ph-trash" aria-hidden="true"></i></button></td>
+                <td><input type="number" step="0.01" min="0" class="form-control form-control-sm" name="tier_to[]" value="{{ $t['to'] }}" placeholder="{{ __('No limit') }}" aria-label="{{ __('To (m³)') }}"></td>
+                <td><input type="number" step="0.01" min="0" class="form-control form-control-sm" name="tier_rate[]" value="{{ $t['rate'] }}" required aria-label="{{ __('Rate per m³') }}"></td>
+                <td class="text-end"><button type="button" class="btn btn-outline btn-sm tier-del text-danger" title="{{ __('Remove this tier') }}" aria-label="{{ __('Remove this tier') }}"><i class="ph ph-trash" aria-hidden="true"></i></button></td>
               </tr>
             @endforeach
           </tbody>
         </table>
       </div>
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2">
-        <button type="button" class="btn btn-outline btn-sm" id="addTier">+ Add tier</button>
-        <span class="text-muted" style="font-size:11.5px;">"From" fills in automatically from the tier above. Leave the last "To" blank for no limit.</span>
+        <button type="button" class="btn btn-outline btn-sm" id="addTier">{{ __('+ Add tier') }}</button>
+        <span class="text-muted" style="font-size:11.5px;">{{ __('"From" fills in automatically from the tier above. Leave the last "To" blank for no limit.') }}</span>
       </div>
 
       <div class="set-box mt-3">
         <div class="row g-3">
           <div class="col-md-5">
-            <div class="form-label">Sample bill check</div>
-            <label class="form-label fw-normal" for="sampleCum">Consumption (m³)</label>
+            <div class="form-label">{{ __('Sample bill check') }}</div>
+            <label class="form-label fw-normal" for="sampleCum">{{ __('Consumption (m³)') }}</label>
             <input type="number" step="0.01" min="0" class="form-control mb-2" id="sampleCum" value="25" style="max-width:200px;">
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="sampleSenior">
-              <label class="form-check-label" for="sampleSenior" style="font-size:13px;">Senior citizen account</label>
+              <label class="form-check-label" for="sampleSenior" style="font-size:13px;">{{ __('Senior citizen account') }}</label>
             </div>
           </div>
           <div class="col-md-7" id="sampleLines" aria-live="polite"></div>
@@ -129,16 +129,16 @@
   {{-- 3. Due Dates & Penalties --}}
   <div class="card set-card">
     <div class="card-body">
-      <h3 class="set-title">3. Due Dates &amp; Penalties</h3>
-      <p class="set-sub">Applies to every account, regardless of tier.</p>
+      <h3 class="set-title">{{ __('3. Due Dates & Penalties') }}</h3>
+      <p class="set-sub">{{ __('Applies to every account, regardless of tier.') }}</p>
       <div class="row g-3">
-        <div class="col-md-3 col-sm-6"><label class="form-label" for="due_day_of_month">Due day (of the month after billing)</label>
+        <div class="col-md-3 col-sm-6"><label class="form-label" for="due_day_of_month">{{ __('Due day (of the month after billing)') }}</label>
           <input type="number" min="1" max="31" step="1" class="form-control" id="due_day_of_month" name="due_day_of_month" value="{{ $v('due_day_of_month') }}" required></div>
-        <div class="col-md-3 col-sm-6"><label class="form-label" for="overdue_grace_days">Grace period (days after due)</label>
+        <div class="col-md-3 col-sm-6"><label class="form-label" for="overdue_grace_days">{{ __('Grace period (days after due)') }}</label>
           <input type="number" min="0" max="90" step="1" class="form-control" id="overdue_grace_days" name="overdue_grace_days" value="{{ $v('overdue_grace_days') }}" required></div>
-        <div class="col-md-3 col-sm-6"><label class="form-label" for="late_penalty_percent">Late penalty (% of unpaid bill)</label>
+        <div class="col-md-3 col-sm-6"><label class="form-label" for="late_penalty_percent">{{ __('Late penalty (% of unpaid bill)') }}</label>
           <input type="number" min="0" max="100" step="0.01" class="form-control" id="late_penalty_percent" name="late_penalty_percent" value="{{ $n($v('late_penalty_percent')) }}" required></div>
-        <div class="col-md-3 col-sm-6"><label class="form-label" for="disconnection_months">Disconnect after (months unpaid)</label>
+        <div class="col-md-3 col-sm-6"><label class="form-label" for="disconnection_months">{{ __('Disconnect after (months unpaid)') }}</label>
           <input type="number" min="1" max="24" step="1" class="form-control" id="disconnection_months" name="disconnection_months" value="{{ $v('disconnection_months') }}" required></div>
       </div>
       <div class="timeline-note mt-3" id="timelineNote"></div>
@@ -148,15 +148,15 @@
   {{-- 4. Discounts --}}
   <div class="card set-card">
     <div class="card-body">
-      <h3 class="set-title">4. Discounts</h3>
-      <p class="set-sub">Deducted after the water charge is computed.</p>
-      <label class="form-label" for="senior_discount_percent">Senior citizen discount (%)</label>
+      <h3 class="set-title">{{ __('4. Discounts') }}</h3>
+      <p class="set-sub">{{ __('Deducted after the water charge is computed.') }}</p>
+      <label class="form-label" for="senior_discount_percent">{{ __('Senior citizen discount (%)') }}</label>
       <input type="number" min="0" max="100" step="0.01" class="form-control" id="senior_discount_percent" name="senior_discount_percent" value="{{ $n($v('senior_discount_percent')) }}" required>
     </div>
   </div>
 
   <div class="d-flex justify-content-end mb-4">
-    <button type="submit" class="btn btn-primary">Save Settings</button>
+    <button type="submit" class="btn btn-primary">{{ __('Save Settings') }}</button>
   </div>
 </form>
 </div>
@@ -165,9 +165,9 @@
   <tr>
     <td class="tier-name"></td>
     <td class="tier-from"></td>
-    <td><input type="number" step="0.01" min="0" class="form-control form-control-sm" name="tier_to[]" placeholder="No limit" aria-label="To (m³)"></td>
-    <td><input type="number" step="0.01" min="0" class="form-control form-control-sm" name="tier_rate[]" required aria-label="Rate per m³"></td>
-    <td class="text-end"><button type="button" class="btn btn-outline btn-sm tier-del text-danger" title="Remove this tier" aria-label="Remove this tier"><i class="ph ph-trash" aria-hidden="true"></i></button></td>
+    <td><input type="number" step="0.01" min="0" class="form-control form-control-sm" name="tier_to[]" placeholder="{{ __('No limit') }}" aria-label="{{ __('To (m³)') }}"></td>
+    <td><input type="number" step="0.01" min="0" class="form-control form-control-sm" name="tier_rate[]" required aria-label="{{ __('Rate per m³') }}"></td>
+    <td class="text-end"><button type="button" class="btn btn-outline btn-sm tier-del text-danger" title="{{ __('Remove this tier') }}" aria-label="{{ __('Remove this tier') }}"><i class="ph ph-trash" aria-hidden="true"></i></button></td>
   </tr>
 </template>
 
@@ -199,7 +199,7 @@
     const cum = Math.max(0, num($('sampleCum')) || 0);
     const included = num($('minimum_cubic_meters')) || 0;
     const minCharge = num($('minimum_charge')) || 0;
-    let html = '<div class="sample-row"><span>Minimum charge (first ' + fmt(included) + ' m³)</span><span>' + peso(minCharge) + '</span></div>';
+    let html = '<div class="sample-row"><span>' + {{ Js::from(__('Minimum charge (first :cum m³)')) }}.replace(':cum', fmt(included)) + '</span><span>' + peso(minCharge) + '</span></div>';
     let subtotal = minCharge, lower = included;
     for (const tr of rows.rows) {
       const toVal = tr.querySelector('[name="tier_to[]"]').value, rate = parseFloat(tr.querySelector('[name="tier_rate[]"]').value) || 0;
@@ -217,18 +217,18 @@
     subtotal = Math.round(subtotal * 100) / 100;
     if ($('sampleSenior').checked) {
       const discount = Math.round(subtotal * (num($('senior_discount_percent')) || 0)) / 100;
-      html += '<div class="sample-row"><span>Senior citizen discount</span><span>− ' + peso(discount) + '</span></div>';
+      html += '<div class="sample-row"><span>' + {{ Js::from(__('Senior citizen discount')) }} + '</span><span>− ' + peso(discount) + '</span></div>';
       subtotal = Math.round((subtotal - discount) * 100) / 100;
     }
-    $('sampleLines').innerHTML = html + '<div class="sample-row sample-total"><span>Amount due</span><span>' + peso(subtotal) + '</span></div>';
+    $('sampleLines').innerHTML = html + '<div class="sample-row sample-total"><span>' + {{ Js::from(__('Amount due')) }} + '</span><span>' + peso(subtotal) + '</span></div>';
   }
 
   function refreshTimeline() {
     const due = parseInt($('due_day_of_month').value, 10), grace = parseInt($('overdue_grace_days').value, 10);
     const pct = $('late_penalty_percent').value, months = parseInt($('disconnection_months').value, 10);
-    $('timelineNote').textContent = 'Timeline: bill due on the ' + (isNaN(due) ? '?' : ordinal(due))
-      + ' → ' + (pct || 0) + '% penalty added after day ' + (isNaN(grace) ? '?' : grace) + ' of grace'
-      + ' → disconnection notice after ' + (isNaN(months) ? '?' : months) + ' unpaid month' + (months === 1 ? '' : 's') + '.';
+    $('timelineNote').textContent = {{ Js::from(__('Timeline: bill due on the :due → :pct% penalty added after day :grace of grace → disconnection notice after :months unpaid month(s).')) }}
+      .replace(':due', isNaN(due) ? '?' : (@json(app()->getLocale()) === 'tl' ? 'ika-' + due : ordinal(due))).replace(':pct', pct || 0)
+      .replace(':grace', isNaN(grace) ? '?' : grace).replace(':months', isNaN(months) ? '?' : months);
   }
 
   $('addTier').addEventListener('click', () => {
@@ -265,31 +265,30 @@
 <div class="settings-pane" data-pane="maintenance" role="tabpanel">
 <div class="card" id="maintenance" style="scroll-margin-top:80px;">
   <div class="card-header">
-    <h3><i class="ph ph-wrench" aria-hidden="true"></i> Maintenance</h3>
-    <span class="badge {{ $maintOn ? 'badge-warning' : 'badge-success' }}">{{ $maintOn ? 'Maintenance mode is ON' : 'System is running normally' }}</span>
+    <h3><i class="ph ph-wrench" aria-hidden="true"></i> {{ __('Maintenance') }}</h3>
+    <span class="badge {{ $maintOn ? 'badge-warning' : 'badge-success' }}">{{ $maintOn ? __('Maintenance mode is ON') : __('System is running normally') }}</span>
   </div>
   <div class="card-body">
     <p class="text-muted mb-3" style="font-size:13px;">
-      Turn this on while updating the system or fixing data. Only <strong>administrators</strong> can use AWAS while it is on —
-      consumers and meter readers see a maintenance page with your message and are signed out. Online payments already made are still confirmed.
+      {{ __('Turn this on while updating the system or fixing data. Only') }} <strong>{{ __('administrators') }}</strong> {{ __('can use AWAS while it is on — consumers and meter readers see a maintenance page with your message and are signed out. Online payments already made are still confirmed.') }}
     </p>
     <form method="POST" action="{{ route('admin.settings.maintenance') }}" id="maintenanceForm">
       @csrf
       <input type="hidden" name="maintenance_mode" value="{{ $maintOn ? '0' : '1' }}">
       <div class="row g-3">
         <div class="col-md-8">
-          <label class="form-label" for="maintenance_message">Message shown to users</label>
+          <label class="form-label" for="maintenance_message">{{ __('Message shown to users') }}</label>
           <textarea class="form-control" id="maintenance_message" name="maintenance_message" rows="2" maxlength="500"
-                    placeholder="e.g. We are updating the water rates. AWAS will be back shortly.">{{ setting('maintenance_message', '') }}</textarea>
+                    placeholder="{{ __('e.g. We are updating the water rates. AWAS will be back shortly.') }}">{{ setting('maintenance_message', '') }}</textarea>
         </div>
         <div class="col-md-4">
-          <label class="form-label" for="maintenance_until">Expected back by (optional)</label>
+          <label class="form-label" for="maintenance_until">{{ __('Expected back by (optional)') }}</label>
           <input type="datetime-local" class="form-control" id="maintenance_until" name="maintenance_until"
                  value="{{ $maintUntil && strtotime($maintUntil) ? date('Y-m-d\TH:i', strtotime($maintUntil)) : '' }}">
         </div>
       </div>
       <button type="submit" class="btn {{ $maintOn ? 'btn-success' : 'btn-warning' }} mt-3">
-        <i class="ph {{ $maintOn ? 'ph-check-circle' : 'ph-wrench' }}" aria-hidden="true"></i> {{ $maintOn ? 'Turn Off Maintenance Mode' : 'Turn On Maintenance Mode' }}
+        <i class="ph {{ $maintOn ? 'ph-check-circle' : 'ph-wrench' }}" aria-hidden="true"></i> {{ $maintOn ? __('Turn Off Maintenance Mode') : __('Turn On Maintenance Mode') }}
       </button>
     </form>
   </div>
@@ -297,7 +296,7 @@
 <script>
 document.getElementById('maintenanceForm').addEventListener('submit', function (e) {
   const turningOn = this.querySelector('[name="maintenance_mode"]').value === '1';
-  if (turningOn && !confirm('Turn on maintenance mode?\n\nConsumers and meter readers will be signed out and see the maintenance page until you turn it off.')) {
+  if (turningOn && !confirm('{{ addslashes(__('Turn on maintenance mode?')) }}\n\n{{ addslashes(__('Consumers and meter readers will be signed out and see the maintenance page until you turn it off.')) }}')) {
     e.preventDefault();
   }
 });

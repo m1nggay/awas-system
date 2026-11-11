@@ -2,7 +2,7 @@
 @php $socials = \App\Http\Controllers\Auth\SocialLoginController::enabled(); @endphp
 @if ($socials)
   <div class="social-links">
-    <div class="pf-label mb-2">Sign in with</div>
+    <div class="pf-label mb-2">{{ __('Sign in with') }}</div>
     @foreach ($socials as $key => $name)
       @php $linked = !empty($user->{$key . '_id'}); @endphp
       <div class="social-link-row">
@@ -13,15 +13,15 @@
             <i class="ph-fill ph-facebook-logo" style="font-size:20px;color:#1877f2;" aria-hidden="true"></i>
           @endif
           <strong>{{ $name }}</strong>
-          @if ($linked)<span class="pf-pill">Connected</span>@endif
+          @if ($linked)<span class="pf-pill">{{ __('Connected') }}</span>@endif
         </span>
         @if ($linked)
-          <form method="POST" action="{{ route('social.unlink', $key) }}" data-confirm="Disconnect {{ $name }}? You will sign in with your username and password.">
+          <form method="POST" action="{{ route('social.unlink', $key) }}" data-confirm="{{ __('Disconnect :name? You will sign in with your username and password.', ['name' => $name]) }}">
             @csrf
-            <button type="submit" class="btn btn-outline btn-sm">Disconnect</button>
+            <button type="submit" class="btn btn-outline btn-sm">{{ __('Disconnect') }}</button>
           </form>
         @else
-          <a href="{{ route('social.redirect', [$key, 'link' => 1]) }}" class="btn btn-outline btn-sm">Connect</a>
+          <a href="{{ route('social.redirect', [$key, 'link' => 1]) }}" class="btn btn-outline btn-sm">{{ __('Connect') }}</a>
         @endif
       </div>
     @endforeach

@@ -45,11 +45,11 @@ class ProfileController extends ResidentController
         $digits = preg_replace('/^(63|0)(?=9\d{9}$)/', '', $digits);
 
         $error = match (true) {
-            $email === '' && $user->email => 'Please enter your email address — it is where your password codes are sent.',
-            $email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL) => 'Please enter a valid email address.',
+            $email === '' && $user->email => __('Please enter your email address — it is where your password codes are sent.'),
+            $email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL) => __('Please enter a valid email address.'),
             $email !== '' && DB::table('users')->where('email', $email)->where('user_id', '!=', $user->user_id)->exists()
-                => 'That email address is already used by another account.',
-            $digits !== '' && !preg_match('/^9\d{9}$/', $digits) => 'Please enter a valid mobile number, e.g. 985 588 5588.',
+                => __('That email address is already used by another account.'),
+            $digits !== '' && !preg_match('/^9\d{9}$/', $digits) => __('Please enter a valid mobile number, e.g. 985 588 5588.'),
             default => null,
         };
         if ($error) {
@@ -71,13 +71,13 @@ class ProfileController extends ResidentController
                 log_activity($user->user_id, 'email_change_requested', "Requested to change email to $email (code sent to the current email)");
             }
             flash($type === 'success' ? 'success' : 'warning', $type === 'success'
-                ? 'We sent a 6-digit code to your current email. Enter it below to confirm the change.' : $message);
+                ? __('We sent a 6-digit code to your current email. Enter it below to confirm the change.') : $message);
             return redirect()->route('resident.profile');
         }
 
         $this->saveContact($request, $email, $contact);
         log_activity($user->user_id, 'profile_update', 'Updated contact information (email / contact number)');
-        flash('success', 'Contact information updated.');
+        flash('success', __('Contact information updated.'));
         return redirect()->route('resident.profile');
     }
 
@@ -91,7 +91,7 @@ class ProfileController extends ResidentController
         }
         $code = preg_replace('/\D+/', '', (string)$request->input('otp'));
         if (!preg_match('/^\d{6}$/', $code)) {
-            return back()->withErrors(['Please enter the 6-digit code from your email.']);
+            return back()->withErrors([__('Please enter the 6-digit code from your email.')]);
         }
 
         $result = OtpService::emailChange()->verify($user->user_id, $code);
@@ -100,9 +100,9 @@ class ProfileController extends ResidentController
                 $request->session()->forget(self::PENDING);
             }
             return back()->withErrors([match ($result) {
-                'expired' => 'That code has expired. Please save your new email again to get a new code.',
-                'locked'  => 'Too many incorrect attempts. Please save your new email again to get a new code.',
-                default   => 'Incorrect code. Please try again.',
+                'expired' => __('That code has expired. Please save your new email again to get a new code.'),
+                'locked'  => __('Too many incorrect attempts. Please save your new email again to get a new code.'),
+                default   => __('Incorrect code. Please try again.'),
             }]);
         }
 
@@ -110,7 +110,7 @@ class ProfileController extends ResidentController
         $this->saveContact($request, $pending['email'], $pending['contact_number']);
         $request->session()->forget(self::PENDING);
         log_activity($user->user_id, 'email_change', "Changed email from $old to {$pending['email']} (verified by a code sent to the old email)");
-        flash('success', 'Your email was changed.');
+        flash('success', __('Your email was changed.'));
         return redirect()->route('resident.profile');
     }
 
@@ -131,7 +131,7 @@ class ProfileController extends ResidentController
     {
         OtpService::emailChange()->invalidate($request->user()->user_id);
         $request->session()->forget(self::PENDING);
-        flash('success', 'Email change cancelled. Your email stays the same.');
+        flash('success', __('Email change cancelled. Your email stays the same.'));
         return redirect()->route('resident.profile');
     }
 

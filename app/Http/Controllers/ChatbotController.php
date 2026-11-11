@@ -13,7 +13,7 @@ class ChatbotController extends Controller
     {
         $message = clean((string)$request->input('message', ''));
         if ($message === '') {
-            return response()->json(['reply' => "Please type a question and I'll do my best to help!"]);
+            return response()->json(['reply' => __("Please type a question and I'll do my best to help!")]);
         }
 
         // Always the LOGGED-IN resident's own account — never one named in the chat text.

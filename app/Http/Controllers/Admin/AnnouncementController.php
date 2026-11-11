@@ -92,7 +92,9 @@ class AnnouncementController extends Controller
             'announcements' => $announcements,
             'purokNames'    => $purokNames,
             'accountCount'  => $this->recipients([])->count(),
-            'templates'     => self::TEMPLATES,
+            // Shown (and filled in) in the administrator's language.
+            'templates'     => collect(self::TEMPLATES)->mapWithKeys(fn ($items, $group) => [__($group) => collect($items)
+                ->mapWithKeys(fn ($t, $name) => [__($name) => array_map(fn ($text) => __($text), $t)])->all()])->all(),
         ]);
     }
 
@@ -104,10 +106,10 @@ class AnnouncementController extends Controller
         $toPuroks = $request->input('audience') === 'puroks';
 
         $error = match (true) {
-            $title === '' || $message === '' => 'Please enter a title and a message.',
-            mb_strlen($title) > 150 => 'The title is too long (150 characters at most).',
-            mb_strlen($message) > 500 => 'The message is too long (500 characters at most).',
-            $toPuroks && !$purokIds => 'Please choose at least one purok.',
+            $title === '' || $message === '' => __('Please enter a title and a message.'),
+            mb_strlen($title) > 150 => __('The title is too long (150 characters at most).'),
+            mb_strlen($message) > 500 => __('The message is too long (500 characters at most).'),
+            $toPuroks && !$purokIds => __('Please choose at least one purok.'),
             default => null,
         };
         if ($error) {
@@ -117,7 +119,7 @@ class AnnouncementController extends Controller
 
         $userIds = $this->recipients($toPuroks ? $purokIds : [])->all();
         if (!$userIds) {
-            flash('warning', 'No consumer accounts to send to — none of these consumers have signed up online yet.');
+            flash('warning', __('No consumer accounts to send to — none of these consumers have signed up online yet.'));
             return back()->withInput();
         }
 
@@ -141,7 +143,7 @@ class AnnouncementController extends Controller
 
         log_activity($request->user()->user_id, 'announcement_send', "Sent announcement \"$title\" to " . count($userIds) . ' consumer account(s)'
             . ($email ? ' (also by email)' : ''));
-        flash('success', 'Announcement sent to ' . count($userIds) . ' consumer account(s)' . ($email ? ', and emailed.' : '.'));
+        flash('success', __($email ? 'Announcement sent to :count consumer account(s), and emailed.' : 'Announcement sent to :count consumer account(s).', ['count' => count($userIds)]));
         return redirect()->route('admin.announcements.index');
     }
 

@@ -1,7 +1,7 @@
 {{-- Centered card layout for login/registration/verification pages.
      Options: $video (drone background), $cardStyle (inline style for the card). --}}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}?v={{ @filemtime(public_path('assets/css/style.css')) ?: '1' }}">
 <link rel="icon" type="image/png" href="{{ asset('assets/img/logo-round.png') }}">
+@include('partials.js-lang')
 @stack('styles')
 </head>
 <body class="auth-body">
@@ -22,8 +23,10 @@
     <div class="bg-video-tint" aria-hidden="true"></div>
   @endif
 
+  <div class="auth-lang">@include('partials.lang-switch')</div>
+
   <div class="auth-card" @isset($cardStyle) style="{{ $cardStyle }}" @endisset>
-    <div class="auth-logo"><img src="{{ asset('assets/img/logo-round.png') }}" alt="AWAS logo"></div>
+    <div class="auth-logo"><img src="{{ asset('assets/img/logo-round.png') }}" alt="{{ __('AWAS logo') }}"></div>
     @include('partials.flash')
     @yield('content')
   </div>

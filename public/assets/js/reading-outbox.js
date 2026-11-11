@@ -57,7 +57,7 @@
 
   const periodLabel = p => {
     const [y, m] = String(p).split('-').map(Number);
-    return (y && m) ? new Date(y, m - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' }) : p;
+    return (y && m) ? new Date(y, m - 1, 1).toLocaleString(document.documentElement.lang === 'tl' ? 'fil-PH' : 'en-US', { month: 'long', year: 'numeric' }) : p;
   };
 
   // ---- Photos of typed readings (IndexedDB, one per item ref) ------------------------
@@ -219,7 +219,7 @@
         if (next.typed) {
           const photoData = await getPhoto(next.ref).catch(() => null);
           if (!photoData) {
-            updateItem(next.ref, { status: 'error', message: 'The photo of this reading is no longer on this phone. Record it again.' });
+            updateItem(next.ref, { status: 'error', message: __t('The photo of this reading is no longer on this phone. Record it again.') });
             changed();
             continue;
           }
@@ -254,7 +254,7 @@
           continue;
         }
         if (res && res.status === 403) {
-          updateItem(next.ref, { status: 'error', message: (res.data && res.data.error) || 'You are not allowed to record this reading.' });
+          updateItem(next.ref, { status: 'error', message: (res.data && res.data.error) || __t('You are not allowed to record this reading.') });
           changed();
           continue;
         }
@@ -286,8 +286,9 @@
     if (!c.waiting && !c.errors && !needLogin) { el.hidden = true; return; }
     el.hidden = false;
     el.className = 'outbox-badge ' + (needLogin || c.errors ? 'is-error' : 'is-waiting');
-    el.querySelector('span').textContent = needLogin ? 'Log in to send ' + c.waiting
-      : c.waiting ? c.waiting + ' pending' : c.errors + ' need' + (c.errors === 1 ? 's' : '') + ' attention';
+    el.querySelector('span').textContent = needLogin ? __t('Log in to send :count', { count: c.waiting })
+      : c.waiting ? __t(':count pending', { count: c.waiting })
+      : __t(c.errors === 1 ? ':count needs attention' : ':count need attention', { count: c.errors });
   }
 
   // ---- "Readings on this phone" panel (Meter Readings page) -------------------------
@@ -296,13 +297,13 @@
   const time = ts => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   const when = ts => {
     const d = new Date(ts), today = new Date();
-    return d.toDateString() === today.toDateString() ? time(ts) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' + time(ts);
+    return d.toDateString() === today.toDateString() ? time(ts) : d.toLocaleDateString(document.documentElement.lang === 'tl' ? 'fil-PH' : 'en-US', { month: 'short', day: 'numeric' }) + ', ' + time(ts);
   };
   const STATUS = {
-    pending: ['badge-warning', 'ph-clock', 'Pending'],
-    sending: ['badge-info', 'ph-arrows-clockwise', 'Sending…'],
-    sent:    ['badge-success', 'ph-check-circle', 'Sent'],
-    error:   ['badge-danger', 'ph-warning', 'Needs attention'],
+    pending: ['badge-warning', 'ph-clock', __t('Pending')],
+    sending: ['badge-info', 'ph-arrows-clockwise', __t('Sending…')],
+    sent:    ['badge-success', 'ph-check-circle', __t('Sent')],
+    error:   ['badge-danger', 'ph-warning', __t('Needs attention')],
   };
 
   function renderPanel() {
@@ -315,19 +316,20 @@
 
     let status;
     if (needLogin) {
-      status = '<div class="alert alert-danger py-2 mb-2"><strong>Your session ended.</strong> ' + c.waiting
-        + ' reading' + (c.waiting === 1 ? ' is' : 's are') + ' safe on this phone. <a href="' + esc(cfg.loginUrl) + '">Log in again</a> to send them.</div>';
+      status = '<div class="alert alert-danger py-2 mb-2"><strong>' + __t('Your session ended.') + '</strong> '
+        + __t(c.waiting === 1 ? '1 reading is safe on this phone.' : ':count readings are safe on this phone.', { count: c.waiting })
+        + ' <a href="' + esc(cfg.loginUrl) + '">' + __t('Log in again') + '</a> ' + __t('to send them.') + '</div>';
     } else if (c.waiting) {
-      status = '<div class="text-muted small mb-2">' + (navigator.onLine === false ? 'No internet — ' : '')
-        + c.waiting + ' waiting to send. They are kept on this phone and sent automatically'
-        + (lastTry ? ' (last try ' + time(lastTry) + ')' : '') + '.</div>';
+      status = '<div class="text-muted small mb-2">' + (navigator.onLine === false ? __t('No internet') + ' — ' : '')
+        + __t(':count waiting to send. They are kept on this phone and sent automatically', { count: c.waiting })
+        + (lastTry ? ' (' + __t('last try :time', { time: time(lastTry) }) + ')' : '') + '.</div>';
     } else {
-      status = '<div class="text-muted small mb-2">All readings on this phone have been sent.</div>';
+      status = '<div class="text-muted small mb-2">' + __t('All readings on this phone have been sent.') + '</div>';
     }
 
     const meters = data
-      ? '<i class="ph ph-download-simple" aria-hidden="true"></i> ' + data.consumers.length + ' meters downloaded · ' + when(data.saved_at)
-      : '<span class="text-danger"><i class="ph ph-warning" aria-hidden="true"></i> Meters not downloaded yet — tap Download while you have internet.</span>';
+      ? '<i class="ph ph-download-simple" aria-hidden="true"></i> ' + __t(':count meters downloaded', { count: data.consumers.length }) + ' · ' + when(data.saved_at)
+      : '<span class="text-danger"><i class="ph ph-warning" aria-hidden="true"></i> ' + __t('Meters not downloaded yet — tap Download while you have internet.') + '</span>';
 
     const rows = list.map(i => {
       const s = STATUS[i.status] || STATUS.pending;
@@ -344,11 +346,11 @@
         + '</div></div>';
     }).join('');
 
-    panel.innerHTML = '<div class="card mb-3"><div class="card-header flex-wrap gap-2"><h3>Readings on this phone</h3>'
+    panel.innerHTML = '<div class="card mb-3"><div class="card-header flex-wrap gap-2"><h3>' + __t('Readings on this phone') + '</h3>'
       + '<div class="d-flex gap-2">'
       + '<button type="button" class="btn btn-outline btn-sm" data-outbox-download' + (downloading ? ' disabled' : '') + '>'
-      + (downloading ? 'Downloading…' : 'Download my puroks') + '</button>'
-      + (c.waiting && !needLogin ? '<button type="button" class="btn btn-primary btn-sm" data-outbox-send' + (busy ? ' disabled' : '') + '>Send now</button>' : '')
+      + (downloading ? __t('Downloading…') : __t('Download my puroks')) + '</button>'
+      + (c.waiting && !needLogin ? '<button type="button" class="btn btn-primary btn-sm" data-outbox-send' + (busy ? ' disabled' : '') + '>' + __t('Send now') + '</button>' : '')
       + '</div></div><div class="card-body">' + status
       + '<div class="small mb-2">' + meters + '</div>'
       + (rows ? '<div class="list-group">' + rows + '</div>' : '')
@@ -357,10 +359,10 @@
 
   document.addEventListener('click', e => {
     const rm = e.target.closest('[data-outbox-remove]');
-    if (rm && confirm('Remove this reading from the phone? It was not saved on the server. Record it again if needed.')) remove(rm.dataset.outboxRemove);
+    if (rm && confirm(__t('Remove this reading from the phone? It was not saved on the server. Record it again if needed.'))) remove(rm.dataset.outboxRemove);
     if (e.target.closest('[data-outbox-send]')) { delay = 5000; kick(0); }
     if (e.target.closest('[data-outbox-download]')) {
-      download().catch(() => alert('Could not download the meters. Please try again when the internet is better.'));
+      download().catch(() => alert(__t('Could not download the meters. Please try again when the internet is better.')));
       changed();
     }
   });
@@ -369,7 +371,9 @@
   window.awasOutboxCanLeave = function () {
     const c = counts();
     if (!c.waiting) return true;
-    return confirm(c.waiting + ' reading' + (c.waiting === 1 ? ' is' : 's are') + ' not sent yet. They stay on this phone and are sent the next time you log in on it.\n\nLog out anyway?');
+    return confirm(__t(c.waiting === 1 ? '1 reading is not sent yet. It stays on this phone and is sent the next time you log in on it.'
+      : ':count readings are not sent yet. They stay on this phone and are sent the next time you log in on it.', { count: c.waiting })
+      + '\n\n' + __t('Log out anyway?'));
   };
 
   window.addEventListener('online', () => { delay = 5000; kick(0); });

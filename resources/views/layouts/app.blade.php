@@ -55,7 +55,7 @@
     $pageTitle = trim($__env->yieldContent('title', config('agas.short_name')));
 @endphp
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -66,6 +66,7 @@
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}?v={{ @filemtime(public_path('assets/css/style.css')) ?: '1' }}">
 <link rel="icon" type="image/png" href="{{ asset('assets/img/logo-round.png') }}">
+@include('partials.js-lang')
 @stack('styles')
 </head>
 <body @if (!empty($liveStart)) data-live-url="{{ route('admin.live') }}" data-live-reading="{{ $liveStart['reading'] }}" data-live-notif="{{ $liveStart['notif'] }}" @endif>
@@ -74,15 +75,15 @@
 
   <div class="offcanvas-lg offcanvas-start sidebar" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
     <div class="offcanvas-header d-lg-none">
-      <span id="sidebarLabel" class="visually-hidden">Navigation</span>
-      <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close"></button>
+      <span id="sidebarLabel" class="visually-hidden">{{ __('Navigation') }}</span>
+      <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="{{ __('Close') }}"></button>
     </div>
     <div class="offcanvas-body d-flex flex-column p-0">
       <div class="sidebar-brand">
-        <img src="{{ asset('assets/img/logo-round.png') }}" alt="AWAS logo">
+        <img src="{{ asset('assets/img/logo-round.png') }}" alt="{{ __('AWAS logo') }}">
         <div>
-          <div class="name">AWAS</div>
-          <div class="sub">BARANGAY ADLAY</div>
+          <div class="name">{{ __('AWAS') }}</div>
+          <div class="sub">{{ __('BARANGAY ADLAY') }}</div>
         </div>
       </div>
       <div class="sidebar-user d-flex align-items-center gap-2">
@@ -96,13 +97,13 @@
       </div>
       <nav class="sidebar-nav">
         @foreach ($nav as $section => $items)
-          <div class="nav-label">{{ $section }}</div>
+          <div class="nav-label">{{ __($section) }}</div>
           @foreach ($items as $item)
             @php [$route, $pattern, $icon, $label] = $item; $badge = $item[4] ?? 0; @endphp
             <div class="position-relative" data-nav="{{ $route }}">
               @php $active = request()->routeIs($pattern); @endphp
               {{-- Outline icon; the filled one for the page you are on. --}}
-              <a href="{{ route($route) }}" class="{{ $active ? 'active' : '' }}"><i class="ic {{ $active ? 'ph-fill' : 'ph' }} {{ $icon }}" aria-hidden="true"></i>{{ $label }}</a>
+              <a href="{{ route($route) }}" class="{{ $active ? 'active' : '' }}"><i class="ic {{ $active ? 'ph-fill' : 'ph' }} {{ $icon }}" aria-hidden="true"></i>{{ __($label) }}</a>
               @if ($badge > 0)
                 <span class="badge text-bg-warning position-absolute" style="right:12px;top:9px;font-size:10px;padding:1px 6px;">{{ $badge > 9 ? '9+' : $badge }}</span>
               @endif
@@ -111,7 +112,7 @@
         @endforeach
         <form method="POST" action="{{ route('logout') }}" id="logoutForm">
           @csrf
-          <a href="{{ route('logout') }}" onclick="event.preventDefault(); if (!window.awasOutboxCanLeave || awasOutboxCanLeave()) document.getElementById('logoutForm').submit();"><i class="ic ph ph-sign-out" aria-hidden="true"></i>Logout</a>
+          <a href="{{ route('logout') }}" onclick="event.preventDefault(); if (!window.awasOutboxCanLeave || awasOutboxCanLeave()) document.getElementById('logoutForm').submit();"><i class="ic ph ph-sign-out" aria-hidden="true"></i>{{ __('Logout') }}</a>
         </form>
       </nav>
     </div>
@@ -129,22 +130,22 @@
           <a href="{{ route('admin.readings.index') }}" id="outboxBadge" class="outbox-badge" hidden><i class="ph ph-cloud-arrow-up" aria-hidden="true"></i><span></span></a>
         @endif
         <div class="dropdown">
-          <button class="notif-btn" id="notifBtn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications" data-read-url="{{ route('notifications.read') }}">
+          <button class="notif-btn" id="notifBtn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Notifications') }}" data-read-url="{{ route('notifications.read') }}">
             <i class="ph ph-bell-simple" aria-hidden="true"></i>
             @if (($unreadCount ?? 0) > 0)<span class="notif-badge">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>@endif
           </button>
           <div class="dropdown-menu dropdown-menu-end notif-panel" aria-labelledby="notifBtn" id="notifPanel">
-            <div class="notif-panel-header">Notifications</div>
+            <div class="notif-panel-header">{{ __('Notifications') }}</div>
             @forelse ($notifications ?? [] as $n)
               <div class="notif-panel-item {{ $n->is_read ? '' : 'unread' }}">
-                <div class="notif-panel-title">{{ $n->title }}</div>
-                <div class="notif-panel-msg">{{ $n->message }}</div>
+                <div class="notif-panel-title">{{ translateStored($n->title) }}</div>
+                <div class="notif-panel-msg">{{ translateStored($n->message) }}</div>
                 <div class="notif-panel-time">{{ formatDateTime($n->created_at) }}</div>
               </div>
             @empty
-              <div class="notif-panel-empty">No notifications yet.</div>
+              <div class="notif-panel-empty">{{ __('No notifications yet.') }}</div>
             @endforelse
-            <a href="{{ route('notifications.index') }}" class="notif-panel-footer">View all notifications</a>
+            <a href="{{ route('notifications.index') }}" class="notif-panel-footer">{{ __('View all notifications') }}</a>
           </div>
         </div>
       </div>
@@ -153,8 +154,8 @@
     <main class="page-body">
       @if ($user->isAdmin() && setting('maintenance_mode', '0') === '1')
         <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2 py-2">
-          <span><i class="ph ph-wrench" aria-hidden="true"></i> <strong>Maintenance mode is ON</strong> — consumers and meter readers can't use AWAS right now.</span>
-          <a href="{{ route('admin.settings.edit') }}#maintenance" class="btn btn-sm btn-outline">Turn off</a>
+          <span><i class="ph ph-wrench" aria-hidden="true"></i> <strong>{{ __('Maintenance mode is ON') }}</strong> {{ __('— consumers and meter readers can\'t use AWAS right now.') }}</span>
+          <a href="{{ route('admin.settings.edit') }}#maintenance" class="btn btn-sm btn-outline">{{ __('Turn off') }}</a>
         </div>
       @endif
       @include('partials.flash')
@@ -162,7 +163,7 @@
     </main>
 
     <footer style="padding:16px 26px;text-align:center;font-size:12px;color:var(--text-muted);">
-      &copy; {{ date('Y') }} Barangay Adlay — AWAS: Adlay Water Augmentation System
+      {{ __('© :value Barangay Adlay — AWAS: Adlay Water Augmentation System', ['value' => date('Y')]) }}
     </footer>
   </div>
 </div>

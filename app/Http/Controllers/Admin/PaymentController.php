@@ -36,7 +36,7 @@ class PaymentController extends Controller
         // Completed PayMongo payments that never returned to the app are recorded as Paid here.
         $recorded = $paymongo->recordCompletedPayments();
         if ($recorded > 0) {
-            session()->now('flash', ['type' => 'success', 'message' => "$recorded completed PayMongo payment(s) were recorded automatically — the bills are now Paid."]);
+            session()->now('flash', ['type' => 'success', 'message' => __(':recorded completed PayMongo payment(s) were recorded automatically — the bills are now Paid.', ['recorded' => $recorded])]);
         }
 
         $counts = DB::table('payments')->groupBy('status')->selectRaw('status, COUNT(*) cnt')->pluck('cnt', 'status');
@@ -102,13 +102,13 @@ class PaymentController extends Controller
         $receipt = null;
         if ($method === 'gcash') {
             $errors = [];
-            $receipt = $files->in('payment-receipts')->store($request->file('gcash_screenshot'), '', 'GCash payment screenshot', true, $errors);
+            $receipt = $files->in('payment-receipts')->store($request->file('gcash_screenshot'), '', __('GCash payment screenshot'), true, $errors);
             if ($errors) {
                 return back()->withInput()->with('pay_error', $errors[0]);
             }
             [$read, $error] = $reader->read($receipt);
             if (!$read && !$error) {
-                $error = 'The screenshot could not be checked automatically. Please try again, or record the payment as Cash after checking the GCash app.';
+                $error = __('The screenshot could not be checked automatically. Please try again, or record the payment as Cash after checking the GCash app.');
             }
             if ($error) {
                 $files->in('payment-receipts')->delete($receipt);
@@ -131,8 +131,9 @@ class PaymentController extends Controller
             $files->in('payment-receipts')->delete($receipt);
             return back()->withInput()->with('pay_error', $error);
         }
-        flash('success', paymentMethodLabel($method) . ' payment of ' . formatCurrency($payment->amount_paid)
-            . " recorded — the bill is updated. Reference: {$payment->payment_reference}");
+        flash('success', __(':method payment of :amount recorded — the bill is updated. Reference: :reference', [
+            'method' => paymentMethodLabel($method), 'amount' => formatCurrency($payment->amount_paid), 'reference' => $payment->payment_reference,
+        ]));
 
         // Back to the list without ?bill_id so the modal doesn't pop open again.
         return redirect()->route('admin.payments.index', ['tab' => 'paid']);
@@ -147,9 +148,9 @@ class PaymentController extends Controller
                 is_numeric($request->input('amount_seen')) ? (float)$request->input('amount_seen') : null);
         } catch (\Throwable $e) {
             Log::error('Payment verify failed: ' . $e->getMessage());
-            $error = 'Failed to verify the payment. Please try again.';
+            $error = __('Failed to verify the payment. Please try again.');
         }
-        $error ? flash('danger', $error) : flash('success', "Payment {$payment->payment_reference} verified — the bill is now updated.");
+        $error ? flash('danger', $error) : flash('success', __('Payment :payment_reference verified — the bill is now updated.', ['payment_reference' => $payment->payment_reference]));
         return back();
     }
 
@@ -168,8 +169,9 @@ class PaymentController extends Controller
             return response()->json(['status' => 'gone']);
         }
         if ($paymongo->verifyAndCredit($row)) {
-            session()->flash('success', 'GCash QR payment of ' . formatCurrency($row->amount_paid)
-                . " received — confirmed by PayMongo, the bill is now Paid. Reference: {$row->payment_reference}");
+            session()->flash('success', __('GCash QR payment of :amount received — confirmed by PayMongo, the bill is now Paid. Reference: :reference', [
+                'amount' => formatCurrency($row->amount_paid), 'reference' => $row->payment_reference,
+            ]));
             return response()->json(['status' => 'paid', 'redirect' => route('admin.payments.index', ['tab' => 'paid'])]);
         }
         if ($paymongo->walletPaymentFailed($row)) {
@@ -192,13 +194,13 @@ class PaymentController extends Controller
     {
         $row = DB::table('payments')->where('payment_id', $payment->payment_id)->first();
         if ($row->payment_method !== 'paymongo' || $row->status !== 'pending') {
-            flash('warning', 'This payment is no longer waiting for PayMongo.');
+            flash('warning', __('This payment is no longer waiting for PayMongo.'));
         } elseif ($paymongo->settleOrCancel($row)) {
-            flash('success', "PayMongo confirmed payment {$row->payment_reference} — the bill is now Paid.");
+            flash('success', __('PayMongo confirmed payment :payment_reference — the bill is now Paid.', ['payment_reference' => $row->payment_reference]));
         } elseif (DB::table('payments')->where('payment_id', $row->payment_id)->exists()) {
-            flash('danger', 'PayMongo could not be reached. Please try again.');
+            flash('danger', __('PayMongo could not be reached. Please try again.'));
         } else {
-            flash('success', "Payment {$row->payment_reference} was not paid on PayMongo, so it was cancelled.");
+            flash('success', __('Payment :payment_reference was not paid on PayMongo, so it was cancelled.', ['payment_reference' => $row->payment_reference]));
         }
         return back();
     }
@@ -207,11 +209,11 @@ class PaymentController extends Controller
     {
         $reason = clean($request->input('rejection_reason'));
         if ($reason === '') {
-            flash('danger', 'Please give the reason for rejecting this payment (the consumer will see it).');
+            flash('danger', __('Please give the reason for rejecting this payment (the consumer will see it).'));
             return back();
         }
         $error = $payments->reject($payment->payment_id, $request->user()->user_id, $reason);
-        $error ? flash('danger', $error) : flash('success', "Payment {$payment->payment_reference} rejected. The consumer was notified and can pay again.");
+        $error ? flash('danger', $error) : flash('success', __('Payment :payment_reference rejected. The consumer was notified and can pay again.', ['payment_reference' => $payment->payment_reference]));
         return back();
     }
 
@@ -220,6 +222,6 @@ class PaymentController extends Controller
     {
         return $files->in('payment-receipts')->response($payment->receipt_file, [
             'Cache-Control' => 'private, no-store, max-age=0',
-        ], 'No receipt attached.');
+        ], __('No receipt attached.'));
     }
 }

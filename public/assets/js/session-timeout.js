@@ -50,8 +50,8 @@
       box.setAttribute('role', 'alertdialog');
       box.setAttribute('aria-live', 'assertive');
       box.innerHTML = '<i class="ph ph-clock-countdown" aria-hidden="true"></i>'
-        + '<div><strong>Still there?</strong><span>You\'ll be signed out in <b data-left></b> seconds due to inactivity.</span></div>'
-        + '<button type="button" class="btn btn-primary btn-sm">Stay signed in</button>';
+        + '<div><strong>' + __t('Still there?') + '</strong><span>' + __t('You\'ll be signed out in :seconds seconds due to inactivity.', { seconds: '<b data-left></b>' }) + '</span></div>'
+        + '<button type="button" class="btn btn-primary btn-sm">' + __t('Stay signed in') + '</button>';
       box.querySelector('button').addEventListener('click', stay);
       document.body.appendChild(box);
     }

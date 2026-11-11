@@ -111,7 +111,7 @@ class ConsumerController extends Controller
             'created_by' => $request->user()->user_id,
         ]);
         log_activity($request->user()->user_id, 'consumer_add', "Added consumer {$data['full_name']} (meter {$data['meter_number']})");
-        flash('success', "Consumer added successfully. Meter Number: {$data['meter_number']}");
+        flash('success', __('Consumer added successfully. Meter Number: :meter_number', ['meter_number' => $data['meter_number']]));
         return back();
     }
 
@@ -126,7 +126,7 @@ class ConsumerController extends Controller
         $status = clean($request->input('status', 'active'));
         $consumer->update($data + ['status' => in_array($status, self::STATUSES, true) ? $status : 'active']);
         log_activity($request->user()->user_id, 'consumer_edit', "Edited consumer {$data['full_name']} (meter {$data['meter_number']})");
-        flash('success', 'Consumer updated successfully.');
+        flash('success', __('Consumer updated successfully.'));
         return back();
     }
 
@@ -135,7 +135,7 @@ class ConsumerController extends Controller
     {
         $consumer->update(['status' => 'inactive']);
         log_activity($request->user()->user_id, 'consumer_deactivate', "Deactivated consumer {$consumer->full_name} (meter {$consumer->meter_number})");
-        flash('success', "{$consumer->full_name} was deactivated. Their records are kept; use Edit to make the account Active again.");
+        flash('success', __(':full_name was deactivated. Their records are kept; use Edit to make the account Active again.', ['full_name' => $consumer->full_name]));
         return back();
     }
 
@@ -177,12 +177,12 @@ class ConsumerController extends Controller
         ];
 
         $error = match (true) {
-            $data['full_name'] === '' || $data['address'] === '' || $data['purok_id'] <= 0 => 'Meter Number, name, address, and purok are required.',
-            !isValidMeterNumber($data['meter_number']) => 'Meter Number must contain numbers only (e.g. 1001) — no letters, spaces, or "ADL-" prefix.',
-            !isset(Consumer::TYPES[$type]) => 'Please select a valid Type of Consumer.',
+            $data['full_name'] === '' || $data['address'] === '' || $data['purok_id'] <= 0 => __('Meter Number, name, address, and purok are required.'),
+            !isValidMeterNumber($data['meter_number']) => __('Meter Number must contain numbers only (e.g. 1001) — no letters, spaces, or "ADL-" prefix.'),
+            !isset(Consumer::TYPES[$type]) => __('Please select a valid Type of Consumer.'),
             DB::table('consumers')->where('meter_number', $data['meter_number'])
                 ->when($exceptId, fn ($q) => $q->where('consumer_id', '!=', $exceptId))->exists()
-                => "Meter Number {$data['meter_number']} is already assigned to another consumer.",
+                => __('Meter Number :meter_number is already assigned to another consumer.', ['meter_number' => $data['meter_number']]),
             default => null,
         };
         return [$data, $error];

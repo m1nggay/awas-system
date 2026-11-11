@@ -59,69 +59,68 @@ class MembershipApplicationController extends Controller
         foreach (['full_name', 'birth_date', 'sex', 'contact_number', 'email', 'username', 'purok_id',
                   'household_members', 'residence_type', 'consumer_type', 'id_type'] as $field) {
             if ($old[$field] === '') {
-                $errors[] = 'Please fill in all required fields.';
+                $errors[] = __('Please fill in all required fields.');
                 break;
             }
         }
         if (mb_strlen($old['full_name']) > 150) {
-            $errors[] = 'The full name is too long. Please shorten it.';
+            $errors[] = __('The full name is too long. Please shorten it.');
         }
         if ($old['birth_date'] !== '') {
             $dob = DateTime::createFromFormat('!Y-m-d', $old['birth_date']);
             $age = ($dob && $dob->format('Y-m-d') === $old['birth_date']) ? ageFromBirthDate($old['birth_date']) : null;
             if ($age === null || $dob > new DateTime('today') || $age > 120) {
-                $errors[] = 'Please enter a valid date of birth.';
+                $errors[] = __('Please enter a valid date of birth.');
             } elseif ($age < 18) {
-                $errors[] = 'Applicants must be at least 18 years old.';
+                $errors[] = __('Applicants must be at least 18 years old.');
             }
         }
         if ($old['sex'] !== '' && !in_array($old['sex'], ['male', 'female'], true)) {
-            $errors[] = 'Please select a valid sex.';
+            $errors[] = __('Please select a valid sex.');
         }
         if ($old['contact_number'] !== '' && !preg_match('/^[0-9+()\-\s]{7,20}$/', $old['contact_number'])) {
-            $errors[] = 'Please enter a valid contact number.';
+            $errors[] = __('Please enter a valid contact number.');
         }
         if ($old['email'] !== '' && (!filter_var($old['email'], FILTER_VALIDATE_EMAIL) || mb_strlen($old['email']) > 150)) {
-            $errors[] = 'Please enter a valid email address — we send a verification code to it.';
+            $errors[] = __('Please enter a valid email address — we send a verification code to it.');
         }
         $purokName = $old['purok_id'] !== '' ? Purok::whereKey((int)$old['purok_id'])->value('purok_name') : null;
         if ($old['purok_id'] !== '' && $purokName === null) {
-            $errors[] = 'Please select a valid purok.';
+            $errors[] = __('Please select a valid purok.');
         }
 
         // --- Household information --------------------------------------------
         if ($old['household_members'] !== '' && (!ctype_digit($old['household_members']) || (int)$old['household_members'] < 1 || (int)$old['household_members'] > 50)) {
-            $errors[] = 'Number of household members must be a whole number from 1 to 50.';
+            $errors[] = __('Number of household members must be a whole number from 1 to 50.');
         }
         if ($old['household_number'] !== '' && !preg_match('/^[A-Za-z0-9\-\/ ]{1,30}$/', $old['household_number'])) {
-            $errors[] = 'Household number may only contain letters, numbers, spaces, "-" and "/".';
+            $errors[] = __('Household number may only contain letters, numbers, spaces, "-" and "/".');
         }
         if ($old['residence_type'] !== '' && !isset(MembershipApplication::RESIDENCE_TYPES[$old['residence_type']])) {
-            $errors[] = 'Please select a valid type of residence.';
+            $errors[] = __('Please select a valid type of residence.');
         }
         if ($old['consumer_type'] !== '' && !isset(Consumer::TYPES[$old['consumer_type']])) {
-            $errors[] = 'Please select a valid Type of Consumer.';
+            $errors[] = __('Please select a valid Type of Consumer.');
         }
         if ($old['id_type'] !== '' && !in_array($old['id_type'], MembershipApplication::ID_TYPES, true)) {
-            $errors[] = 'Please select the type of ID you are submitting.';
+            $errors[] = __('Please select the type of ID you are submitting.');
         }
 
         // --- Face verification (blink / liveness check done in the browser) ----
         $livenessPassed = $request->input('liveness_passed') === '1' && (string)$request->input('selfie_capture', '') !== '';
         $verifyInPerson = $request->boolean('verify_in_person');
         if (!$livenessPassed && !$verifyInPerson) {
-            $errors[] = 'Please complete the face verification (position your face, then blink when asked), '
-                . 'or tick "I will verify my face in person" if you cannot use a camera.';
+            $errors[] = __('Please complete the face verification (position your face, then blink when asked), or tick "I will verify my face in person" if you cannot use a camera.');
         }
 
         // --- Account information ----------------------------------------------
         if (mb_strlen($old['username']) > 50) {
-            $errors[] = 'Username must be 50 characters or fewer.';
+            $errors[] = __('Username must be 50 characters or fewer.');
         }
         if ($policy = passwordPolicyError($password)) {
             $errors[] = $policy;
         } elseif ($password !== $confirmPassword) {
-            $errors[] = 'Passwords do not match.';
+            $errors[] = __('Passwords do not match.');
         }
 
         // --- Existing accounts / abuse limits -----------------------------------
@@ -133,20 +132,20 @@ class MembershipApplicationController extends Controller
                 if ($existing->role === 'applicant' && $existing->status === 'pending') {
                     $staleUserIds[] = (int)$existing->user_id;
                 } else {
-                    $errors[] = 'That email address is already registered. Please log in instead, or use a different email.';
+                    $errors[] = __('That email address is already registered. Please log in instead, or use a different email.');
                     break;
                 }
             }
         }
         if (!$errors && DB::table('users')->whereRaw('LOWER(username) = ?', [mb_strtolower($old['username'])])
                 ->whereNotIn('user_id', $staleUserIds ?: [0])->exists()) {
-            $errors[] = 'That username is already taken. Please choose another.';
+            $errors[] = __('That username is already taken. Please choose another.');
         }
         if (!$errors) {
             $recent = DB::table('membership_applications')->where('ip_address', $request->ip())
                 ->where('created_at', '>', now()->subHour())->count();
             if ($recent >= MembershipApplication::MAX_PER_IP_PER_HOUR) {
-                $errors[] = 'Too many applications were submitted from your connection recently. Please try again later.';
+                $errors[] = __('Too many applications were submitted from your connection recently. Please try again later.');
             }
         }
 
@@ -155,11 +154,11 @@ class MembershipApplicationController extends Controller
         $idFile = $idBackFile = $faceFile = null;
         if (!$errors) {
             $idFile = $files->store($request->file('id_file'), (string)$request->input('id_capture', ''),
-                'front of your valid ID', true, $errors, 'landscape');
+                __('front of your valid ID'), true, $errors, 'landscape');
             $idBackFile = $files->store($request->file('id_back_file'), (string)$request->input('id_back_capture', ''),
-                'back of your valid ID', true, $errors, 'landscape');
+                __('back of your valid ID'), true, $errors, 'landscape');
             if ($livenessPassed) {
-                $faceFile = $files->store(null, (string)$request->input('selfie_capture', ''), 'face verification', true, $errors, 'portrait');
+                $faceFile = $files->store(null, (string)$request->input('selfie_capture', ''), __('face verification'), true, $errors, 'portrait');
             }
             if ($errors) {
                 $files->delete($idFile);
@@ -217,16 +216,16 @@ class MembershipApplicationController extends Controller
             $files->delete($idBackFile);
             $files->delete($faceFile);
             Log::error('Membership application error: ' . $e->getMessage());
-            return back()->withErrors(['A system error occurred while submitting your application. Please try again.'])
+            return back()->withErrors([__('A system error occurred while submitting your application. Please try again.')])
                 ->withInput($old)->with('filesDiscarded', true);
         }
 
         log_activity($newUserId, 'membership_application', "New membership application $referenceCode started (pending email verification)");
 
         $result = $codes->sendEmailVerification($newUserId, $old['email'], $old['full_name'],
-            'Enter this code to verify your email address for your AWAS membership:',
-            'Go back to the verification page you were on and type the 6-digit code. '
-                . 'Your application only goes to the barangay water office for review after your email is verified.');
+            __('Enter this code to verify your email address for your AWAS membership:'),
+            __('Go back to the verification page you were on and type the 6-digit code.') . ' '
+                . __('Your application only goes to the barangay water office for review after your email is verified.'));
 
         $request->session()->put('email_verify_user_id', $newUserId);
         $request->session()->put('email_verify_started_at', time());

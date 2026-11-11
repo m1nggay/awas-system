@@ -9,8 +9,8 @@
   $pct = $progress['total'] > 0 ? round($progress['read'] / $progress['total'] * 100) : 0;
   $chips = collect([
       'purok'  => $purokFil ? optional($puroks->firstWhere('purok_id', $purokFil))->purok_name : null,
-      'type'   => $typeFil !== '' ? (\App\Models\Consumer::TYPES[$typeFil] ?? null) : null,
-      'status' => $statusFil !== '' ? ucfirst($statusFil) : null,
+      'type'   => $typeFil !== '' && isset(\App\Models\Consumer::TYPES[$typeFil]) ? __(\App\Models\Consumer::TYPES[$typeFil]) : null,
+      'status' => $statusFil !== '' ? __(ucfirst($statusFil)) : null,
   ])->filter();
   $reading = fn ($v) => rtrim(rtrim(number_format((float)$v, 2), '0'), '.');
 @endphp
@@ -83,11 +83,11 @@
 
 <div class="rd">
   @if ($noPuroks)
-    <div class="alert alert-warning">No puroks are assigned to your account yet, so there are no consumers to read. Please ask the administrator to assign your puroks.</div>
+    <div class="alert alert-warning">{{ __('No puroks are assigned to your account yet, so there are no consumers to read. Please ask the administrator to assign your puroks.') }}</div>
   @endif
 
   <div class="rd-progress">
-    <div class="top"><strong>{{ $purokName ?: 'My puroks' }}</strong><span><strong>{{ number_format($progress['read']) }}</strong> of {{ number_format($progress['total']) }} read</span></div>
+    <div class="top"><strong>{{ $purokName ?: __('My puroks') }}</strong><span><strong>{{ number_format($progress['read']) }}</strong> {{ __('of :value read', ['value' => number_format($progress['total'])]) }}</span></div>
     <div class="rd-bar" role="progressbar" aria-label="Meters read in {{ billingPeriodLabel($currentPeriod) }}" aria-valuenow="{{ $pct }}" aria-valuemin="0" aria-valuemax="100"><span style="width:{{ $pct }}%"></span></div>
   </div>
 
@@ -97,9 +97,9 @@
     @endforeach
     <div class="rd-search-box">
       <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
-      <input type="search" name="q" value="{{ $search }}" placeholder="Search name or meter number" aria-label="Search consumers" autocomplete="off" enterkeyhint="search">
+      <input type="search" name="q" value="{{ $search }}" placeholder="{{ __('Search name or meter number') }}" aria-label="{{ __('Search consumers') }}" autocomplete="off" enterkeyhint="search">
     </div>
-    <button type="button" class="rd-filter-btn" data-bs-toggle="offcanvas" data-bs-target="#rdFilters" aria-controls="rdFilters" aria-label="Filters">
+    <button type="button" class="rd-filter-btn" data-bs-toggle="offcanvas" data-bs-target="#rdFilters" aria-controls="rdFilters" aria-label="{{ __('Filters') }}">
       <i class="ph ph-funnel" aria-hidden="true"></i>@if ($chips->isNotEmpty())<span class="dot">{{ $chips->count() }}</span>@endif
     </button>
   </form>
@@ -113,18 +113,18 @@
   @endif
 
   <div id="rdResults">
-    <nav class="rd-tabs" aria-label="Reading status">
-      <a href="{{ $link(['read' => null]) }}" class="{{ $readTab === 'todo' ? 'active' : '' }}">Not yet read</a>
-      <a href="{{ $link(['read' => 'done']) }}" class="{{ $readTab === 'done' ? 'active' : '' }}">Read</a>
-      <a href="{{ $link(['read' => 'all']) }}" class="{{ $readTab === 'all' ? 'active' : '' }}">All</a>
+    <nav class="rd-tabs" aria-label="{{ __('Reading status') }}">
+      <a href="{{ $link(['read' => null]) }}" class="{{ $readTab === 'todo' ? 'active' : '' }}">{{ __('Not yet read') }}</a>
+      <a href="{{ $link(['read' => 'done']) }}" class="{{ $readTab === 'done' ? 'active' : '' }}">{{ __('Read') }}</a>
+      <a href="{{ $link(['read' => 'all']) }}" class="{{ $readTab === 'all' ? 'active' : '' }}">{{ __('All') }}</a>
     </nav>
 
     @if ($consumers->isEmpty())
       <div class="rd-empty">
         @if ($readTab === 'todo' && $search === '' && $chips->isEmpty())
-          <i class="ph ph-check-circle" aria-hidden="true"></i><strong>All meters are read</strong> for {{ billingPeriodLabel($currentPeriod) }}.
+          <i class="ph ph-check-circle" aria-hidden="true"></i><strong>{{ __('All meters are read') }}</strong> {{ __('for :period.', ['period' => billingPeriodLabel($currentPeriod)]) }}
         @else
-          No consumers found{{ $search !== '' ? ' for "' . $search . '"' : '' }}.
+          {{ __('No consumers found:value.', ['value' => $search !== '' ? __(' for "') . $search . '"' : '']) }}
         @endif
       </div>
     @else
@@ -142,25 +142,25 @@
             <div class="r1">
               <span class="name">{{ $c->display_name }}</span>
               @if ($done)
-                <span class="rd-state done"><i class="ph-fill ph-check-circle" aria-hidden="true"></i>Read</span>
+                <span class="rd-state done"><i class="ph-fill ph-check-circle" aria-hidden="true"></i>{{ __('Read') }}</span>
               @elseif ($active)
-                <span class="rd-state todo">Not read</span>
+                <span class="rd-state todo">{{ __('Not read') }}</span>
               @endif
             </div>
             <div class="r2">
-              {{ $c->meter_number ?: 'No meter' }} · {{ $c->purok_name }}
+              {{ $c->meter_number ?: __('No meter') }} · {{ $c->purok_name }}
               @unless ($active)<span class="rd-pill {{ $c->status === 'disconnected' ? 'disconnected' : 'inactive' }}">{{ ucfirst($c->status) }}</span>@endunless
             </div>
             <div class="r3">
               <span>
                 @if ($done)
-                  This month: <strong>{{ $reading($last->current_reading) }} m³</strong> ({{ date('M j', strtotime($last->reading_date)) }})
+                  {{ __('This month:') }} <strong>{{ $reading($last->current_reading) }} m³</strong> ({{ formatDate($last->reading_date, 'M j') }})
                 @elseif ($last)
-                  Last: <strong>{{ $reading($last->current_reading) }} m³</strong> ({{ date('M j', strtotime($last->reading_date)) }})
+                  {{ __('Last:') }} <strong>{{ $reading($last->current_reading) }} m³</strong> ({{ formatDate($last->reading_date, 'M j') }})
                 @elseif ($c->initial_meter_reading !== null)
-                  Starting reading: <strong>{{ $reading($c->initial_meter_reading) }} m³</strong>
+                  {{ __('Starting reading:') }} <strong>{{ $reading($c->initial_meter_reading) }} m³</strong>
                 @else
-                  No reading yet
+                  {{ __('No reading yet') }}
                 @endif
               </span>
               @if ($href)<i class="ph ph-caret-right" aria-hidden="true"></i>@endif
@@ -177,37 +177,37 @@
 {{-- Filters: a sheet that slides up from the bottom --}}
 <div class="offcanvas offcanvas-bottom" tabindex="-1" id="rdFilters" aria-labelledby="rdFiltersTitle">
   <div class="offcanvas-header">
-    <h3 class="offcanvas-title h6 mb-0" id="rdFiltersTitle">Filter consumers</h3>
-    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    <h3 class="offcanvas-title h6 mb-0" id="rdFiltersTitle">{{ __('Filter consumers') }}</h3>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="{{ __('Close') }}"></button>
   </div>
   <div class="offcanvas-body pt-0">
     <form method="GET" action="{{ route('admin.consumers.index') }}">
       @if ($search !== '')<input type="hidden" name="q" value="{{ $search }}">@endif
       @if ($readTab !== 'todo')<input type="hidden" name="read" value="{{ $readTab }}">@endif
-      <label class="form-label" for="f_purok">Purok</label>
+      <label class="form-label" for="f_purok">{{ __('Purok') }}</label>
       <select id="f_purok" name="purok" class="form-select mb-3">
-        <option value="">All my puroks</option>
+        <option value="">{{ __('All my puroks') }}</option>
         @foreach ($puroks as $pk)
           <option value="{{ $pk->purok_id }}" @selected($purokFil === (int)$pk->purok_id)>{{ $pk->purok_name }}</option>
         @endforeach
       </select>
-      <label class="form-label" for="f_type">Type of consumer</label>
+      <label class="form-label" for="f_type">{{ __('Type of consumer') }}</label>
       <select id="f_type" name="type" class="form-select mb-3">
-        <option value="">All types</option>
+        <option value="">{{ __('All types') }}</option>
         @foreach (\App\Models\Consumer::TYPES as $v => $l)
-          <option value="{{ $v }}" @selected($typeFil === $v)>{{ $l }}</option>
+          <option value="{{ $v }}" @selected($typeFil === $v)>{{ __($l) }}</option>
         @endforeach
       </select>
-      <label class="form-label" for="f_status">Account status</label>
+      <label class="form-label" for="f_status">{{ __('Account status') }}</label>
       <select id="f_status" name="status" class="form-select mb-3">
-        <option value="">All</option>
-        <option value="active" @selected($statusFil === 'active')>Active</option>
-        <option value="disconnected" @selected($statusFil === 'disconnected')>Disconnected</option>
-        <option value="inactive" @selected($statusFil === 'inactive')>Inactive</option>
+        <option value="">{{ __('All') }}</option>
+        <option value="active" @selected($statusFil === 'active')>{{ __('Active') }}</option>
+        <option value="disconnected" @selected($statusFil === 'disconnected')>{{ __('Disconnected') }}</option>
+        <option value="inactive" @selected($statusFil === 'inactive')>{{ __('Inactive') }}</option>
       </select>
       <div class="d-flex gap-2">
-        <a href="{{ route('admin.consumers.index', array_filter(['q' => $search, 'read' => $readTab === 'todo' ? null : $readTab])) }}" class="btn btn-outline">Reset</a>
-        <button type="submit" class="btn btn-primary">Show results</button>
+        <a href="{{ route('admin.consumers.index', array_filter(['q' => $search, 'read' => $readTab === 'todo' ? null : $readTab])) }}" class="btn btn-outline">{{ __('Reset') }}</a>
+        <button type="submit" class="btn btn-primary">{{ __('Show results') }}</button>
       </div>
     </form>
   </div>

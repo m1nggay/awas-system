@@ -49,7 +49,7 @@ class SocialLoginController extends Controller
             $social = Socialite::driver($provider)->user();
         } catch (\Throwable $e) {
             report($e);
-            flash('danger', "$name sign-in was cancelled or did not finish. Please try again.");
+            flash('danger', __(':name sign-in was cancelled or did not finish. Please try again.', ['name' => $name]));
             return $linking ? redirect($this->profileUrl($request->user())) : redirect()->route('login');
         }
 
@@ -64,7 +64,7 @@ class SocialLoginController extends Controller
         $user = $request->user();
         $user->forceFill([$provider . '_id' => null])->save();
         log_activity($user->user_id, 'social_unlink', 'Disconnected ' . self::PROVIDERS[$provider] . ' sign-in');
-        flash('success', self::PROVIDERS[$provider] . ' is disconnected. Sign in with your username and password.');
+        flash('success', __(':name is disconnected. Sign in with your username and password.', ['name' => self::PROVIDERS[$provider]]));
         return redirect($this->profileUrl($user));
     }
 
@@ -87,8 +87,8 @@ class SocialLoginController extends Controller
 
         if (!$user) {
             log_activity(null, 'login_failed', "$name sign-in with no matching AWAS account" . ($email ? " ($email)" : ''));
-            flash('danger', "No AWAS account uses this $name account" . ($email ? " ($email)" : '') . '. Sign in with your username and password, then connect '
-                . "$name in your Profile — or apply for membership with Create an account.");
+            flash('danger', __('No AWAS account uses this :name account', ['name' => $name]) . ($email ? " ($email)" : '') . '. '
+                . __('Sign in with your username and password, then connect :name in your Profile — or apply for membership with Create an account.', ['name' => $name]));
             return redirect()->route('login');
         }
         if ($user->status === 'pending') {
@@ -98,13 +98,13 @@ class SocialLoginController extends Controller
         }
         if ($user->status !== 'active') {
             log_activity($user->user_id, 'login_blocked', "Inactive account $name sign-in attempt");
-            flash('danger', 'This account is not active. Please contact the AWAS administrator.');
+            flash('danger', __('This account is not active. Please contact the AWAS administrator.'));
             return redirect()->route('login');
         }
 
         // Signing in through the account's own Google / Facebook proves it is theirs, like Forgot Password.
         $user->clearLockout();
-        return LoginController::startSession($request, $user, "User logged in with $name");
+        return LoginController::startSession($request, $user, __('User logged in with :name', ['name' => $name]));
     }
 
     private function link(Request $request, string $provider, string $socialId)
@@ -113,11 +113,11 @@ class SocialLoginController extends Controller
         $user = $request->user();
         $owner = User::where($provider . '_id', $socialId)->first();
         if ($owner && $owner->user_id !== $user->user_id) {
-            flash('danger', "That $name account is already connected to another AWAS account.");
+            flash('danger', __('That :name account is already connected to another AWAS account.', ['name' => $name]));
         } else {
             $user->forceFill([$provider . '_id' => $socialId])->save();
             log_activity($user->user_id, 'social_link', "Connected $name sign-in");
-            flash('success', "$name is connected. You can now sign in with \"Continue with $name\".");
+            flash('success', __(':name is connected. You can now sign in with "Continue with :name".', ['name' => $name]));
         }
         return redirect($this->profileUrl($user));
     }

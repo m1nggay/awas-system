@@ -128,17 +128,17 @@ class MeterReadingController extends Controller
     {
         $meter = clean($request->query('meter'));
         if (!isValidMeterNumber($meter)) {
-            return response()->json(['found' => false, 'message' => 'Meter Number must contain numbers only.']);
+            return response()->json(['found' => false, 'message' => __('Meter Number must contain numbers only.')]);
         }
 
         $c = DB::table('consumers as c')->join('puroks as p', 'p.purok_id', '=', 'c.purok_id')
             ->where('c.meter_number', $meter)
             ->first(['c.consumer_id', 'c.full_name', 'c.status', 'c.is_senior', 'c.consumer_type', 'c.initial_meter_reading', 'c.purok_id', 'p.purok_name']);
         if (!$c) {
-            return response()->json(['found' => false, 'message' => "No consumer has Meter Number $meter."]);
+            return response()->json(['found' => false, 'message' => __('No consumer has Meter Number :meter.', ['meter' => $meter])]);
         }
         if (!$request->user()->canAccessPurok((int)$c->purok_id)) {
-            return response()->json(['found' => false, 'message' => "Meter Number $meter is in {$c->purok_name}, which is not assigned to you."]);
+            return response()->json(['found' => false, 'message' => __('Meter Number :meter is in :purok_name, which is not assigned to you.', ['meter' => $meter, 'purok_name' => $c->purok_name])]);
         }
 
         $last = DB::table('meter_readings')->where('consumer_id', $c->consumer_id)
@@ -174,7 +174,7 @@ class MeterReadingController extends Controller
         $data = (string)$request->input('photo_data');
         $bytes = preg_match('#^data:image/(jpeg|png|webp);base64,#', $data, $m) ? base64_decode(substr($data, strlen($m[0])), true) : false;
         if (!$bytes || strlen($bytes) > 400 * 1024) {
-            return response()->json(['available' => true, 'ok' => false, 'hint' => 'Point the camera at the meter dial.'], 422);
+            return response()->json(['available' => true, 'ok' => false, 'hint' => __('Point the camera at the meter dial.')], 422);
         }
         $result = $reader->check($bytes);
         return response()->json($result ? ['available' => true] + $result : ['available' => false]);
@@ -190,7 +190,7 @@ class MeterReadingController extends Controller
     {
         $correcting = $request->filled('reading_id') ? MeterReading::find((int)$request->input('reading_id')) : null;
         if ($request->filled('reading_id') && (!$correcting || !$this->canManage($request, $correcting))) {
-            return response()->json(['ok' => false, 'message' => 'This reading is not in a purok assigned to you.'], 403);
+            return response()->json(['ok' => false, 'message' => __('This reading is not in a purok assigned to you.')], 403);
         }
 
         [$scan, $error, $retry] = $this->readPhoto($files, $reader, (string)$request->input('photo_data'));
@@ -217,7 +217,7 @@ class MeterReadingController extends Controller
     public function photo(Request $request, MeterReading $reading, ApplicationFiles $files)
     {
         abort_unless($request->user()->isAdmin() || $this->canManage($request, $reading), 403);
-        return $files->in(self::PHOTO_FOLDER)->response($reading->photo_file, ['Cache-Control' => 'private, max-age=86400'], 'No photo for this reading.');
+        return $files->in(self::PHOTO_FOLDER)->response($reading->photo_file, ['Cache-Control' => 'private, max-age=86400'], __('No photo for this reading.'));
     }
 
     /** The form without the phone outbox (e.g. browser storage blocked): save now, then reload the page. */
@@ -243,7 +243,7 @@ class MeterReadingController extends Controller
     {
         $ref = (string)$request->input('client_ref');
         if (!preg_match('/^[A-Za-z0-9-]{8,40}$/', $ref)) {
-            return response()->json(['status' => 'error', 'message' => 'This reading has no valid reference. Please record it again.'], 422);
+            return response()->json(['status' => 'error', 'message' => __('This reading has no valid reference. Please record it again.')], 422);
         }
         if ($saved = $this->savedByRef($ref)) {
             return response()->json($saved);
@@ -331,7 +331,7 @@ class MeterReadingController extends Controller
         $fail = fn (string $message) => ['ok' => false, 'duplicate' => false, 'message' => $message];
 
         if (!preg_match('/^\d{4}-\d{2}$/', $period) || $period > currentBillingPeriod()) {
-            return $fail('Please choose a valid billing period.');
+            return $fail(__('Please choose a valid billing period.'));
         }
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $readingDate) || $readingDate > date('Y-m-d')) {
             $readingDate = date('Y-m-d');
@@ -345,32 +345,29 @@ class MeterReadingController extends Controller
             $meterTyped = preg_replace('/\D/', '', (string)$request->input('typed_meter'));
             $readingTyped = (string)$request->input('typed_reading');
             if ($meterTyped === '' || !is_numeric($readingTyped) || (float)$readingTyped < 0 || (float)$readingTyped > 99999999) {
-                return $fail('The typed meter number or reading is not valid. Please record it again.');
+                return $fail(__('The typed meter number or reading is not valid. Please record it again.'));
             }
             $errors = [];
             $this->removeUnusedPhotos();
             $photo = $files->in(self::PHOTO_FOLDER)->store(null, (string)$request->input('photo_data'), 'meter', true, $errors);
             if (!$photo) {
-                return $fail($errors[0] ?? 'The meter photo could not be saved. Please record it again.');
+                return $fail($errors[0] ?? __('The meter photo could not be saved. Please record it again.'));
             }
             $scan = ['photo' => $photo, 'meter' => $meterTyped, 'reading' => round((float)$readingTyped, 2)];
         } elseif ($photo === '') {
-            return $fail('Take a photo of the meter to record its reading.');
+            return $fail(__('Take a photo of the meter to record its reading.'));
         } else {
             $cached = Cache::get('meter-scan:' . $photo);
             if (!$cached || $cached['user_id'] !== $userId || $cached['reading_id'] !== null || !$files->in(self::PHOTO_FOLDER)->exists($photo)) {
-                return $fail('This meter photo has expired. Please take the photo again.');
+                return $fail(__('This meter photo has expired. Please take the photo again.'));
             }
             $scan = ['photo' => $photo, 'meter' => $cached['meter'], 'reading' => (float)$cached['reading']];
         }
 
-        $check = $this->checkScan($request, $billing, $scan, $period, clean($request->input('expect_meter')), null);
+        $check = $this->checkScan($request, $billing, $scan, $period, clean($request->input('expect_meter')), null, $typed);
         if ($check['error']) {
             if ($typed) {
                 $files->in(self::PHOTO_FOLDER)->delete($photo);
-                $check['error'] = str_replace(['The photo shows', ' Retake the photo so the meter number on the dial is clear.',
-                    ' Retake the photo so all the black numbers are clear.'], ['You typed', ' Check the meter and record it again.',
-                    ' Check the meter and record it again.'], $check['error']);
             }
             return $fail($check['error']);
         }
@@ -395,7 +392,7 @@ class MeterReadingController extends Controller
             if ($typed) {
                 $files->in(self::PHOTO_FOLDER)->delete($scan['photo']);
             }
-            return ['ok' => false, 'duplicate' => true, 'message' => "Meter $meter already has a reading for " . billingPeriodLabel($period) . '.'];
+            return ['ok' => false, 'duplicate' => true, 'message' => __('Meter :meter already has a reading for :period.', ['meter' => $meter, 'period' => billingPeriodLabel($period)])];
         }
         Cache::forget('meter-scan:' . $scan['photo']);
         if ($typed) {
@@ -410,10 +407,11 @@ class MeterReadingController extends Controller
             . ($typed ? ' (typed without internet; the photo is checked)' : ' (read from the meter photo)'));
         return [
             'ok' => true, 'duplicate' => false, 'total' => (float)$bill->total_amount,
-            'message' => "Saved for meter $meter ({$check['name']}). Consumption: " . number_format($current - $previous, 2)
-                . ' m³, Total: ' . formatCurrency($bill->total_amount)
-                . ($previousBalance > 0 ? ', unpaid balance: ' . formatCurrency($previousBalance) : '')
-                . '. The bill was sent to the administrator.',
+            'message' => __('Saved for meter :meter (:name). Consumption: :consumption m³, Total: :total', [
+                    'meter' => $meter, 'name' => $check['name'], 'consumption' => number_format($current - $previous, 2), 'total' => formatCurrency($bill->total_amount),
+                ])
+                . ($previousBalance > 0 ? ', ' . __('unpaid balance: :amount', ['amount' => formatCurrency($previousBalance)]) : '')
+                . '. ' . __('The bill was sent to the administrator.'),
         ];
     }
 
@@ -429,14 +427,14 @@ class MeterReadingController extends Controller
         $errors = [];
         $name = $store->store(null, $dataUrl, 'meter', true, $errors);
         if (!$name) {
-            return [null, $errors[0] ?? 'Take a photo of the meter.', false];
+            return [null, $errors[0] ?? __('Take a photo of the meter.'), false];
         }
         [$read, $error] = $reader->read((string)$store->contents($name));
         if (!$read) {
             $store->delete($name);
             return $error
                 ? [null, $error, false]
-                : [null, 'The photo could not be read right now. Check your internet and try again in a moment.', true];
+                : [null, __('The photo could not be read right now. Check your internet and try again in a moment.'), true];
         }
         return [['photo' => $name] + $read, null, false];
     }
@@ -455,30 +453,32 @@ class MeterReadingController extends Controller
      * was opened for, isn't read yet this period, and the reading isn't lower than last month's.
      * Returns ['error' => ?string] plus, when fine, everything the form shows.
      */
-    private function checkScan(Request $request, BillingService $billing, array $scan, string $period, string $expectMeter, ?MeterReading $correcting): array
+    private function checkScan(Request $request, BillingService $billing, array $scan, string $period, string $expectMeter, ?MeterReading $correcting, bool $typed = false): array
     {
-        $retake = ' Retake the photo so the meter number on the dial is clear.';
+        // Typed without internet: the numbers came from the meter reader, not the photo.
+        $shows = $typed ? __('You typed') : __('The photo shows');
+        $retake = ' ' . ($typed ? __('Check the meter and record it again.') : __('Retake the photo so the meter number on the dial is clear.'));
         $c = $this->consumerByMeter($scan['meter']);
         if (!$c) {
-            return ['error' => "The photo shows meter number {$scan['meter']}, which is not in AWAS." . $retake];
+            return ['error' => __(':shows meter number :meter, which is not in AWAS.', ['shows' => $shows, 'meter' => $scan['meter']]) . $retake];
         }
         $meter = $c->meter_number;
         if (!$request->user()->canAccessPurok((int)$c->purok_id)) {
-            return ['error' => "Meter $meter ({$c->full_name}) is in {$c->purok_name}, which is not assigned to you."];
+            return ['error' => __('Meter :meter (:full_name) is in :purok_name, which is not assigned to you.', ['meter' => $meter, 'full_name' => $c->full_name, 'purok_name' => $c->purok_name])];
         }
         if ($correcting && (int)$correcting->consumer_id !== (int)$c->consumer_id) {
-            return ['error' => "This photo is of meter $meter ({$c->full_name}), not the meter of the reading you are correcting." . $retake];
+            return ['error' => __('This photo is of meter :meter (:full_name), not the meter of the reading you are correcting.', ['meter' => $meter, 'full_name' => $c->full_name]) . $retake];
         }
         if ($expectMeter !== '' && ltrim($expectMeter, '0') !== ltrim($meter, '0')) {
             $expected = DB::table('consumers')->where('meter_number', $expectMeter)->value('full_name');
-            return ['error' => "This photo is of meter $meter ({$c->full_name}), but you are recording meter $expectMeter"
-                . ($expected ? " ($expected)" : '') . '. Take the photo of the right meter.'];
+            return ['error' => __('This photo is of meter :meter (:full_name), but you are recording meter :expectmeter', ['meter' => $meter, 'full_name' => $c->full_name, 'expectmeter' => $expectMeter])
+                . ($expected ? " ($expected)" : '') . '. ' . __('Take the photo of the right meter.')];
         }
         if (!$correcting && $c->status !== 'active') {
-            return ['error' => "Meter $meter ({$c->full_name}) belongs to an account that is not active."];
+            return ['error' => __('Meter :meter (:full_name) belongs to an account that is not active.', ['meter' => $meter, 'full_name' => $c->full_name])];
         }
         if (!$correcting && DB::table('meter_readings')->where('consumer_id', $c->consumer_id)->where('billing_period', $period)->exists()) {
-            return ['error' => "Meter $meter ({$c->full_name}) already has a reading for " . billingPeriodLabel($period) . '.'];
+            return ['error' => __('Meter :meter (:full_name) already has a reading for :period.', ['meter' => $meter, 'full_name' => $c->full_name, 'period' => billingPeriodLabel($period)])];
         }
 
         // Previous reading: the one before this period (when correcting, the reading's own).
@@ -493,8 +493,9 @@ class MeterReadingController extends Controller
         }
         $present = (float)$scan['reading'];
         if ($present < $previous) {
-            return ['error' => 'The photo shows ' . number_format($present, 0, '.', '') . ' m³, which is lower than the previous reading ('
-                . number_format($previous, 2) . ' m³). Retake the photo so all the black numbers are clear.'];
+            return ['error' => __(':shows :present m³, which is lower than the previous reading (:previous m³).', [
+                    'shows' => $shows, 'present' => number_format($present, 0, '.', ''), 'previous' => number_format($previous, 2),
+                ]) . ' ' . ($typed ? __('Check the meter and record it again.') : __('Retake the photo so all the black numbers are clear.'))];
         }
 
         $usual = (float)DB::table('meter_readings')->where('consumer_id', $c->consumer_id)
@@ -534,7 +535,7 @@ class MeterReadingController extends Controller
     public function update(Request $request, MeterReading $reading, BillingService $billing)
     {
         if (!$this->canManage($request, $reading)) {
-            flash('danger', 'This reading is not in a purok assigned to you.');
+            flash('danger', __('This reading is not in a purok assigned to you.'));
             return back();
         }
 
@@ -543,11 +544,11 @@ class MeterReadingController extends Controller
         $photo = (string)$request->input('photo');
         $cached = $photo !== '' ? Cache::get('meter-scan:' . $photo) : null;
         if (!$cached || $cached['user_id'] !== $request->user()->user_id || (int)$cached['reading_id'] !== (int)$reading->reading_id) {
-            flash('danger', 'Take a new photo of the meter to correct this reading.');
+            flash('danger', __('Take a new photo of the meter to correct this reading.'));
             return back();
         }
         if ((float)$cached['reading'] < (float)$reading->previous_reading) {
-            flash('danger', 'The new photo shows a reading lower than the previous reading. Please take the photo again.');
+            flash('danger', __('The new photo shows a reading lower than the previous reading. Please take the photo again.'));
             return back();
         }
 
@@ -571,9 +572,9 @@ class MeterReadingController extends Controller
 
         $row = DB::table('meter_readings')->where('reading_id', $reading->reading_id)->first();
         match ($billing->recomputeBillForReading($row)) {
-            'updated' => flash('success', 'Meter reading updated, and its bill was re-computed.'),
-            'locked'  => flash('warning', 'Meter reading updated. Its bill already has payments, so the bill amount was NOT changed — adjust it manually if needed.'),
-            default   => flash('success', 'Meter reading updated.'),
+            'updated' => flash('success', __('Meter reading updated, and its bill was re-computed.')),
+            'locked'  => flash('warning', __('Meter reading updated. Its bill already has payments, so the bill amount was NOT changed — adjust it manually if needed.')),
+            default   => flash('success', __('Meter reading updated.')),
         };
         return back();
     }
@@ -585,7 +586,7 @@ class MeterReadingController extends Controller
     public function review(Request $request, MeterReading $reading, BillingService $billing)
     {
         if (!in_array($reading->photo_check, self::NEEDS_REVIEW, true)) {
-            flash('info', 'This reading does not need a review.');
+            flash('info', __('This reading does not need a review.'));
             return back();
         }
         $meter = DB::table('consumers')->where('consumer_id', $reading->consumer_id)->value('meter_number');
@@ -595,17 +596,17 @@ class MeterReadingController extends Controller
         if ($request->input('decision') !== 'photo') {
             $reading->update(['photo_check' => 'kept']);
             log_activity($request->user()->user_id, 'meter_reading_review', "Reviewed the $label reading of meter $meter: kept the typed " . number_format($typed, 2));
-            flash('success', "Kept the typed reading of meter $meter (" . number_format($typed, 2) . ').');
+            flash('success', __('Kept the typed reading of meter :meter (:reading).', ['meter' => $meter, 'reading' => number_format($typed, 2)]));
             return back();
         }
 
         $photoReading = $reading->photo_reading !== null ? (float)$reading->photo_reading : null;
         if ($reading->photo_check !== 'mismatch' || $photoReading === null || ltrim((string)$reading->photo_meter, '0') !== ltrim((string)$meter, '0')) {
-            flash('danger', 'The photo is not of this meter or could not be read, so its number cannot be used. Keep the typed reading, or ask the meter reader to correct it with a new photo.');
+            flash('danger', __('The photo is not of this meter or could not be read, so its number cannot be used. Keep the typed reading, or ask the meter reader to correct it with a new photo.'));
             return back();
         }
         if ($photoReading < (float)$reading->previous_reading) {
-            flash('danger', 'The photo shows a reading lower than the previous reading, so it cannot be used.');
+            flash('danger', __('The photo shows a reading lower than the previous reading, so it cannot be used.'));
             return back();
         }
         $reading->update(['current_reading' => $photoReading, 'photo_check' => 'corrected']);
@@ -614,8 +615,8 @@ class MeterReadingController extends Controller
 
         $row = DB::table('meter_readings')->where('reading_id', $reading->reading_id)->first();
         match ($billing->recomputeBillForReading($row)) {
-            'locked' => flash('warning', "Meter $meter now uses the photo's reading (" . number_format($photoReading, 2) . '). Its bill already has payments, so the bill amount was NOT changed — adjust it manually if needed.'),
-            default  => flash('success', "Meter $meter now uses the photo's reading (" . number_format($photoReading, 2) . '), and its bill was re-computed.'),
+            'locked' => flash('warning', __('Meter :meter now uses the photo\'s reading (:reading). Its bill already has payments, so the bill amount was NOT changed — adjust it manually if needed.', ['meter' => $meter, 'reading' => number_format($photoReading, 2)])),
+            default  => flash('success', __('Meter :meter now uses the photo\'s reading (:reading), and its bill was re-computed.', ['meter' => $meter, 'reading' => number_format($photoReading, 2)])),
         };
         return back();
     }
@@ -627,7 +628,7 @@ class MeterReadingController extends Controller
     public function destroy(Request $request, MeterReading $reading)
     {
         if (!$this->canManage($request, $reading)) {
-            flash('danger', 'This reading is not in a purok assigned to you.');
+            flash('danger', __('This reading is not in a purok assigned to you.'));
             return back();
         }
 
@@ -639,11 +640,11 @@ class MeterReadingController extends Controller
         $hasPayments = $bill && ((float)$bill->amount_paid > 0 || DB::table('payments')->where('bill_id', $bill->bill_id)->exists());
 
         if (!$isLatest) {
-            flash('danger', "Only the latest reading of meter $meter can be deleted. Correct this one with Edit instead.");
+            flash('danger', __('Only the latest reading of meter :meter can be deleted. Correct this one with Edit instead.', ['meter' => $meter]));
             return back();
         }
         if ($hasPayments) {
-            flash('danger', "The $label bill of meter $meter already has payments, so its reading cannot be deleted. Use Edit to correct it.");
+            flash('danger', __('The :label bill of meter :meter already has payments, so its reading cannot be deleted. Use Edit to correct it.', ['label' => $label, 'meter' => $meter]));
             return back();
         }
 
@@ -654,7 +655,7 @@ class MeterReadingController extends Controller
             $reading->delete();
         });
         log_activity($request->user()->user_id, 'meter_reading_delete', "Deleted the $label reading of meter $meter and its bill");
-        flash('success', "Deleted the $label reading of meter $meter and its bill.");
+        flash('success', __('Deleted the :label reading of meter :meter and its bill.', ['label' => $label, 'meter' => $meter]));
         return back();
     }
 
