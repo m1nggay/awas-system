@@ -29,6 +29,7 @@
   a{text-decoration:none;color:inherit;}
   .wrap{max-width:1140px;margin:0 auto;padding:0 28px;}
   section[id]{scroll-margin-top:12px;}
+  @media (max-width: 1060px){ section[id]{scroll-margin-top:92px;} }   /* below the fixed header on phones */
 
   /* Kill the browser's default blue tap-highlight/focus-ring flash on click. */
   a, button, summary{-webkit-tap-highlight-color:transparent;}
@@ -185,24 +186,39 @@
   footer.site-foot a{color:#fff;}
   footer.site-foot a:hover{text-decoration:underline;}
 
-  /* Menu: a row on wide screens; a ☰ dropdown on phones and tablets */
+  /* Menu: a row on wide screens; on phones and tablets a ☰ button with a small dropdown box */
   .site-nav .wrap{position:relative;}
   .nav-menu{display:flex;align-items:center;gap:16px;margin-left:auto;}
-  .nav-toggle{display:none;margin-left:auto;width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,.35);
-    background:transparent;color:#fff;font-size:24px;align-items:center;justify-content:center;cursor:pointer;}
-  .nav-toggle:hover{background:rgba(255,255,255,.12);}
+  .nav-toggle{display:none;position:relative;margin-left:auto;flex:none;width:48px;height:48px;padding:0;border-radius:12px;
+    border:1.5px solid rgba(255,255,255,.45);background:transparent;cursor:pointer;}
+  .nav-toggle:hover{background:rgba(255,255,255,.1);}
+  .nav-toggle span{position:absolute;left:50%;top:50%;width:22px;height:2.5px;margin-left:-11px;border-radius:2px;background:#fff;
+    transition:transform .2s ease, opacity .2s ease;}
+  .nav-toggle span:nth-child(1){transform:translateY(-7px);}
+  .nav-toggle span:nth-child(3){transform:translateY(7px);}
+  .nav-toggle[aria-expanded="true"] span:nth-child(1){transform:rotate(45deg);}
+  .nav-toggle[aria-expanded="true"] span:nth-child(2){opacity:0;}
+  .nav-toggle[aria-expanded="true"] span:nth-child(3){transform:rotate(-45deg);}
+
+  .nav-drop{position:absolute;top:calc(100% + 8px);right:28px;width:220px;z-index:30;background:#fff;border-radius:12px;padding:6px;
+    box-shadow:0 12px 32px rgba(6,42,74,.28);opacity:0;visibility:hidden;transform:translateY(-6px);
+    transition:opacity .15s ease, transform .15s ease, visibility .15s;}
+  .nav-drop.open{opacity:1;visibility:visible;transform:translateY(0);}
+  .nav-drop a.drop-link{display:block;font-size:15px;color:#0b2a45;padding:10px 12px;border-radius:8px;}
+  .nav-drop a.drop-link:hover, .nav-drop a.drop-link:focus-visible{background:#e8f4fb;outline:none;}
+  .nav-drop hr{margin:6px 4px;border:0;border-top:1px solid #e3ebf0;opacity:1;}
+  .nav-drop .drop-lang{display:flex;align-items:center;gap:6px;padding:4px 8px 6px;font-size:12.5px;color:#5b6d77;}
+  .nav-drop .drop-lang a{padding:4px 12px;border-radius:99px;border:1px solid #d6e2ea;color:#0b2a45;font-weight:600;font-size:12.5px;}
+  .nav-drop .drop-lang a.on{background:#0b2a45;border-color:#0b2a45;color:#fff;}
+
   @media (max-width: 1060px){
-    /* Opens as a plain list under the header, one option per line; it pushes the page down (doesn't cover it) */
-    .site-nav .wrap{flex-wrap:wrap;}
-    .nav-toggle{display:inline-flex;}
-    .nav-menu{display:none;flex-basis:100%;order:3;margin:0 0 10px;flex-direction:column;align-items:stretch;gap:10px;
-      border-top:1px solid rgba(255,255,255,.15);}
-    .nav-menu.open{display:flex;}
-    .nav-links{display:flex;flex-direction:column;gap:0;margin:0;}
-    .nav-links a{font-size:15px;padding:11px 4px;border-radius:0;border-bottom:1px solid rgba(255,255,255,.1);}
-    .nav-links a:hover{background:transparent;color:#fff;}
-    .nav-menu .lang-switch{align-self:flex-start;margin:0;}
+    /* The header stays at the top while scrolling; the dropdown floats over the page (covers nothing else, pushes nothing) */
+    .site-nav{position:fixed;top:0;left:0;right:0;background:rgba(6,42,74,.96);box-shadow:0 2px 12px rgba(0,0,0,.18);}
+    .hero{padding-top:84px;}
+    .nav-toggle{display:block;}
+    .nav-menu{display:none;}
   }
+  @media (prefers-reduced-motion: reduce){ .nav-toggle span, .nav-drop{transition:none;} }
   @media (max-width: 900px){
     .features, .split, .contacts{grid-template-columns:1fr;}
     .features{gap:16px;}
@@ -223,6 +239,8 @@
     body{font-size:15px;}
     .wrap{padding:0 18px;}
     .site-nav .wrap{min-height:68px;gap:10px;}
+    .hero{padding-top:68px;}
+    .nav-drop{right:18px;}
     .brand{gap:9px;flex:1;}
     .brand img{width:42px;height:42px;}
     .brand .word{font-size:16.5px;}
@@ -265,11 +283,27 @@
             <div class="tagline">Adlay Water Augmentation System</div>
           </div>
         </a>
-        {{-- Phones and tablets: the links and EN | TL open from this button. --}}
-        <button type="button" class="nav-toggle" id="navToggle" aria-controls="navMenu" aria-expanded="false" aria-label="{{ __('Menu') }}">
-          <i class="ph ph-list" aria-hidden="true"></i>
+        {{-- Phones and tablets: this button opens the small dropdown box (#navDrop). --}}
+        <button type="button" class="nav-toggle" id="navToggle" aria-controls="navDrop" aria-expanded="false"
+                aria-label="{{ __('Open menu') }}" data-open-label="{{ __('Open menu') }}" data-close-label="{{ __('Close menu') }}">
+          <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
         </button>
-        <div class="nav-menu" id="navMenu">
+        @php($lang = app()->getLocale())
+        <div class="nav-drop" id="navDrop">
+          <a class="drop-link" href="#features">{{ __('Features') }}</a>
+          <a class="drop-link" href="#how">{{ __('Membership') }}</a>
+          <a class="drop-link" href="#rates">{{ __('Rates & Payments') }}</a>
+          <a class="drop-link" href="#faq">{{ __('FAQ') }}</a>
+          <a class="drop-link" href="#contact">{{ __('Contact') }}</a>
+          <hr>
+          <div class="drop-lang">
+            <span>{{ __('Language:') }}</span>
+            <a href="{{ route('locale', 'en') }}" lang="en" @class(['on' => $lang === 'en']) @if ($lang === 'en') aria-current="true" @endif>EN</a>
+            <a href="{{ route('locale', 'tl') }}" lang="tl" @class(['on' => $lang === 'tl']) @if ($lang === 'tl') aria-current="true" @endif>TL</a>
+          </div>
+        </div>
+        {{-- Wide screens: the links and EN | TL in the header row. --}}
+        <div class="nav-menu">
           <div class="nav-links">
             <a href="#features">{{ __('Features') }}</a>
             <a href="#how">{{ __('Membership') }}</a>
@@ -503,18 +537,20 @@
   </footer>
 
 <script>
-  // ☰ menu on phones: open/close, and close after choosing a section or tapping outside.
+  // ☰ dropdown on phones: toggle; close on a link, a tap outside, or Esc (focus back on the button).
   (function () {
-    var btn = document.getElementById('navToggle'), menu = document.getElementById('navMenu');
+    var btn = document.getElementById('navToggle'), drop = document.getElementById('navDrop');
     function set(open) {
-      menu.classList.toggle('open', open);
+      drop.classList.toggle('open', open);
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      btn.querySelector('i').className = 'ph ' + (open ? 'ph-x' : 'ph-list');
+      btn.setAttribute('aria-label', btn.getAttribute(open ? 'data-close-label' : 'data-open-label'));
     }
-    btn.addEventListener('click', function (e) { e.stopPropagation(); set(!menu.classList.contains('open')); });
-    menu.querySelectorAll('.nav-links a').forEach(function (a) { a.addEventListener('click', function () { set(false); }); });
-    document.addEventListener('click', function (e) { if (!menu.contains(e.target)) set(false); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') set(false); });
+    btn.addEventListener('click', function (e) { e.stopPropagation(); set(!drop.classList.contains('open')); });
+    drop.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', function () { set(false); }); });
+    document.addEventListener('click', function (e) { if (drop.classList.contains('open') && !drop.contains(e.target)) set(false); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && drop.classList.contains('open')) { set(false); btn.focus(); }
+    });
   })();
 </script>
 <script src="{{ asset('assets/js/transitions.js') }}"></script>
