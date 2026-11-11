@@ -201,7 +201,7 @@ async function start() {
           els.result.hidden = false;
           stopCamera();
           els.stage.hidden = true;
-          say(__t('✓ Face verification passed.'), 'good');
+          say('✓ ' + __t('Face verified'), 'good');
           els.retry.hidden = false;
           els.retry.textContent = __t('Redo face verification');
           if (els.inPerson) els.inPerson.checked = false;
@@ -223,5 +223,18 @@ async function start() {
 }
 
 els.start.addEventListener('click', start);
+
+// No camera on this device: say so up front and point to the in-person option.
+(async () => {
+  const md = navigator.mediaDevices;
+  let camera = !!(md && md.getUserMedia);
+  if (camera && md.enumerateDevices) {
+    try { camera = (await md.enumerateDevices()).some((d) => d.kind === 'videoinput'); } catch (e) { /* keep the button */ }
+  }
+  if (!camera && els.passed.value !== '1') {
+    els.start.hidden = true;
+    say(__t('No camera found on this device. Tick "I will verify my face in person" below, or apply from a phone.'), 'bad');
+  }
+})();
 els.retry.addEventListener('click', start);
 window.addEventListener('beforeunload', stopCamera);

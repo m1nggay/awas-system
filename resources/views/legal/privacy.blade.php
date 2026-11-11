@@ -51,6 +51,8 @@
 <h2>{{ __('5. How long we keep it') }}</h2>
 <p>{{ __('We keep your information while you are a member of the water system and afterwards only as long as needed for billing records, audits and legal requirements. Records of applications that were not approved are kept only as long as needed to handle them.') }}</p>
 
+<p>{{ __('The photos of your valid ID and the face photo from your membership application are deleted :days days after your application is approved or rejected. The rest of the application record is kept with your account.', ['days' => config('agas.application_photo_days')]) }}</p>
+
 <h2>{{ __('6. Your rights') }}</h2>
 <p>{{ __('Under the Data Privacy Act you have the right to be informed, to access your information, to have wrong information corrected, to object to or withdraw consent for processing, to ask for deletion when the information is no longer needed, to data portability, to damages, and to file a complaint with the') }} <strong>{{ __('National Privacy Commission') }}</strong> {{ __('(privacy.gov.ph).') }}</p>
 <p>{{ __('You can view and update your contact details, password and profile in') }} <strong>{{ __('My Profile') }}</strong>{{ __('. For anything else, contact us below.') }}</p>

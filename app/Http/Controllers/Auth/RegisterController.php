@@ -28,7 +28,9 @@ class RegisterController extends Controller
     {
         $username = clean($request->query('username'));
         return response()->json([
-            'available' => $username !== '' && mb_strlen($username) <= 50 && !DB::table('users')->where('username', $username)->exists(),
+            // Case-insensitive, like the Apply page's own check (stricter for Activate Account).
+            'available' => $username !== '' && mb_strlen($username) <= 50
+                && !DB::table('users')->whereRaw('LOWER(username) = ?', [mb_strtolower($username)])->exists(),
         ]);
     }
 

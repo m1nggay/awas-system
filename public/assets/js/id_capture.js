@@ -277,7 +277,11 @@ function initWidget(widget) {
   }
 
   els.open.addEventListener('click', open);
-  els.retake.addEventListener('click', () => { setResult('', ''); show(els.preview, false); open(); });
+  // Retake: the camera again, or (no camera on this device) choose another photo.
+  els.retake.addEventListener('click', () => {
+    setResult('', ''); show(els.preview, false);
+    if (widget.dataset.noCamera === '1') { show(els.retake, false); els.file.click(); } else { open(); }
+  });
   els.snap.addEventListener('click', snap);
   els.close.addEventListener('click', () => {
     stop(); show(els.stage, false); show(els.snap, false); show(els.close, false);
@@ -290,3 +294,23 @@ function initWidget(widget) {
 }
 
 document.querySelectorAll('[data-id-widget]').forEach(initWidget);
+
+/** No camera on this device (e.g. a laptop without a webcam): offer the upload only. */
+async function hasCamera() {
+  if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) return false;
+  if (!navigator.mediaDevices.enumerateDevices) return true;   // can't tell: keep the camera option
+  try {
+    return (await navigator.mediaDevices.enumerateDevices()).some((d) => d.kind === 'videoinput');
+  } catch (e) {
+    return true;
+  }
+}
+hasCamera().then((ok) => {
+  if (ok) return;
+  document.querySelectorAll('[data-id-widget]').forEach((w) => {
+    w.dataset.noCamera = '1';
+    const open = w.querySelector('[data-role="open"]'), hint = w.querySelector('[data-role="upload-hint"]');
+    if (open) open.hidden = true;
+    if (hint) hint.textContent = __t('No camera found on this device — upload a landscape photo of your ID (JPG, PNG or WEBP). Large photos are made smaller automatically.');
+  });
+});
