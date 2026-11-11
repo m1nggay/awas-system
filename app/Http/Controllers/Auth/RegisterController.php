@@ -23,6 +23,15 @@ class RegisterController extends Controller
         return view('auth.register', ['puroks' => Purok::orderBy('purok_id')->get()]);
     }
 
+    /** Live check on the Activate Account page: is this username still free? (Checked again on submit.) */
+    public function usernameAvailable(Request $request)
+    {
+        $username = clean($request->query('username'));
+        return response()->json([
+            'available' => $username !== '' && mb_strlen($username) <= 50 && !DB::table('users')->where('username', $username)->exists(),
+        ]);
+    }
+
     public function store(Request $request, CodeMailer $codes)
     {
         $old = [];

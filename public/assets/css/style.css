@@ -96,7 +96,7 @@ a:focus-visible, button:focus-visible{outline:2px solid var(--primary-light);out
   display:flex;align-items:center;justify-content:center;
   position:relative;overflow-x:hidden;overflow-y:auto; /* tall forms (e.g. register.php) must be able to scroll instead of clipping off-screen */
   background:#062a4a url('../drone-poster.jpg') center/cover no-repeat fixed; /* base look (same navy as the landing page) — the video crossfades on top once ready */
-  padding:20px;
+  padding:20px 20px 48px;   /* a little more room under the card */
 }
 .bg-video{
   position:fixed;inset:0;width:100%;height:100%;object-fit:cover;
