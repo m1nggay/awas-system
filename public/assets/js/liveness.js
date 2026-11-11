@@ -62,7 +62,7 @@ function reset() {
 
 async function loadModel() {
   if (landmarker) return landmarker;
-  say('Loading face check… (first time may take a few seconds)');
+  say(__t('Loading face check… (first time may take a few seconds)'));
   const files = await FilesetResolver.forVisionTasks(WASM_URL);
   const options = (delegate) => ({
     baseOptions: { modelAssetPath: MODEL_URL, delegate },
@@ -91,8 +91,8 @@ function portraitArea() {
 
 /** Is the (single) face inside the oval guide and big enough? Returns a message or null when OK. */
 function positionProblem(faces) {
-  if (!faces.length) return 'No face detected — look at the camera.';
-  if (faces.length > 1) return 'Only one person should be in front of the camera.';
+  if (!faces.length) return __t('No face detected — look at the camera.');
+  if (faces.length > 1) return __t('Only one person should be in front of the camera.');
   const pts = faces[0];
   const area = portraitArea();   // measure within the portrait view the person sees
   let minX = 1, maxX = 0, minY = 1, maxY = 0;
@@ -102,10 +102,10 @@ function positionProblem(faces) {
     minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
   }
   const width = maxX - minX, cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
-  if (width < 0.28) return 'Move closer — your face should fill the guide.';
-  if (width > 0.75) return 'Move a little farther from the camera.';
-  if (Math.abs(cx - 0.5) > 0.12 || Math.abs(cy - 0.5) > 0.15) return 'Center your face inside the guide.';
-  if (minX < 0.02 || maxX > 0.98 || minY < 0.02 || maxY > 0.98) return 'Keep your whole face inside the guide.';
+  if (width < 0.28) return __t('Move closer — your face should fill the guide.');
+  if (width > 0.75) return __t('Move a little farther from the camera.');
+  if (Math.abs(cx - 0.5) > 0.12 || Math.abs(cy - 0.5) > 0.15) return __t('Center your face inside the guide.');
+  if (minX < 0.02 || maxX > 0.98 || minY < 0.02 || maxY > 0.98) return __t('Keep your whole face inside the guide.');
   return null;
 }
 
@@ -133,7 +133,7 @@ async function start() {
   els.retry.hidden = true;
 
   if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
-    say('Camera is not available in this browser. Tick "verify in person" below, or use another device.', 'bad');
+    say(__t('Camera is not available in this browser. Tick "verify in person" below, or use another device.'), 'bad');
     els.retry.hidden = false;
     return;
   }
@@ -143,8 +143,8 @@ async function start() {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 } }, audio: false });
   } catch (e) {
     say(e && e.name === 'NotAllowedError'
-      ? 'Camera permission was denied. Allow camera access and try again, or tick "verify in person" below.'
-      : 'Could not start the face check (camera or connection problem). Try again, or tick "verify in person" below.', 'bad');
+      ? __t('Camera permission was denied. Allow camera access and try again, or tick "verify in person" below.')
+      : __t('Could not start the face check (camera or connection problem). Try again, or tick "verify in person" below.'), 'bad');
     els.retry.hidden = false;
     return;
   }
@@ -172,15 +172,15 @@ async function start() {
       if (problem) {
         steady = 0;
         els.guide.classList.remove('ok');
-        say(problem === 'No face detected — look at the camera.' ? 'Position your face inside the guide.' : problem);
+        say(problem === __t('No face detected — look at the camera.') ? __t('Position your face inside the guide.') : problem);
       } else if (++steady >= STEADY_FRAMES) {
         phase = 'blink';
         blinkStartedAt = performance.now();
         els.guide.classList.add('ok');
-        say('Please blink.', 'good');
+        say(__t('Please blink.'), 'good');
       } else {
         els.guide.classList.add('ok');
-        say('Hold still…');
+        say(__t('Hold still…'));
       }
     } else if (phase === 'blink') {
       if (problem) {
@@ -201,18 +201,18 @@ async function start() {
           els.result.hidden = false;
           stopCamera();
           els.stage.hidden = true;
-          say('✓ Face verification passed.', 'good');
+          say(__t('✓ Face verification passed.'), 'good');
           els.retry.hidden = false;
-          els.retry.textContent = 'Redo face verification';
+          els.retry.textContent = __t('Redo face verification');
           if (els.inPerson) els.inPerson.checked = false;
           return;
         }
         if (performance.now() - blinkStartedAt > BLINK_TIMEOUT_MS) {
           stopCamera();
           els.stage.hidden = true;
-          say('We did not detect a blink, so verification did not pass. Please try again.', 'bad');
+          say(__t('We did not detect a blink, so verification did not pass. Please try again.'), 'bad');
           els.retry.hidden = false;
-          els.retry.textContent = 'Try again';
+          els.retry.textContent = __t('Try again');
           return;
         }
       }

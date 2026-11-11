@@ -7,7 +7,7 @@ window.AwasCharts = (function () {
   const C = { blue: '#0077b6', peak: '#023e8a', orange: '#e07a2f', violet: '#7b5ea7', grey: '#8a9ba4', grid: '#eef4f7', ink: '#1b2b34', muted: '#6b7f89' };
   const SERIES = [C.blue, C.orange, C.violet];
 
-  Chart.defaults.font.family = "'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+  Chart.defaults.font.family = __t('\'Poppins\', system-ui, -apple-system, \'Segoe UI\', Roboto, sans-serif');
   Chart.defaults.color = C.muted;
   Chart.defaults.maintainAspectRatio = false;
   Object.assign(Chart.defaults.plugins.tooltip, { backgroundColor: '#1b2b34', padding: 10, cornerRadius: 8, boxPadding: 4 });
@@ -31,7 +31,7 @@ window.AwasCharts = (function () {
       ctx.fillStyle = C.ink;
       ctx.font = '600 11px ' + Chart.defaults.font.family;
       ctx.textAlign = 'center';
-      ctx.fillText('Peak', bar.x, bar.y - 6);
+      ctx.fillText(__t('Peak'), bar.x, bar.y - 6);
       ctx.restore();
     },
   };
@@ -44,11 +44,11 @@ window.AwasCharts = (function () {
     const max = Math.max(0, ...values);
     const peak = max > 0 ? values.indexOf(max) : -1;
     const datasets = [{
-      type: 'bar', label: 'Consumption', data: values, borderRadius: 4, maxBarThickness: 36,
+      type: 'bar', label: __t('Consumption'), data: values, borderRadius: 4, maxBarThickness: 36,
       backgroundColor: values.map((v, i) => (i === peak ? C.peak : C.blue)),
     }];
     if (opts.average != null) {
-      datasets.push({ type: 'line', label: 'Your average', data: values.map(() => opts.average), borderColor: C.grey,
+      datasets.push({ type: 'line', label: __t('Your average'), data: values.map(() => opts.average), borderColor: C.grey,
         borderDash: [6, 4], borderWidth: 2, pointRadius: 0, pointHoverRadius: 0 });
     }
     const chart = new Chart(canvas, {
@@ -112,7 +112,7 @@ window.AwasCharts = (function () {
   function ranked(canvas, labels, values, extra) {
     return new Chart(canvas, {
       type: 'bar',
-      data: { labels, datasets: [{ label: 'Consumption', data: values, backgroundColor: C.blue, borderRadius: 4, maxBarThickness: 22 }] },
+      data: { labels, datasets: [{ label: __t('Consumption'), data: values, backgroundColor: C.blue, borderRadius: 4, maxBarThickness: 22 }] },
       options: {
         indexAxis: 'y',
         plugins: {
@@ -132,7 +132,7 @@ window.AwasCharts = (function () {
     const last = values.length - 1;
     return new Chart(canvas, {
       type: 'bar',
-      data: { labels, datasets: [{ label: 'Collected', data: values, borderRadius: 4, maxBarThickness: 30,
+      data: { labels, datasets: [{ label: __t('Collected'), data: values, borderRadius: 4, maxBarThickness: 30,
         backgroundColor: values.map((v, i) => (i === last ? C.peak : C.blue)) }] },
       options: {
         plugins: {

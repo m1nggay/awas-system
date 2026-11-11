@@ -19,11 +19,11 @@ class BillPrintController extends Controller
             ->first(['b.*', 'c.full_name', 'c.meter_number', 'c.consumer_type', 'c.address', 'c.user_id', 'p.purok_name',
                 'mr.previous_reading', 'mr.current_reading', 'mr.reading_date']);
 
-        abort_if(!$row, 404, 'Bill not found.');
+        abort_if(!$row, 404, __('Bill not found.'));
 
         $user = $request->user();
         if (!$user->isAdmin() && (int)$row->user_id !== (int)$user->user_id) {
-            abort(403, 'You are not authorized to view this bill.');
+            abort(403, __('You are not authorized to view this bill.'));
         }
 
         $tariff      = $billing->tariff();

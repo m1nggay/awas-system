@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <meta charset="UTF-8">
@@ -21,22 +21,22 @@
 </head>
 <body>
   <div class="actions-bar">
-    <button class="btn btn-primary" onclick="window.print()"><i class="ph ph-printer" aria-hidden="true"></i> Print / Save as PDF</button>
-    <a class="btn btn-outline-secondary" href="{{ route('admin.collections.export', ['range' => $range]) }}"><i class="ph ph-file-csv" aria-hidden="true"></i> Download CSV (Excel)</a>
-    <span class="text-muted" style="font-size:12px;">In the print window, choose <strong>Save as PDF</strong> to download.</span>
+    <button class="btn btn-primary" onclick="window.print()"><i class="ph ph-printer" aria-hidden="true"></i> {{ __('Print / Save as PDF') }}</button>
+    <a class="btn btn-outline-secondary" href="{{ route('admin.collections.export', ['range' => $range]) }}"><i class="ph ph-file-csv" aria-hidden="true"></i> {{ __('Download CSV (Excel)') }}</a>
+    <span class="text-muted" style="font-size:12px;">{{ __('In the print window, choose') }} <strong>{{ __('Save as PDF') }}</strong> {{ __('to download.') }}</span>
   </div>
 
   <div class="report-head">
-    <img src="{{ asset('assets/img/logo-round.png') }}" alt="AWAS logo">
+    <img src="{{ asset('assets/img/logo-round.png') }}" alt="{{ __('AWAS logo') }}">
     <div>
-      <div style="font-weight:700;font-size:18px;">AWAS — {{ $barangay }}</div>
+      <div style="font-weight:700;font-size:18px;">{{ __('AWAS — :barangay', ['barangay' => $barangay]) }}</div>
       <div>{{ $title }} — {{ $label }}</div>
-      <div class="text-muted" style="font-size:12px;">Paid payments only, by the date the money was received · Generated {{ formatDateTime(now()->toDateTimeString()) }}</div>
+      <div class="text-muted" style="font-size:12px;">{{ __('Paid payments only, by the date the money was received · Generated :date', ['date' => formatDateTime(now()->toDateTimeString())]) }}</div>
     </div>
   </div>
 
   <table class="table table-bordered">
-    <thead><tr><th>#</th><th>Reference</th><th>Meter Number</th><th>Name</th><th>Bill Period</th><th class="text-end">Amount</th><th>Method</th><th>Paid At</th><th>GCash Ref. No.</th><th>Received By</th><th>Date</th></tr></thead>
+    <thead><tr><th>#</th><th>{{ __('Reference') }}</th><th>{{ __('Meter Number') }}</th><th>{{ __('Name') }}</th><th>{{ __('Bill Period') }}</th><th class="text-end">{{ __('Amount') }}</th><th>{{ __('Method') }}</th><th>{{ __('Paid At') }}</th><th>{{ __('GCash Ref. No.') }}</th><th>{{ __('Received By') }}</th><th>{{ __('Date') }}</th></tr></thead>
     <tbody>
     @forelse ($rows as $i => $r)
       <tr>
@@ -49,24 +49,24 @@
         <td>{{ paymentMethodLabel($r->payment_method, $r->wallet) }}</td>
         <td>{{ paymentChannelLabel($r->channel) }}</td>
         <td>{{ $r->payment_method === 'gcash' ? $r->payment_gateway_txn_id : '' }}</td>
-        <td>{{ $r->received_by ?? ($r->channel === 'online' ? 'Online (automatic)' : '—') }}</td>
+        <td>{{ $r->received_by ?? ($r->channel === 'online' ? __('Online (automatic)') : '—') }}</td>
         <td>{{ formatDateTime($r->payment_date) }}</td>
       </tr>
     @empty
-      <tr><td colspan="11" class="text-center text-muted">No payments were collected in this period.</td></tr>
+      <tr><td colspan="11" class="text-center text-muted">{{ __('No payments were collected in this period.') }}</td></tr>
     @endforelse
     </tbody>
     <tfoot class="totals">
       @foreach ($byMethod as $method => $m)
-        <tr><td colspan="5" class="text-end">Subtotal — {{ $method }} ({{ $m['count'] }})</td><td class="text-end">{{ formatCurrency($m['amount']) }}</td><td colspan="5"></td></tr>
+        <tr><td colspan="5" class="text-end">{{ __('Subtotal — :method (:value)', ['method' => $method, 'value' => $m['count']]) }}</td><td class="text-end">{{ formatCurrency($m['amount']) }}</td><td colspan="5"></td></tr>
       @endforeach
-      <tr><td colspan="5" class="text-end">TOTAL COLLECTION ({{ $count }} {{ Str::plural('payment', $count) }})</td><td class="text-end">{{ formatCurrency($total) }}</td><td colspan="5"></td></tr>
+      <tr><td colspan="5" class="text-end">{{ __('TOTAL COLLECTION (:count :value)', ['count' => $count, 'value' => __(Str::plural('payment', $count))]) }}</td><td class="text-end">{{ formatCurrency($total) }}</td><td colspan="5"></td></tr>
     </tfoot>
   </table>
 
   <div class="signatures">
-    <div>Prepared by</div>
-    <div>Received / Checked by (Treasurer)</div>
+    <div>{{ __('Prepared by') }}</div>
+    <div>{{ __('Received / Checked by (Treasurer)') }}</div>
   </div>
 
 <script>window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 400); });</script>

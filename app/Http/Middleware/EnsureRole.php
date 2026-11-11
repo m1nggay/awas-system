@@ -17,13 +17,13 @@ class EnsureRole
         $user = $request->user();
         if (!$user) {
             return $request->expectsJson()
-                ? response()->json(['error' => 'Please sign in.'], 401)
+                ? response()->json(['error' => __('Please sign in.')], 401)
                 : redirect()->route('login');
         }
 
         if ($roles && !in_array($user->role, $roles, true)) {
             return $request->expectsJson()
-                ? response()->json(['error' => 'You do not have permission to do that.'], 403)
+                ? response()->json(['error' => __('You do not have permission to do that.')], 403)
                 : response()->view('errors.access-denied', [], 403);
         }
 

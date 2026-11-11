@@ -119,10 +119,10 @@ class OtpService
     public static function resultMessage(string $result, int $waitSeconds = 0): array
     {
         return match ($result) {
-            'sent'     => ['success', 'A 6-digit code was sent to your email. If you don\'t see it within a minute, check your Spam or Promotions folder.'],
-            'cooldown' => ['warning', "Please wait {$waitSeconds} seconds before requesting another code."],
-            'limit'    => ['danger', 'Too many codes were requested in the last hour. Please try again later.'],
-            default    => ['danger', 'We could not send the email right now. Please try again in a moment, or contact the barangay water office.'],
+            'sent'     => ['success', __('A 6-digit code was sent to your email. If you don\'t see it within a minute, check your Spam or Promotions folder.')],
+            'cooldown' => ['warning', __('Please wait :waitseconds seconds before requesting another code.', ['waitseconds' => $waitSeconds])],
+            'limit'    => ['danger', __('Too many codes were requested in the last hour. Please try again later.')],
+            default    => ['danger', __('We could not send the email right now. Please try again in a moment, or contact the barangay water office.')],
         };
     }
 

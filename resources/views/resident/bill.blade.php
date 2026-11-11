@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Current Bills')
+@section('title', __('Current Bills'))
 
 @push('styles')
 <style>
@@ -23,22 +23,22 @@
 @if ($receiptId = session('receipt_payment_id'))
   <div class="card" style="border-left:4px solid #1a9b5b;">
     <div class="card-body d-flex flex-wrap align-items-center gap-2">
-      <div class="flex-grow-1"><strong><i class="ph ph-receipt" aria-hidden="true"></i> Your payment receipt is ready.</strong></div>
-      <a href="{{ route('payments.receipt', $receiptId) }}" class="btn btn-outline btn-sm"><i class="ph ph-receipt" aria-hidden="true"></i> View Receipt</a>
-      <a href="{{ route('payments.receipt', ['payment' => $receiptId, 'download' => 1]) }}" class="btn btn-primary btn-sm"><i class="ph ph-download-simple" aria-hidden="true"></i> Download Receipt</a>
+      <div class="flex-grow-1"><strong><i class="ph ph-receipt" aria-hidden="true"></i> {{ __('Your payment receipt is ready.') }}</strong></div>
+      <a href="{{ route('payments.receipt', $receiptId) }}" class="btn btn-outline btn-sm"><i class="ph ph-receipt" aria-hidden="true"></i> {{ __('View Receipt') }}</a>
+      <a href="{{ route('payments.receipt', ['payment' => $receiptId, 'download' => 1]) }}" class="btn btn-primary btn-sm"><i class="ph ph-download-simple" aria-hidden="true"></i> {{ __('Download Receipt') }}</a>
     </div>
   </div>
 @endif
 @if ($openBills->count() > 1)
-  <div class="alert alert-warning">You have {{ $openBills->count() }} unpaid bills. Total unpaid balance: <strong>{{ formatCurrency($totalBalance) }}</strong></div>
+  <div class="alert alert-warning">{{ __('You have :value unpaid bills. Total unpaid balance:', ['value' => $openBills->count()]) }} <strong>{{ formatCurrency($totalBalance) }}</strong></div>
 @endif
 @forelse ($openBills as $bill)
   @php $balance = (float)$bill->total_amount - (float)$bill->amount_paid; @endphp
   <div class="card">
     <div class="card-header">
-      <h3>{{ date('F', strtotime($bill->billing_period . '-01')) }} Bill {{ substr($bill->billing_period, 0, 4) }}</h3>
+      <h3>{{ __(':month Bill :year', ['month' => formatDate($bill->billing_period . '-01', 'F'), 'year' => substr($bill->billing_period, 0, 4)]) }}</h3>
       @if (($lastPayment[$bill->bill_id] ?? null)?->status === 'pending')
-        <span class="badge badge-warning">{{ $lastPayment[$bill->bill_id]->payment_method === 'paymongo' ? 'Payment Not Finished' : 'Pending Verification' }}</span>
+        <span class="badge badge-warning">{{ $lastPayment[$bill->bill_id]->payment_method === 'paymongo' ? __('Payment Not Finished') : __('Pending Verification') }}</span>
       @else
         <span class="badge {{ billStatusBadgeClass($bill->status) }}">{{ str_replace('_', ' ', $bill->status) }}</span>
       @endif
@@ -47,70 +47,70 @@
       @php $last = $lastPayment[$bill->bill_id] ?? null; @endphp
       @if ($last && in_array($last->status, ['rejected', 'failed'], true))
         <div class="alert alert-danger small">
-          <strong>Your GCash payment of {{ formatCurrency($last->amount_paid) }} was rejected.</strong>
-          @if ($last->rejection_reason)<br>Reason: {{ $last->rejection_reason }}@endif
-          <br>Please check your GCash receipt and pay again, or visit the barangay water office.
+          <strong>{{ __('Your GCash payment of :amount was rejected.', ['amount' => formatCurrency($last->amount_paid)]) }}</strong>
+          @if ($last->rejection_reason)<br>{{ __('Reason: :rejectionreason', ['rejectionreason' => $last->rejection_reason]) }}@endif
+          <br>{{ __('Please check your GCash receipt and pay again, or visit the barangay water office.') }}
         </div>
       @endif
 
       {{-- What to pay, by when, and the way to pay it. --}}
       <div class="bill-box">
-        <h4><i class="ph ph-drop" aria-hidden="true"></i> Water Consumption</h4>
-        <div class="bill-line"><span class="text-muted">Previous reading</span><strong>{{ $bill->previous_reading !== null ? number_format($bill->previous_reading, 2) : '—' }}</strong></div>
-        <div class="bill-line"><span class="text-muted">Present reading</span><strong>{{ $bill->current_reading !== null ? number_format($bill->current_reading, 2) : '—' }}</strong></div>
-        <div class="bill-line"><span class="text-muted">Consumption</span><strong>{{ number_format($bill->consumption, 2) }} m³</strong></div>
-        <div class="bill-total"><span>Total</span><span>{{ formatCurrency($bill->total_amount) }}</span></div>
+        <h4><i class="ph ph-drop" aria-hidden="true"></i> {{ __('Water Consumption') }}</h4>
+        <div class="bill-line"><span class="text-muted">{{ __('Previous reading') }}</span><strong>{{ $bill->previous_reading !== null ? number_format($bill->previous_reading, 2) : '—' }}</strong></div>
+        <div class="bill-line"><span class="text-muted">{{ __('Present reading') }}</span><strong>{{ $bill->current_reading !== null ? number_format($bill->current_reading, 2) : '—' }}</strong></div>
+        <div class="bill-line"><span class="text-muted">{{ __('Consumption') }}</span><strong>{{ number_format($bill->consumption, 2) }} m³</strong></div>
+        <div class="bill-total"><span>{{ __('Total') }}</span><span>{{ formatCurrency($bill->total_amount) }}</span></div>
         @if ($bill->discount_amount > 0 || $bill->penalty_amount > 0)
           <div class="text-muted small mt-1">
-            Includes{{ $bill->discount_amount > 0 ? ' a senior citizen discount of − ' . formatCurrency($bill->discount_amount) : '' }}{{ $bill->discount_amount > 0 && $bill->penalty_amount > 0 ? ' and' : '' }}{{ $bill->penalty_amount > 0 ? ' a late penalty of + ' . formatCurrency($bill->penalty_amount) : '' }}.
+            {{ __('Includes:value:value2:value3.', ['value' => $bill->discount_amount > 0 ? __(' a senior citizen discount of − ') . formatCurrency($bill->discount_amount) : '', 'value2' => $bill->discount_amount > 0 && $bill->penalty_amount > 0 ? __(' and') : '', 'value3' => $bill->penalty_amount > 0 ? __(' a late penalty of + ') . formatCurrency($bill->penalty_amount) : '']) }}
           </div>
         @endif
         @if ((float)$bill->amount_paid > 0)
-          <div class="small mt-1">Already paid <strong class="text-success">{{ formatCurrency($bill->amount_paid) }}</strong> · Balance to pay <strong class="text-primary-dark">{{ formatCurrency($balance) }}</strong></div>
+          <div class="small mt-1">{{ __('Already paid') }} <strong class="text-success">{{ formatCurrency($bill->amount_paid) }}</strong> {{ __('· Balance to pay') }} <strong class="text-primary-dark">{{ formatCurrency($balance) }}</strong></div>
         @endif
         {{-- Dates on the left, the way to pay on the right. --}}
         <div class="bill-pay-row mt-3">
         <div class="bill-dates">
-          <div>Due <strong>{{ formatDate($bill->due_date) }}</strong></div>
+          <div>{{ __('Due') }} <strong>{{ formatDate($bill->due_date) }}</strong></div>
           @if (!empty($bill->disconnection_date))
-            <div>Disconnection <strong class="text-danger">{{ formatDate($bill->disconnection_date) }}</strong></div>
+            <div>{{ __('Disconnection') }} <strong class="text-danger">{{ formatDate($bill->disconnection_date) }}</strong></div>
           @endif
         </div>
         <div class="bill-pay">
           @if ($last && $last->status === 'pending' && $last->payment_method === 'paymongo')
             <div class="p-3" style="background:#fff8e6;border:1px solid #f1d58a;border-radius:10px;">
-              <div class="mb-1"><span class="badge badge-warning">Payment Not Finished</span></div>
-              <div>You started a {{ paymentMethodLabel('paymongo', $last->wallet) }} payment of <strong>{{ formatCurrency($last->amount_paid) }}</strong>, but it was not completed.</div>
-              <div class="text-muted small mt-1">If you already paid, refresh this page in a moment. Otherwise, pay again.</div>
-              <button type="button" class="btn btn-primary w-100 mt-2" data-pay-url="{{ route('resident.bill.pay', [$bill->bill_id, 'partial' => 1]) }}" data-pay-page="{{ route('resident.bill.pay', $bill->bill_id) }}">Pay Bill</button>
+              <div class="mb-1"><span class="badge badge-warning">{{ __('Payment Not Finished') }}</span></div>
+              <div>{{ __('You started a :value payment of', ['value' => paymentMethodLabel('paymongo', $last->wallet)]) }} <strong>{{ formatCurrency($last->amount_paid) }}</strong>{{ __(', but it was not completed.') }}</div>
+              <div class="text-muted small mt-1">{{ __('If you already paid, refresh this page in a moment. Otherwise, pay again.') }}</div>
+              <button type="button" class="btn btn-primary w-100 mt-2" data-pay-url="{{ route('resident.bill.pay', [$bill->bill_id, 'partial' => 1]) }}" data-pay-page="{{ route('resident.bill.pay', $bill->bill_id) }}">{{ __('Pay Bill') }}</button>
             </div>
           @elseif ($last && $last->status === 'pending')
             <div class="p-3" style="background:#fff8e6;border:1px solid #f1d58a;border-radius:10px;">
-              <div class="mb-1"><span class="badge badge-warning">Pending Verification</span></div>
-              <div>Your GCash payment of <strong>{{ formatCurrency($last->amount_paid) }}</strong>
-                was submitted on {{ formatDateTime($last->payment_date) }}.</div>
-              <div class="text-muted small mt-1">The water office will verify it. Your bill changes to <strong>Paid</strong> once verified — no need to pay again.</div>
+              <div class="mb-1"><span class="badge badge-warning">{{ __('Pending Verification') }}</span></div>
+              <div>{{ __('Your GCash payment of') }} <strong>{{ formatCurrency($last->amount_paid) }}</strong>
+                {{ __('was submitted on :date.', ['date' => formatDateTime($last->payment_date)]) }}</div>
+              <div class="text-muted small mt-1">{{ __('The water office will verify it. Your bill changes to') }} <strong>{{ __('Paid') }}</strong> {{ __('once verified — no need to pay again.') }}</div>
               <div class="d-flex flex-wrap gap-2 mt-2">
-                <a href="{{ route('payments.receipt', $last->payment_id) }}" class="btn btn-outline btn-sm"><i class="ph ph-receipt" aria-hidden="true"></i> View Receipt</a>
-                <a href="{{ route('payments.receipt', ['payment' => $last->payment_id, 'download' => 1]) }}" class="btn btn-outline btn-sm"><i class="ph ph-download-simple" aria-hidden="true"></i> Download Receipt</a>
+                <a href="{{ route('payments.receipt', $last->payment_id) }}" class="btn btn-outline btn-sm"><i class="ph ph-receipt" aria-hidden="true"></i> {{ __('View Receipt') }}</a>
+                <a href="{{ route('payments.receipt', ['payment' => $last->payment_id, 'download' => 1]) }}" class="btn btn-outline btn-sm"><i class="ph ph-download-simple" aria-hidden="true"></i> {{ __('Download Receipt') }}</a>
               </div>
             </div>
           @else
-            <button type="button" class="btn btn-primary btn-lg px-5" data-pay-url="{{ route('resident.bill.pay', [$bill->bill_id, 'partial' => 1]) }}" data-pay-page="{{ route('resident.bill.pay', $bill->bill_id) }}"><i class="ph ph-wallet" aria-hidden="true"></i> Pay Bill</button>
+            <button type="button" class="btn btn-primary btn-lg px-5" data-pay-url="{{ route('resident.bill.pay', [$bill->bill_id, 'partial' => 1]) }}" data-pay-page="{{ route('resident.bill.pay', $bill->bill_id) }}"><i class="ph ph-wallet" aria-hidden="true"></i> {{ __('Pay Bill') }}</button>
           @endif
         </div>
         </div>
       </div>
 
-      <button type="button" class="btn btn-outline btn-sm mt-3" data-bill-download="{{ route('bills.print', [$bill->bill_id, 'embed' => 1, 'download' => 1]) }}"><i class="ph ph-download-simple" aria-hidden="true"></i> Download Bill</button>
+      <button type="button" class="btn btn-outline btn-sm mt-3" data-bill-download="{{ route('bills.print', [$bill->bill_id, 'embed' => 1, 'download' => 1]) }}"><i class="ph ph-download-simple" aria-hidden="true"></i> {{ __('Download Bill') }}</button>
     </div>
   </div>
 @empty
-  <div class="card"><div class="card-body text-center"><p style="font-size:15px;">You have no outstanding bills right now.</p></div></div>
+  <div class="card"><div class="card-body text-center"><p style="font-size:15px;">{{ __('You have no outstanding bills right now.') }}</p></div></div>
 @endforelse
 
 {{-- "Pay Bill" opens the Online Payment panel here instead of another page. --}}
-<div class="modal fade" id="payModal" tabindex="-1" aria-label="Online Payment" aria-hidden="true">
+<div class="modal fade" id="payModal" tabindex="-1" aria-label="{{ __('Online Payment') }}" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" style="max-width:560px;">
     <div class="modal-content" id="payModalContent"></div>
   </div>
@@ -127,7 +127,7 @@
     if (busy) return;
     busy = btn;
     btn.disabled = true;
-    btn.textContent = 'Preparing PDF…';
+    btn.textContent = {{ Js::from(__('Preparing PDF…')) }};
     const frame = document.createElement('iframe');
     frame.hidden = true;
     frame.src = btn.dataset.billDownload;
@@ -149,7 +149,7 @@
 (function () {
   const modal = document.getElementById('payModal'), content = document.getElementById('payModalContent');
   document.querySelectorAll('[data-pay-url]').forEach(btn => btn.addEventListener('click', () => {
-    content.innerHTML = '<div class="text-center text-muted p-5">Loading…</div>';
+    content.innerHTML = '<div class="text-center text-muted p-5">' + {{ Js::from(__('Loading…')) }} + '</div>';
     bootstrap.Modal.getOrCreateInstance(modal).show();
     fetch(btn.dataset.payUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
       .then(r => {

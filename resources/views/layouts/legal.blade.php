@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,15 +27,18 @@
 <body>
   <header class="legal-top">
     <div class="wrap">
-      <a href="{{ url('/') }}" class="legal-brand"><img src="{{ asset('assets/img/logo-round.png') }}" alt="">AWAS</a>
-      <a href="{{ url('/') }}" class="small"><i class="ph ph-arrow-left" aria-hidden="true"></i> Back to Home</a>
+      <a href="{{ url('/') }}" class="legal-brand"><img src="{{ asset('assets/img/logo-round.png') }}" alt="">{{ __('AWAS') }}</a>
+      <div class="d-flex align-items-center gap-3">
+        <a href="{{ url('/') }}" class="small"><i class="ph ph-arrow-left" aria-hidden="true"></i> {{ __('Back to Home') }}</a>
+        @include('partials.lang-switch', ['light' => true])
+      </div>
     </div>
   </header>
   <main class="legal">
     @yield('content')
   </main>
   <div class="legal-foot">
-    <a href="{{ route('privacy') }}">Privacy Policy</a>·<a href="{{ route('terms') }}">Terms of Service</a>·<a href="{{ route('login') }}">Login</a>
+    <a href="{{ route('privacy') }}">{{ __('Privacy Policy') }}</a>·<a href="{{ route('terms') }}">{{ __('Terms of Service') }}</a>·<a href="{{ route('login') }}">{{ __('Login') }}</a>
   </div>
 </body>
 </html>

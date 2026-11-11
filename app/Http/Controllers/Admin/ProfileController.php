@@ -37,10 +37,10 @@ class ProfileController extends Controller
         $digits = preg_replace('/^(63|0)(?=9\d{9}$)/', '', $digits);
 
         $error = match (true) {
-            $email !== null && !filter_var($email, FILTER_VALIDATE_EMAIL) => 'Please enter a valid email address.',
+            $email !== null && !filter_var($email, FILTER_VALIDATE_EMAIL) => __('Please enter a valid email address.'),
             $email !== null && DB::table('users')->where('email', $email)->where('user_id', '!=', $request->user()->user_id)->exists()
-                => 'That email address is already used by another account.',
-            $digits !== '' && !preg_match('/^9\d{9}$/', $digits) => 'Please enter a valid mobile number, e.g. 985 588 5588.',
+                => __('That email address is already used by another account.'),
+            $digits !== '' && !preg_match('/^9\d{9}$/', $digits) => __('Please enter a valid mobile number, e.g. 985 588 5588.'),
             default => null,
         };
         if ($error) {
@@ -50,7 +50,7 @@ class ProfileController extends Controller
         DB::table('users')->where('user_id', $request->user()->user_id)
             ->update(['email' => $email, 'contact_number' => $digits !== '' ? '0' . $digits : null]);
         log_activity($request->user()->user_id, 'profile_update', 'Updated contact information (email / contact number)');
-        flash('success', 'Contact information updated.');
+        flash('success', __('Contact information updated.'));
         return redirect()->route('admin.profile');
     }
 }

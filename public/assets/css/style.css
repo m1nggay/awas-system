@@ -136,6 +136,17 @@ a:focus-visible, button:focus-visible{outline:2px solid var(--primary-light);out
   background:#f0fbff;border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;}
 .username-note i{font-size:16px;color:var(--primary);flex:none;margin-top:1px;}
 
+/* English / Tagalog switch (partials/lang-switch): top-right of the login/apply pages, and in the legal pages' header */
+.auth-lang{position:absolute;top:16px;right:16px;z-index:2;}
+.lang-switch{display:flex;flex:none;padding:3px;border:1px solid rgba(255,255,255,.35);border-radius:99px;}
+.lang-switch a{font-size:12.5px;font-weight:600;letter-spacing:.04em;color:#dbe8f2;padding:4px 11px;border-radius:99px;line-height:1.4;}
+.lang-switch a:hover{color:#fff;background:rgba(255,255,255,.12);}
+.lang-switch a.on{background:#fff;color:#062a4a;}
+.lang-switch.on-light{border-color:var(--border);}
+.lang-switch.on-light a{color:var(--text-muted);}
+.lang-switch.on-light a:hover{color:var(--primary-dark);background:#eef7fb;}
+.lang-switch.on-light a.on{background:#062a4a;color:#fff;}
+
 .form-group{margin-bottom:16px;}
 .form-group label{display:block;font-weight:500;margin-bottom:6px;font-size:13px;color:var(--text-dark);}
 .form-control{

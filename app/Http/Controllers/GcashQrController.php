@@ -11,6 +11,6 @@ class GcashQrController extends Controller
     {
         return $qr->files()->response($qr->fileName(), [
             'Cache-Control' => 'private, max-age=300',
-        ], 'The GCash QR code has not been set up yet.');
+        ], __('The GCash QR code has not been set up yet.'));
     }
 }

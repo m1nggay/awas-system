@@ -27,18 +27,18 @@ class Chatbot
     {
         $message = trim($message);
         if ($message === '') {
-            return ['reply' => "Please type a question and I'll do my best to help!"];
+            return ['reply' => __("Please type a question and I'll do my best to help!")];
         }
         $message = mb_substr($message, 0, 500);
 
         if ($this->isRestrictedAction($message)) {
-            return ['reply' => "I'm here to provide information only — I can't verify payments, edit billing records, or change meter readings. Please visit or call the Barangay Adlay water office for that."];
+            return ['reply' => __("I'm here to provide information only — I can't verify payments, edit billing records, or change meter readings. Please visit or call the Barangay Adlay water office for that.")];
         }
 
         $intent = $this->detectIntent($message);
         if ($intent) {
             if (!$consumer) {
-                return ['reply' => "I couldn't find a water account linked to your login, so I can't pull up personal details. Please contact the Barangay Adlay water office to get your account linked."];
+                return ['reply' => __("I couldn't find a water account linked to your login, so I can't pull up personal details. Please contact the Barangay Adlay water office to get your account linked.")];
             }
             $reply = $this->personalAnswer($intent, $consumer);
             if ($reply !== '') return ['reply' => $reply];
@@ -58,7 +58,7 @@ class Chatbot
         }
 
         DB::table('chatbot_unanswered')->insert(['question' => mb_substr($message, 0, 500), 'asked_by' => $userId]);
-        return ['reply' => "I'm sorry, I don't have enough information to answer that question. Please contact the Barangay Adlay water staff or administrator for assistance."];
+        return ['reply' => __("I'm sorry, I don't have enough information to answer that question. Please contact the Barangay Adlay water staff or administrator for assistance.")];
     }
 
     /** Phrasing that asks for an action the assistant must never take. */
@@ -82,6 +82,29 @@ class Chatbot
     private function detectIntent(string $message): ?string
     {
         $m = strtolower($message);
+
+        // Common Tagalog phrasings (the site can be switched to Tagalog).
+        if (preg_match('/\b(kasaysayan ng bayad|mga bayad ko|nakaraang bayad)\b/', $m)) {
+            return 'payment_history';
+        }
+        if (preg_match('/\b(status ng bayad|na-verify na ba|naitala na ba)\b/', $m)) {
+            return 'payment_status';
+        }
+        if (preg_match('/\b(nakaraang singil|mga singil ko|kasaysayan ng singil)\b/', $m)) {
+            return 'billing_history';
+        }
+        if (preg_match('/\b(kailan.*(bayaran|due|takdang petsa)|takdang petsa)\b/', $m)) {
+            return 'due_date';
+        }
+        if (preg_match('/\b(konsumo|nagamit na tubig|gaano karaming tubig)\b/', $m)) {
+            return 'consumption';
+        }
+        if (preg_match('/\b(magkano.*(singil|babayaran|utang|bill)|singil ko|bill ko|balanse ko)\b/', $m)) {
+            return 'current_bill';
+        }
+        if (preg_match('/\b(account ko|impormasyon ko|purok ko)\b/', $m)) {
+            return 'account_info';
+        }
 
         if (preg_match('/\bpayment\b.{0,20}\b(status|pending|verified|recorded|reflect)\b/', $m)
             || preg_match('/\b(status|pending|recorded|reflect)\b.{0,20}\bpayment\b/', $m)) {
@@ -116,55 +139,64 @@ class Chatbot
         switch ($intent) {
             case 'current_bill':
                 $bill = DB::table('water_bills')->where('consumer_id', $cid)->where('status', '!=', 'paid')->orderBy('due_date')->first();
-                if (!$bill) return "🎉 Good news — you have no outstanding water bill right now. All your bills are paid up to date.";
+                if (!$bill) return __('🎉 Good news — you have no outstanding water bill right now. All your bills are paid up to date.');
                 $balance = (float)$bill->total_amount - (float)$bill->amount_paid;
-                $msg = 'Your current bill for ' . billingPeriodLabel($bill->billing_period)
-                    . ' totals ' . formatCurrency($bill->total_amount) . ', with a remaining balance of ' . formatCurrency($balance)
-                    . ', due on ' . formatDate($bill->due_date) . '.';
+                $msg = __('Your current bill for :period totals :total, with a remaining balance of :balance, due on :date.', [
+                    'period' => billingPeriodLabel($bill->billing_period), 'total' => formatCurrency($bill->total_amount),
+                    'balance' => formatCurrency($balance), 'date' => formatDate($bill->due_date),
+                ]);
                 if ((float)$bill->penalty_amount > 0) {
-                    $msg .= ' This includes a ' . formatCurrency($bill->penalty_amount) . ' overdue penalty.';
+                    $msg .= ' ' . __('This includes a :amount overdue penalty.', ['amount' => formatCurrency($bill->penalty_amount)]);
                 }
                 return $msg;
 
             case 'consumption':
                 $r = DB::table('meter_readings')->where('consumer_id', $cid)->orderByDesc('billing_period')->first();
-                if (!$r) return "We don't have any meter readings on file for your account yet.";
-                return 'Your recorded consumption for ' . billingPeriodLabel($r->billing_period) . ' was ' . number_format((float)$r->consumption, 2)
-                    . ' m³ (reading went from ' . number_format((float)$r->previous_reading, 2) . ' to ' . number_format((float)$r->current_reading, 2) . ').';
+                if (!$r) return __("We don't have any meter readings on file for your account yet.");
+                return __('Your recorded consumption for :period was :consumption m³ (reading went from :previous to :current).', [
+                    'period' => billingPeriodLabel($r->billing_period), 'consumption' => number_format((float)$r->consumption, 2),
+                    'previous' => number_format((float)$r->previous_reading, 2), 'current' => number_format((float)$r->current_reading, 2),
+                ]);
 
             case 'due_date':
                 $bill = DB::table('water_bills')->where('consumer_id', $cid)->where('status', '!=', 'paid')->orderBy('due_date')->first();
-                if (!$bill) return "You have no pending bill, so there's no due date to worry about right now. 🎉";
-                return 'Your ' . billingPeriodLabel($bill->billing_period) . ' bill is due on ' . formatDate($bill->due_date) . '. Pay before then to avoid an overdue penalty.';
+                if (!$bill) return __("You have no pending bill, so there's no due date to worry about right now. 🎉");
+                return __('Your :period bill is due on :date. Pay before then to avoid an overdue penalty.', [
+                    'period' => billingPeriodLabel($bill->billing_period), 'date' => formatDate($bill->due_date),
+                ]);
 
             case 'payment_status':
                 $p = DB::table('payments')->where('consumer_id', $cid)->orderByDesc('payment_date')->first();
-                if (!$p) return "You don't have any payment records yet.";
+                if (!$p) return __("You don't have any payment records yet.");
                 $statusMsg = [
-                    'pending'  => 'Pending Verification by the barangay water office',
-                    'verified' => 'verified and applied to your bill',
-                    'failed'   => 'rejected — please contact the water office',
-                    'rejected' => 'rejected' . ($p->rejection_reason ? " (reason: {$p->rejection_reason})" : '') . ' — you can pay again from "Current Bills"',
-                    'refunded' => 'refunded',
+                    'pending'  => __('Pending Verification by the barangay water office'),
+                    'verified' => __('verified and applied to your bill'),
+                    'failed'   => __('rejected — please contact the water office'),
+                    'rejected' => __('rejected') . ($p->rejection_reason ? ' (' . __('reason: :reason', ['reason' => $p->rejection_reason]) . ')' : '') . ' — ' . __('you can pay again from "Current Bills"'),
+                    'refunded' => __('refunded'),
                 ][$p->status] ?? $p->status;
-                return "Your most recent payment ({$p->payment_reference}, " . formatCurrency($p->amount_paid) . ") is $statusMsg"
-                    . '. Submitted on ' . formatDateTime($p->payment_date) . '.';
+                return __('Your most recent payment (:reference, :amount) is :status. Submitted on :date.', [
+                    'reference' => $p->payment_reference, 'amount' => formatCurrency($p->amount_paid),
+                    'status' => $statusMsg, 'date' => formatDateTime($p->payment_date),
+                ]);
 
             case 'payment_history':
                 $rows = DB::table('payments')->where('consumer_id', $cid)->orderByDesc('payment_date')->limit(3)->get();
-                if ($rows->isEmpty()) return "You don't have any payments on record yet. Your full payment history is always available on the \"Payment History\" page.";
+                if ($rows->isEmpty()) return __('You don\'t have any payments on record yet. Your full payment history is always available on the "Payment History" page.');
                 $lines = $rows->map(fn ($p) => "• {$p->payment_reference} — " . formatCurrency($p->amount_paid) . " (" . paymentStatusLabel($p->status) . ")");
-                return "Here are your most recent payments:\n" . $lines->implode("\n") . "\nSee the full list on the \"Payment History\" page.";
+                return __('Here are your most recent payments:') . "\n" . $lines->implode("\n") . "\n" . __('See the full list on the "Payment History" page.');
 
             case 'billing_history':
                 $rows = DB::table('water_bills')->where('consumer_id', $cid)->orderByDesc('billing_period')->limit(3)->get();
-                if ($rows->isEmpty()) return "You don't have any bills on record yet.";
-                $lines = $rows->map(fn ($b) => '• ' . billingPeriodLabel($b->billing_period) . ' — ' . formatCurrency($b->total_amount) . ', ' . str_replace('_', ' ', $b->status));
-                return "Here's a quick look at your recent bills:\n" . $lines->implode("\n") . "\nUnpaid bills are under \"Current Bills\"; paid ones under \"Billing History\".";
+                if ($rows->isEmpty()) return __("You don't have any bills on record yet.");
+                $lines = $rows->map(fn ($b) => '• ' . billingPeriodLabel($b->billing_period) . ' — ' . formatCurrency($b->total_amount) . ', ' . __(ucfirst(str_replace('_', ' ', $b->status))));
+                return __("Here's a quick look at your recent bills:") . "\n" . $lines->implode("\n") . "\n" . __('Unpaid bills are under "Current Bills"; paid ones under "Billing History".');
 
             case 'account_info':
-                return "Meter Number {$consumer->meter_number} — {$consumer->full_name}, " . ($consumer->purok_name ?? 'your purok')
-                    . ' (' . consumerTypeLabel($consumer->consumer_type ?? null) . "). Status: {$consumer->status}. Full details are on your \"My Profile\" page.";
+                return __('Meter Number :meter — :name, :purok (:type). Status: :status. Full details are on your "My Profile" page.', [
+                    'meter' => $consumer->meter_number, 'name' => $consumer->full_name, 'purok' => $consumer->purok_name ?? __('your purok'),
+                    'type' => consumerTypeLabel($consumer->consumer_type ?? null), 'status' => __(ucfirst((string)$consumer->status)),
+                ]);
         }
         return '';
     }
@@ -233,7 +265,9 @@ class Chatbot
             . 'Never claim to verify payments, edit bills, or change meter readings — those require barangay staff. '
             . "Never reveal or guess a password. If the question is unrelated to AWAS/water billing, or you are unsure, "
             . "say you don't have enough information and to contact the Barangay Adlay water staff. "
-            . "Keep answers under 80 words, friendly, and simple.\n\nReference FAQs:\n" . $context;
+            . "Keep answers under 80 words, friendly, and simple."
+            . (app()->getLocale() === 'tl' ? ' The resident is using AWAS in Tagalog: answer in simple, everyday Tagalog (Filipino).' : '')
+            . "\n\nReference FAQs:\n" . $context;
 
         try {
             $response = Http::withHeaders([

@@ -59,21 +59,21 @@ class BillController extends ResidentController
             ->where('b.bill_id', $bill)->where('b.consumer_id', $consumer->consumer_id)
             ->first(['b.*', 'mr.previous_reading', 'mr.current_reading']) : null;
         if (!$row) {
-            flash('danger', 'Bill not found.');
+            flash('danger', __('Bill not found.'));
             return redirect()->route('resident.bill');
         }
         if ($row->status === 'paid' || $payments->balance($row) <= 0) {
-            flash('success', 'This bill is already paid.');
+            flash('success', __('This bill is already paid.'));
             return redirect()->route('resident.bill');
         }
         $pending = $payments->pendingPayment($row->bill_id);
         // An unfinished PayMongo checkout: credit it if it was paid, otherwise cancel it so the resident can start again.
         if ($pending && $pending->payment_method === 'paymongo' && $paymongo->settleOrCancel($pending)) {
-            flash('success', 'This bill is already paid through PayMongo.');
+            flash('success', __('This bill is already paid through PayMongo.'));
             return redirect()->route('resident.bill');
         }
         if ($payments->pendingPayment($row->bill_id)) {
-            flash('warning', 'You already submitted a payment for this bill. It is waiting for verification by the water office.');
+            flash('warning', __('You already submitted a payment for this bill. It is waiting for verification by the water office.'));
             return redirect()->route('resident.bill');
         }
 
@@ -101,7 +101,7 @@ class BillController extends ResidentController
         }
         $wallet = clean($request->input('wallet'));
         if (!isset($paymongo->enabledWallets()[$wallet])) {
-            flash('danger', 'That e-wallet is not available. Please pay with the QR code instead.');
+            flash('danger', __('That e-wallet is not available. Please pay with the QR code instead.'));
             return redirect()->route('resident.bill');
         }
         [$checkoutUrl, $error] = $paymongo->startCheckout($consumer, $bill, $request->user()->user_id, $wallet);
@@ -117,7 +117,7 @@ class BillController extends ResidentController
     {
         $consumer = $this->consumer($request);
         if (!$consumer) {
-            return response()->json(['error' => 'Your login is not linked to a water account.'], 422);
+            return response()->json(['error' => __('Your login is not linked to a water account.')], 422);
         }
         [$qr, $error] = $paymongo->startOnlineQr((int)$consumer->consumer_id, $bill, $request->user()->user_id);
         return $error ? response()->json(['error' => $error], 422) : response()->json($qr);
@@ -131,7 +131,7 @@ class BillController extends ResidentController
             return response()->json(['status' => 'gone']);
         }
         if ($paymongo->verifyAndCredit($row)) {
-            flash('success', 'Payment successful! Your ' . formatCurrency($row->amount_paid) . ' QR payment was confirmed — your bill is now Paid.');
+            flash('success', __('Payment successful! Your :amount QR payment was confirmed — your bill is now Paid.', ['amount' => formatCurrency($row->amount_paid)]));
             session()->flash('receipt_payment_id', $row->payment_id);
             return response()->json(['status' => 'paid', 'redirect' => route('resident.bill')]);
         }
@@ -148,7 +148,7 @@ class BillController extends ResidentController
         $row = $this->ownQrPayment($request, $payment);
         $paid = $row && $paymongo->settleOrCancel($row);
         if ($paid) {
-            flash('success', 'Your payment was already received — your bill is now Paid.');
+            flash('success', __('Your payment was already received — your bill is now Paid.'));
             session()->flash('receipt_payment_id', $row->payment_id);
         }
         return response()->json(['paid' => $paid, 'redirect' => route('resident.bill')]);
@@ -176,12 +176,14 @@ class BillController extends ResidentController
         $cancelled = $request->boolean('cancel') || $paymongo->walletPaymentFailed($payment);
         $paid = $cancelled ? $paymongo->settleOrCancel($payment) : $paymongo->verifyAndCredit($payment);
         if ($paid) {
-            flash('success', 'Payment successful! Your ' . formatCurrency($payment->amount_paid) . ' ' . paymentMethodLabel('paymongo', $payment->wallet) . ' payment was confirmed — your bill is now Paid.');
+            flash('success', __('Payment successful! Your :amount :method payment was confirmed — your bill is now Paid.', [
+                'amount' => formatCurrency($payment->amount_paid), 'method' => paymentMethodLabel('paymongo', $payment->wallet),
+            ]));
             session()->flash('receipt_payment_id', $payment->payment_id);
         } elseif ($cancelled) {
-            flash('warning', 'Payment was not completed. Your bill was not paid — you can try again.');
+            flash('warning', __('Payment was not completed. Your bill was not paid — you can try again.'));
         } else {
-            flash('warning', 'PayMongo has not confirmed your payment yet. If you completed it, your bill will change to Paid shortly.');
+            flash('warning', __('PayMongo has not confirmed your payment yet. If you completed it, your bill will change to Paid shortly.'));
         }
         return redirect()->route('resident.bill');
     }
@@ -196,7 +198,7 @@ class BillController extends ResidentController
 
         // The GCash receipt screenshot is the proof of payment; stored privately (only administrators can open it).
         $errors = [];
-        $receipt = $files->in('payment-receipts')->store($request->file('receipt'), '', 'GCash receipt screenshot', true, $errors);
+        $receipt = $files->in('payment-receipts')->store($request->file('receipt'), '', __('GCash receipt screenshot'), true, $errors);
         if ($errors) {
             flash('danger', $errors[0]);
             return redirect()->route('resident.bill.pay', $bill)->withInput();
@@ -215,8 +217,9 @@ class BillController extends ResidentController
             return redirect()->route('resident.bill.pay', $bill)->withInput();
         }
 
-        flash('success', 'Payment submitted! Your ' . formatCurrency($payment->amount_paid)
-            . ' GCash payment is now Pending Verification. Your bill will change to Paid once the water office verifies it.');
+        flash('success', __('Payment submitted! Your :amount GCash payment is now Pending Verification. Your bill will change to Paid once the water office verifies it.', [
+            'amount' => formatCurrency($payment->amount_paid),
+        ]));
         session()->flash('receipt_payment_id', $payment->payment_id);
         return redirect()->route('resident.bill');
     }

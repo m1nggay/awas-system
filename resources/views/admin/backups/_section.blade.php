@@ -11,35 +11,34 @@
 @endphp
 <div class="card" id="backup" style="scroll-margin-top:80px;">
   <div class="card-header">
-    <h3><i class="ph ph-database" aria-hidden="true"></i> Backup &amp; Restore</h3>
+    <h3><i class="ph ph-database" aria-hidden="true"></i> {{ __('Backup & Restore') }}</h3>
     <span class="small text-muted">
-      @if ($latest) Last backup: {{ $latest['created_at']->format('M j, Y g:i A') }} ({{ $latest['created_at']->diffForHumans() }})
-      @else No backups yet @endif
+      @if ($latest) {{ __('Last backup: :value (:value2)', ['value' => localizeMonths($latest['created_at']->format('M j, Y g:i A')), 'value2' => $latest['created_at']->diffForHumans()]) }}
+      @else {{ __('No backups yet') }} @endif
     </span>
   </div>
   <div class="card-body">
     <div class="row g-4">
       <div class="col-lg-7">
-        <p class="mb-2" style="font-size:13.5px;">A backup is a full copy of AWAS's data: consumers, accounts, meter readings, bills, payments, applications,
-          settings, activity logs and every uploaded file (GCash receipts, IDs and photos).</p>
+        <p class="mb-2" style="font-size:13.5px;">{{ __('A backup is a full copy of AWAS\'s data: consumers, accounts, meter readings, bills, payments, applications, settings, activity logs and every uploaded file (GCash receipts, IDs and photos).') }}</p>
         <ul class="small text-muted mb-3 ps-3">
-          <li>An <strong>automatic backup</strong> is made every night at 2:00 AM; the newest {{ $keepAuto }} are kept.</li>
-          <li>Backups are saved privately on the server. <strong>Download</strong> important ones to keep a copy elsewhere (e.g. Google Drive or a USB drive).</li>
-          <li>Backup files contain personal information and password hashes — keep downloaded copies private.</li>
+          <li>{{ __('An') }} <strong>{{ __('automatic backup') }}</strong> {{ __('is made every night at 2:00 AM; the newest :keepauto are kept.', ['keepauto' => $keepAuto]) }}</li>
+          <li>{{ __('Backups are saved privately on the server.') }} <strong>{{ __('Download') }}</strong> {{ __('important ones to keep a copy elsewhere (e.g. Google Drive or a USB drive).') }}</li>
+          <li>{{ __('Backup files contain personal information and password hashes — keep downloaded copies private.') }}</li>
         </ul>
         <form method="POST" action="{{ route('admin.backups.store') }}" data-busy="Creating backup…">
           @csrf
-          <button type="submit" class="btn btn-primary"><i class="ph ph-database" aria-hidden="true"></i> Create Backup Now</button>
+          <button type="submit" class="btn btn-primary"><i class="ph ph-database" aria-hidden="true"></i> {{ __('Create Backup Now') }}</button>
         </form>
       </div>
       <div class="col-lg-5">
         <div class="backup-upload">
-          <strong class="d-block mb-1" style="font-size:14px;">Restore from a file</strong>
-          <p class="small text-muted mb-2">Upload an AWAS backup file (<code>.json.gz</code>) downloaded earlier. Largest file the server accepts: <strong>{{ $size($maxUpload) }}</strong>.</p>
+          <strong class="d-block mb-1" style="font-size:14px;">{{ __('Restore from a file') }}</strong>
+          <p class="small text-muted mb-2">{{ __('Upload an AWAS backup file (') }}<code>{{ __('.json.gz') }}</code>{{ __(') downloaded earlier. Largest file the server accepts:') }} <strong>{{ $size($maxUpload) }}</strong>.</p>
           <form method="POST" action="{{ route('admin.backups.upload') }}" enctype="multipart/form-data" class="restore-form">
             @csrf
             <input type="file" name="backup_file" accept=".gz,application/gzip" class="form-control form-control-sm mb-2" required>
-            <button type="button" class="btn btn-outline btn-sm" data-restore-open data-label="the uploaded file"><i class="ph ph-upload-simple" aria-hidden="true"></i> Upload &amp; Restore…</button>
+            <button type="button" class="btn btn-outline btn-sm" data-restore-open data-label="{{ __('the uploaded file') }}"><i class="ph ph-upload-simple" aria-hidden="true"></i> {{ __('Upload & Restore…') }}</button>
           </form>
         </div>
       </div>
@@ -47,38 +46,37 @@
 
     <div class="alert alert-warning small d-flex gap-2 align-items-start mt-4 mb-3">
       <i class="ph ph-warning" style="font-size:18px;" aria-hidden="true"></i>
-      <div><strong>Restoring replaces all current data</strong> with the backup's. Anything recorded after the backup was made (readings, bills, payments, accounts) is removed.
-        To be safe, AWAS first saves the current data as a <strong>"Before restore"</strong> backup — restore that one to undo.</div>
+      <div><strong>{{ __('Restoring replaces all current data') }}</strong> {{ __('with the backup\'s. Anything recorded after the backup was made (readings, bills, payments, accounts) is removed. To be safe, AWAS first saves the current data as a') }} <strong>{{ __('"Before restore"') }}</strong> {{ __('backup — restore that one to undo.') }}</div>
     </div>
 
-    <strong class="d-block mb-2" style="font-size:14px;">Saved Backups <span class="text-muted fw-normal">({{ count($backups) }})</span></strong>
+    <strong class="d-block mb-2" style="font-size:14px;">{{ __('Saved Backups') }} <span class="text-muted fw-normal">({{ count($backups) }})</span></strong>
     <div class="table-responsive backup-table">
       <table class="table table-hover align-middle mb-0">
-        <thead><tr><th>Date</th><th>Type</th><th>Made by</th><th class="text-end">Size</th><th class="text-end">Actions</th></tr></thead>
+        <thead><tr><th>{{ __('Date') }}</th><th>{{ __('Type') }}</th><th>{{ __('Made by') }}</th><th class="text-end">{{ __('Size') }}</th><th class="text-end">{{ __('Actions') }}</th></tr></thead>
         <tbody>
         @forelse ($backups as $b)
           @php [$kindLabel, $kindClass] = $kinds[$b['kind']] ?? [ucfirst($b['kind']), 'badge-secondary']; @endphp
           <tr>
-            <td><strong>{{ $b['created_at']->format('M j, Y g:i A') }}</strong><div class="text-muted small">{{ $b['name'] }}</div></td>
-            <td><span class="badge {{ $kindClass }}">{{ $kindLabel }}</span></td>
+            <td><strong>{{ localizeMonths($b['created_at']->format('M j, Y g:i A')) }}</strong><div class="text-muted small">{{ $b['name'] }}</div></td>
+            <td><span class="badge {{ $kindClass }}">{{ __($kindLabel) }}</span></td>
             <td>{{ $b['created_by'] ?? '—' }}</td>
             <td class="text-end text-nowrap">{{ $size($b['size']) }}</td>
             <td class="text-end">
               <div class="d-inline-flex flex-wrap justify-content-end gap-1">
-                <a href="{{ route('admin.backups.download', $b['name']) }}" class="btn btn-outline btn-sm"><i class="ph ph-download-simple" aria-hidden="true"></i> Download</a>
+                <a href="{{ route('admin.backups.download', $b['name']) }}" class="btn btn-outline btn-sm"><i class="ph ph-download-simple" aria-hidden="true"></i> {{ __('Download') }}</a>
                 <form method="POST" action="{{ route('admin.backups.restore', $b['name']) }}" class="restore-form">
                   @csrf
-                  <button type="button" class="btn btn-secondary btn-sm" data-restore-open data-label="the backup from {{ $b['created_at']->format('M j, Y g:i A') }}">Restore…</button>
+                  <button type="button" class="btn btn-secondary btn-sm" data-restore-open data-label="{{ __('the backup from :date', ['date' => localizeMonths($b['created_at']->format('M j, Y g:i A'))]) }}">{{ __('Restore…') }}</button>
                 </form>
-                <form method="POST" action="{{ route('admin.backups.destroy', $b['name']) }}" data-confirm="Delete the backup from {{ $b['created_at']->format('M j, Y g:i A') }}? This cannot be undone.">
+                <form method="POST" action="{{ route('admin.backups.destroy', $b['name']) }}" data-confirm="{{ __('Delete the backup from :date? This cannot be undone.', ['date' => localizeMonths($b['created_at']->format('M j, Y g:i A'))]) }}">
                   @csrf @method('DELETE')
-                  <button type="submit" class="btn btn-danger btn-sm" aria-label="Delete backup"><i class="ph ph-trash" aria-hidden="true"></i></button>
+                  <button type="submit" class="btn btn-danger btn-sm" aria-label="{{ __('Delete backup') }}"><i class="ph ph-trash" aria-hidden="true"></i></button>
                 </form>
               </div>
             </td>
           </tr>
         @empty
-          <tr class="empty-row"><td colspan="5">No backups yet. Click <strong>Create Backup Now</strong> to make the first one.</td></tr>
+          <tr class="empty-row"><td colspan="5">{{ __('No backups yet. Click') }} <strong>{{ __('Create Backup Now') }}</strong> {{ __('to make the first one.') }}</td></tr>
         @endforelse
         </tbody>
       </table>
@@ -90,19 +88,19 @@
 <div class="modal fade" id="restoreModal" tabindex="-1" aria-labelledby="restoreTitle" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header"><h3 class="h6 mb-0" id="restoreTitle">Restore Database</h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-header"><h3 class="h6 mb-0" id="restoreTitle">{{ __('Restore Database') }}</h3><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"></button></div>
       <div class="modal-body">
-        <p class="mb-2">You are about to restore <strong id="restoreLabel"></strong>.</p>
-        <p class="small text-danger mb-3">All current records will be replaced by the backup's. A "Before restore" backup of the current data is saved first so you can undo.</p>
-        <label class="form-label" for="restorePassword">Your password *</label>
+        <p class="mb-2">{{ __('You are about to restore') }} <strong id="restoreLabel"></strong>.</p>
+        <p class="small text-danger mb-3">{{ __('All current records will be replaced by the backup\'s. A "Before restore" backup of the current data is saved first so you can undo.') }}</p>
+        <label class="form-label" for="restorePassword">{{ __('Your password *') }}</label>
         <input type="password" id="restorePassword" class="form-control mb-2" autocomplete="current-password">
-        <label class="form-label" for="restoreConfirm">Type <strong>RESTORE</strong> to confirm *</label>
+        <label class="form-label" for="restoreConfirm">{{ __('Type') }} <strong>{{ __('RESTORE') }}</strong> {{ __('to confirm *') }}</label>
         <input type="text" id="restoreConfirm" class="form-control" autocomplete="off" spellcheck="false">
         <div class="text-danger small mt-2" id="restoreError" hidden></div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-danger" id="restoreGo">Restore</button>
+        <button type="button" class="btn btn-outline" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+        <button type="button" class="btn btn-danger" id="restoreGo">{{ __('Restore') }}</button>
       </div>
     </div>
   </div>
@@ -129,7 +127,7 @@
   $('restoreGo').addEventListener('click', () => {
     const pw = $('restorePassword').value, text = $('restoreConfirm').value.trim().toUpperCase();
     if (!pw || text !== 'RESTORE') {
-      $('restoreError').textContent = !pw ? 'Enter your password.' : 'Type RESTORE to confirm.';
+      $('restoreError').textContent = !pw ? {{ Js::from(__('Enter your password.')) }} : {{ Js::from(__('Type RESTORE to confirm.')) }};
       $('restoreError').hidden = false;
       return;
     }
@@ -138,7 +136,7 @@
       if (!input) { input = document.createElement('input'); input.type = 'hidden'; input.name = name; form.appendChild(input); }
       input.value = value;
     });
-    $('restoreGo').disabled = true; $('restoreGo').textContent = 'Restoring… do not close this page';
+    $('restoreGo').disabled = true; $('restoreGo').textContent = {{ Js::from(__('Restoring… do not close this page')) }};
     form.submit();
   });
 

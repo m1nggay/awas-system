@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
@@ -74,12 +74,23 @@
   .nav-links{display:flex;gap:4px;margin-left:auto;}
   .nav-links a{font-size:14px;font-weight:500;color:#dbe8f2;padding:8px 12px;border-radius:8px;white-space:nowrap;}
   .nav-links a:hover{color:#fff;background:rgba(255,255,255,.1);}
+  /* English / Tagalog switch: stays visible on phones, where the links above are hidden */
+  .lang-switch{display:flex;flex:none;padding:3px;border:1px solid rgba(255,255,255,.35);border-radius:99px;}
+  .lang-switch a{font-size:12.5px;font-weight:600;letter-spacing:.04em;color:#dbe8f2;padding:4px 11px;border-radius:99px;line-height:1.4;}
+  .lang-switch a:hover{color:#fff;background:rgba(255,255,255,.12);}
+  .lang-switch a.on{background:#fff;color:var(--navy);}
+  /* Wide screens: the menu and switch sit a little further right, into the page margin */
+  @media (min-width: 1061px){ .site-nav .lang-switch{margin-right:-24px;} }
 
   .hero-body{position:relative;z-index:2;flex:1;display:flex;align-items:center;}
   .hero-body .wrap{width:100%;padding-top:40px;padding-bottom:72px;}
   .hero-copy{max-width:620px;}
   .eyebrow{display:inline-block;font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--aqua);margin-bottom:16px;}
   .hero h1{font-size:clamp(36px, 5.2vw, 58px);line-height:1.08;font-weight:700;letter-spacing:-.02em;margin:0 0 20px;text-wrap:balance;}
+  .hero h1 span{display:block;}   /* one sentence per line */
+  /* Tagalog lines are longer: a wider block and a slightly smaller size keep each sentence on one line */
+  html[lang="tl"] .hero-copy{max-width:760px;}
+  html[lang="tl"] .hero h1{font-size:clamp(32px, 4.4vw, 52px);}
   .hero .lede{font-size:18px;line-height:1.7;color:#dbe8f2;margin:0 0 32px;max-width:54ch;}
   .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px;}
   .member-line{font-size:15px;color:#dbe8f2;margin:0 0 24px;}
@@ -174,7 +185,7 @@
   footer.site-foot a{color:#fff;}
   footer.site-foot a:hover{text-decoration:underline;}
 
-  @media (max-width: 1060px){ .nav-links{display:none;} }
+  @media (max-width: 1060px){ .nav-links{display:none;} .lang-switch{margin-left:auto;} }
   @media (max-width: 900px){
     .features, .split, .contacts{grid-template-columns:1fr;}
     .features{gap:16px;}
@@ -218,6 +229,8 @@
     $m3 = fn ($v) => rtrim(rtrim(number_format((float)$v, 2), '0'), '.');
     $peso = fn ($v) => '₱' . number_format((float)$v, 2);
     $ordinal = fn ($n) => $n . (in_array($n % 100, [11, 12, 13]) ? 'th' : (['th', 'st', 'nd', 'rd'][$n % 10] ?? 'th'));
+    // Due day for the translations: English uses :day ("19th"), Tagalog uses :n ("ika-19").
+    $due = ['day' => $ordinal($dueDay), 'n' => $dueDay];
   @endphp
 
   <header class="hero">
@@ -236,26 +249,27 @@
           </div>
         </a>
         <div class="nav-links">
-          <a href="#features">Features</a>
-          <a href="#how">Membership</a>
-          <a href="#rates">Rates &amp; Payments</a>
-          <a href="#faq">FAQ</a>
-          <a href="#contact">Contact</a>
+          <a href="#features">{{ __('Features') }}</a>
+          <a href="#how">{{ __('Membership') }}</a>
+          <a href="#rates">{{ __('Rates & Payments') }}</a>
+          <a href="#faq">{{ __('FAQ') }}</a>
+          <a href="#contact">{{ __('Contact') }}</a>
         </div>
+        @include('partials.lang-switch')
       </div>
     </nav>
 
     <div class="hero-body">
       <div class="wrap">
         <div class="hero-copy">
-          <h1>Track the Flow. Trust the Bill.</h1>
-          <p class="lede">AWAS brings water meter readings, billing, and payment monitoring together in one convenient system for Barangay Adlay.</p>
+          <h1><span>{{ __('Track the Flow.') }}</span> <span>{{ __('Trust the Bill.') }}</span></h1>
+          <p class="lede">{{ __('AWAS brings water meter readings, billing, and payment monitoring together in one convenient system for Barangay Adlay.') }}</p>
           <div class="cta-row">
-            <a class="btn btn-light" href="{{ route('login') }}"><i class="ph ph-sign-in" aria-hidden="true"></i> Login</a>
-            <a class="btn btn-ghost" href="{{ route('activate') }}">Activate Account</a>
+            <a class="btn btn-light" href="{{ route('login') }}"><i class="ph ph-sign-in" aria-hidden="true"></i> {{ __('Login') }}</a>
+            <a class="btn btn-ghost" href="{{ route('activate') }}">{{ __('Activate Account') }}</a>
           </div>
-          <p class="member-line">Not a member yet? <a href="{{ route('apply') }}">Apply for Membership</a></p>
-          <div class="trust-line"><i class="ph ph-users-three" aria-hidden="true"></i> For barangay staff, water association personnel, and registered residents.</div>
+          <p class="member-line">{{ __('Not a member yet?') }} <a href="{{ route('apply') }}">{{ __('Apply for Membership') }}</a></p>
+          <div class="trust-line"><i class="ph ph-users-three" aria-hidden="true"></i> {{ __('For barangay staff, water association personnel, and registered residents.') }}</div>
         </div>
       </div>
     </div>
@@ -266,25 +280,25 @@
     <section class="section" id="features">
       <div class="wrap">
         <div class="sec-head">
-          <span class="eyebrow">What AWAS does</span>
-          <h2>Readings, bills and payments in one place</h2>
-          <p>From the meter to your receipt, every step is recorded once and kept up to date.</p>
+          <span class="eyebrow">{{ __('What AWAS does') }}</span>
+          <h2>{{ __('Readings, bills and payments in one place') }}</h2>
+          <p>{{ __('From the meter to your receipt, every step is recorded once and kept up to date.') }}</p>
         </div>
         <div class="features">
           <div class="card">
             <div class="icon"><i class="ph ph-drop" aria-hidden="true"></i></div>
-            <h3>Digital meter reading</h3>
-            <p>Field staff log current and previous readings for each household; consumption is calculated the moment it's saved.</p>
+            <h3>{{ __('Digital meter reading') }}</h3>
+            <p>{{ __("Field staff log current and previous readings for each household; consumption is calculated the moment it's saved.") }}</p>
           </div>
           <div class="card">
             <div class="icon"><i class="ph ph-invoice" aria-hidden="true"></i></div>
-            <h3>Automated billing</h3>
-            <p>Bills are computed against the barangay's configured rate tiers — no manual math, no spreadsheets to reconcile.</p>
+            <h3>{{ __('Automated billing') }}</h3>
+            <p>{{ __("Bills are computed against the barangay's configured rate tiers — no manual math, no spreadsheets to reconcile.") }}</p>
           </div>
           <div class="card">
             <div class="icon"><i class="ph ph-wallet" aria-hidden="true"></i></div>
-            <h3>Online payments</h3>
-            <p>Residents review their bill and pay online with GCash; the account updates on its own once the payment is confirmed.</p>
+            <h3>{{ __('Online payments') }}</h3>
+            <p>{{ __('Residents review their bill and pay online with GCash; the account updates on its own once the payment is confirmed.') }}</p>
           </div>
         </div>
       </div>
@@ -294,28 +308,28 @@
     <section class="section alt" id="how">
       <div class="wrap">
         <div class="sec-head center">
-          <span class="eyebrow">Membership</span>
-          <h2>How to become a member</h2>
-          <p>Three steps, all online. You only need a valid government ID and an email address.</p>
+          <span class="eyebrow">{{ __('Membership') }}</span>
+          <h2>{{ __('How to become a member') }}</h2>
+          <p>{{ __('Three steps, all online. You only need a valid government ID and an email address.') }}</p>
         </div>
         <ol class="steps">
           <li class="step">
             <div class="step-no">1</div>
-            <h3>Apply online</h3>
-            <p>Tap <strong>Apply for Membership</strong> and fill in your name, purok, contact number and household details.</p>
+            <h3>{{ __('Apply online') }}</h3>
+            <p>{!! __('Tap <strong>Apply for Membership</strong> and fill in your name, purok, contact number and household details.') !!}</p>
           </li>
           <li class="step">
             <div class="step-no">2</div>
-            <h3>Verify your identity</h3>
-            <p>Take photos of the front and back of a valid government ID and a quick selfie, then confirm your email with a 6-digit code.</p>
+            <h3>{{ __('Verify your identity') }}</h3>
+            <p>{{ __('Take photos of the front and back of a valid government ID and a quick selfie, then confirm your email with a 6-digit code.') }}</p>
           </li>
           <li class="step">
             <div class="step-no">3</div>
-            <h3>Get approved</h3>
-            <p>The water office reviews your application and assigns your meter. Sign in anytime to check its status.</p>
+            <h3>{{ __('Get approved') }}</h3>
+            <p>{{ __('The water office reviews your application and assigns your meter. Sign in anytime to check its status.') }}</p>
           </li>
         </ol>
-        <div class="steps-cta"><a class="btn btn-primary" href="{{ route('apply') }}">Start your application <i class="ph ph-arrow-right" aria-hidden="true"></i></a></div>
+        <div class="steps-cta"><a class="btn btn-primary" href="{{ route('apply') }}">{{ __('Start your application') }} <i class="ph ph-arrow-right" aria-hidden="true"></i></a></div>
       </div>
     </section>
 
@@ -323,66 +337,66 @@
     <section class="section" id="rates">
       <div class="wrap">
         <div class="sec-head">
-          <span class="eyebrow">Rates &amp; payments</span>
-          <h2>What you pay, and how to pay it</h2>
-          <p>Rates are set by the barangay water office and are the same for every household.</p>
+          <span class="eyebrow">{{ __('Rates & payments') }}</span>
+          <h2>{{ __('What you pay, and how to pay it') }}</h2>
+          <p>{{ __('Rates are set by the barangay water office and are the same for every household.') }}</p>
         </div>
         <div class="split">
           <div class="card">
             <div class="panel-title">
               <div class="icon"><i class="ph ph-drop-half-bottom" aria-hidden="true"></i></div>
-              <h3>Water rates</h3>
+              <h3>{{ __('Water rates') }}</h3>
             </div>
             <div class="rate-hero">
               <span class="big">{{ $peso($tariff['minimumCharge']) }}</span>
-              <span>minimum charge — covers the first <strong>{{ $m3($tariff['includedCum']) }} m³</strong> each month</span>
+              <span>{!! __('minimum charge — covers the first <strong>:m3 m³</strong> each month', ['m3' => e($m3($tariff['includedCum']))]) !!}</span>
             </div>
             <table class="rate-table">
-              <thead><tr><th>Water used beyond {{ $m3($tariff['includedCum']) }} m³</th><th>Rate</th></tr></thead>
+              <thead><tr><th>{{ __('Water used beyond :m3 m³', ['m3' => $m3($tariff['includedCum'])]) }}</th><th>{{ __('Rate') }}</th></tr></thead>
               <tbody>
               @foreach ($tariff['tiers'] as $t)
-                <tr><td>{{ $t['to'] === null ? 'Above ' . $m3($t['lower']) . ' m³' : 'Over ' . $m3($t['lower']) . ' up to ' . $m3($t['to']) . ' m³' }}</td><td><b>{{ $peso($t['rate']) }}</b> per m³</td></tr>
+                <tr><td>{{ $t['to'] === null ? __('Above :from m³', ['from' => $m3($t['lower'])]) : __('Over :from up to :to m³', ['from' => $m3($t['lower']), 'to' => $m3($t['to'])]) }}</td><td><b>{{ $peso($t['rate']) }}</b> {{ __('per m³') }}</td></tr>
               @endforeach
               </tbody>
             </table>
-            <span class="example">Example: {{ $m3($example) }} m³ = <strong>{{ $peso($exampleBill['total_amount']) }}</strong></span>
+            <span class="example">{!! __('Example: :m3 m³ = <strong>:amount</strong>', ['m3' => e($m3($example)), 'amount' => e($peso($exampleBill['total_amount']))]) !!}</span>
             <ul class="facts">
-              <li><i class="ph ph-calendar-check" aria-hidden="true"></i><div><b>Due date</b>{{ $ordinal($dueDay) }} of the following month</div></li>
+              <li><i class="ph ph-calendar-check" aria-hidden="true"></i><div><b>{{ __('Due date') }}</b>{{ __(':day of the following month', $due) }}</div></li>
               @if ($latePct > 0)
-                <li><i class="ph ph-warning-circle" aria-hidden="true"></i><div><b>Late payment</b>{{ $m3($latePct) }}% penalty</div></li>
+                <li><i class="ph ph-warning-circle" aria-hidden="true"></i><div><b>{{ __('Late payment') }}</b>{{ __(':pct% penalty', ['pct' => $m3($latePct)]) }}</div></li>
               @endif
               @if ($tariff['seniorPct'] > 0)
-                <li><i class="ph ph-user-circle-plus" aria-hidden="true"></i><div><b>Senior citizens</b>{{ $m3($tariff['seniorPct']) }}% discount</div></li>
+                <li><i class="ph ph-user-circle-plus" aria-hidden="true"></i><div><b>{{ __('Senior citizens') }}</b>{{ __(':pct% discount', ['pct' => $m3($tariff['seniorPct'])]) }}</div></li>
               @endif
-              <li><i class="ph ph-plugs" aria-hidden="true"></i><div><b>Disconnection</b>after {{ $discMonths }} unpaid {{ $discMonths === 1 ? 'month' : 'months' }} past due</div></li>
+              <li><i class="ph ph-plugs" aria-hidden="true"></i><div><b>{{ __('Disconnection') }}</b>{{ $discMonths === 1 ? __('after 1 unpaid month past due') : __('after :n unpaid months past due', ['n' => $discMonths]) }}</div></li>
             </ul>
           </div>
 
           <div class="card">
             <div class="panel-title">
               <div class="icon"><i class="ph ph-wallet" aria-hidden="true"></i></div>
-              <h3>How to pay</h3>
+              <h3>{{ __('How to pay') }}</h3>
             </div>
             <div class="pay-list">
               <div class="pay-item">
                 <div class="icon"><i class="ph ph-qr-code" aria-hidden="true"></i></div>
                 <div>
-                  <h3>Online with GCash</h3>
-                  <p>Sign in, open <strong>Current Bills</strong> and tap <strong>Pay Bill</strong>. Pay in the GCash app and your bill turns Paid by itself — or scan the barangay's GCash QR and upload your receipt.</p>
+                  <h3>{{ __('Online with GCash') }}</h3>
+                  <p>{!! __("Sign in, open <strong>Current Bills</strong> and tap <strong>Pay Bill</strong>. Pay in the GCash app and your bill turns Paid by itself — or scan the barangay's GCash QR and upload your receipt.") !!}</p>
                 </div>
               </div>
               <div class="pay-item">
                 <div class="icon"><i class="ph ph-storefront" aria-hidden="true"></i></div>
                 <div>
-                  <h3>At the water office</h3>
-                  <p>Pay in cash, or scan the office's QR code with GCash. Bring your meter number or name to find your bill quickly.</p>
+                  <h3>{{ __('At the water office') }}</h3>
+                  <p>{{ __("Pay in cash, or scan the office's QR code with GCash. Bring your meter number or name to find your bill quickly.") }}</p>
                 </div>
               </div>
               <div class="pay-item">
                 <div class="icon"><i class="ph ph-receipt" aria-hidden="true"></i></div>
                 <div>
-                  <h3>Receipts and history</h3>
-                  <p>Every payment shows in your account right away. Download receipts under <strong>Payment History</strong>.</p>
+                  <h3>{{ __('Receipts and history') }}</h3>
+                  <p>{!! __('Every payment shows in your account right away. Download receipts under <strong>Payment History</strong>.') !!}</p>
                 </div>
               </div>
             </div>
@@ -395,29 +409,34 @@
     <section class="section alt" id="faq">
       <div class="wrap">
         <div class="sec-head center">
-          <span class="eyebrow">Help</span>
-          <h2>Common questions</h2>
+          <span class="eyebrow">{{ __('Help') }}</span>
+          <h2>{{ __('Common questions') }}</h2>
         </div>
         <div class="faq">
           <details>
-            <summary>How is my water use measured? <i class="ph ph-plus" aria-hidden="true"></i></summary>
-            <p>Each month the meter reader records your meter. Your consumption is the present reading minus the previous reading, in cubic meters (m³).</p>
+            <summary>{{ __('How is my water use measured?') }} <i class="ph ph-plus" aria-hidden="true"></i></summary>
+            <p>{{ __('Each month the meter reader records your meter. Your consumption is the present reading minus the previous reading, in cubic meters (m³).') }}</p>
           </details>
           <details>
-            <summary>When is my bill due? <i class="ph ph-plus" aria-hidden="true"></i></summary>
-            <p>Bills are due on the {{ $ordinal($dueDay) }} of the month after the reading{{ $latePct > 0 ? '. Late payments get a ' . $m3($latePct) . '% penalty' : '' }}, and accounts unpaid {{ $discMonths }} {{ $discMonths === 1 ? 'month' : 'months' }} after the due date may be disconnected. You also get reminders in AWAS and by email.</p>
+            <summary>{{ __('When is my bill due?') }} <i class="ph ph-plus" aria-hidden="true"></i></summary>
+            <p>
+              {{ __('Bills are due on the :day of the month after the reading.', $due) }}
+              @if ($latePct > 0) {{ __('Late payments get a :pct% penalty.', ['pct' => $m3($latePct)]) }} @endif
+              {{ $discMonths === 1 ? __('Accounts unpaid 1 month after the due date may be disconnected.') : __('Accounts unpaid :n months after the due date may be disconnected.', ['n' => $discMonths]) }}
+              {{ __('You also get reminders in AWAS and by email.') }}
+            </p>
           </details>
           <details>
-            <summary>Forgot your password? <i class="ph ph-plus" aria-hidden="true"></i></summary>
-            <p>Tap <strong>Forgot your password?</strong> on the login page and enter your account's Gmail — we'll email a code to set a new one. This also unlocks a locked account.</p>
+            <summary>{{ __('Forgot your password?') }} <i class="ph ph-plus" aria-hidden="true"></i></summary>
+            <p>{!! __("Tap <strong>Forgot your password?</strong> on the login page and enter your account's Gmail — we'll email a code to set a new one. This also unlocks a locked account.") !!}</p>
           </details>
           <details>
-            <summary>My reading looks wrong, or I see a leak. What do I do? <i class="ph ph-plus" aria-hidden="true"></i></summary>
-            <p>Contact the water office by phone, email or in person (see below). They can check your meter and correct the reading before you pay.</p>
+            <summary>{{ __('My reading looks wrong, or I see a leak. What do I do?') }} <i class="ph ph-plus" aria-hidden="true"></i></summary>
+            <p>{{ __('Contact the water office by phone, email or in person (see below). They can check your meter and correct the reading before you pay.') }}</p>
           </details>
           <details>
-            <summary>Is my information safe? <i class="ph ph-plus" aria-hidden="true"></i></summary>
-            <p>Your information is used only for the water service and is protected under the Data Privacy Act of 2012. Read our <a href="{{ route('privacy') }}">Privacy Policy</a>.</p>
+            <summary>{{ __('Is my information safe?') }} <i class="ph ph-plus" aria-hidden="true"></i></summary>
+            <p>{!! __('Your information is used only for the water service and is protected under the Data Privacy Act of 2012. Read our <a href=":url">Privacy Policy</a>.', ['url' => e(route('privacy'))]) !!}</p>
           </details>
         </div>
       </div>
@@ -429,23 +448,23 @@
         <div class="contact-band">
           <div class="top">
             <div>
-              <h2>Not a member yet?</h2>
-              <p>Apply online in a few minutes — no need to visit the office first.</p>
+              <h2>{{ __('Not a member yet?') }}</h2>
+              <p>{{ __('Apply online in a few minutes — no need to visit the office first.') }}</p>
             </div>
-            <a class="btn btn-aqua" href="{{ route('apply') }}">Apply for Membership <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
+            <a class="btn btn-aqua" href="{{ route('apply') }}">{{ __('Apply for Membership') }} <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
           </div>
           <div class="contacts">
             <div class="contact">
               <div class="icon"><i class="ph ph-phone" aria-hidden="true"></i></div>
-              <div><small>Call or text</small>@if ($phone)<a href="tel:{{ preg_replace('/[^\d+]/', '', $phone) }}">{{ $phone }}</a>@else<span>Visit the water office</span>@endif</div>
+              <div><small>{{ __('Call or text') }}</small>@if ($phone)<a href="tel:{{ preg_replace('/[^\d+]/', '', $phone) }}">{{ $phone }}</a>@else<span>{{ __('Visit the water office') }}</span>@endif</div>
             </div>
             <div class="contact">
               <div class="icon"><i class="ph ph-envelope-simple" aria-hidden="true"></i></div>
-              <div><small>Email</small>@if ($email)<a href="mailto:{{ $email }}">{{ $email }}</a>@else<span>Visit the water office</span>@endif</div>
+              <div><small>{{ __('Email') }}</small>@if ($email)<a href="mailto:{{ $email }}">{{ $email }}</a>@else<span>{{ __('Visit the water office') }}</span>@endif</div>
             </div>
             <div class="contact">
               <div class="icon"><i class="ph ph-map-pin" aria-hidden="true"></i></div>
-              <div><small>Visit</small><span>AWAS Water Office, {{ $barangay }}, Carrascal, Surigao del Sur</span></div>
+              <div><small>{{ __('Visit') }}</small><span>AWAS Water Office, {{ $barangay }}, Carrascal, Surigao del Sur</span></div>
             </div>
           </div>
         </div>

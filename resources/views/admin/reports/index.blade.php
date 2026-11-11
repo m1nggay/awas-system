@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Reports')
+@section('title', __('Reports'))
 
 @section('content')
 @php
@@ -8,10 +8,10 @@
 @endphp
 <div class="card">
   <div class="card-header">
-    <h3>Reports</h3>
+    <h3>{{ __('Reports') }}</h3>
     <div class="d-flex gap-2">
-      <a class="btn btn-outline btn-sm" href="{{ route('admin.reports.export', $query) }}"><i class="ph ph-download-simple" aria-hidden="true"></i> Download Excel (CSV)</a>
-      <a class="btn btn-primary btn-sm" href="{{ route('admin.reports.index', $query + ['print' => 1]) }}" target="_blank" rel="noopener"><i class="ph ph-download-simple" aria-hidden="true"></i> Download PDF / Print</a>
+      <a class="btn btn-outline btn-sm" href="{{ route('admin.reports.export', $query) }}"><i class="ph ph-download-simple" aria-hidden="true"></i> {{ __('Download Excel (CSV)') }}</a>
+      <a class="btn btn-primary btn-sm" href="{{ route('admin.reports.index', $query + ['print' => 1]) }}" target="_blank" rel="noopener"><i class="ph ph-download-simple" aria-hidden="true"></i> {{ __('Download PDF / Print') }}</a>
     </div>
   </div>
   <div class="card-body">
@@ -32,15 +32,15 @@
       @endif
       @if ($reportType === 'purok')
         <select name="purok" class="form-select w-auto" onchange="this.form.submit()">
-          <option value="0">All Puroks</option>
+          <option value="0">{{ __('All Puroks') }}</option>
           @foreach ($puroks as $pk)
             <option value="{{ $pk->purok_id }}" @selected($purokId === (int)$pk->purok_id)>{{ $pk->purok_name }}</option>
           @endforeach
         </select>
       @endif
-      <button type="submit" class="btn btn-secondary btn-sm">Generate</button>
+      <button type="submit" class="btn btn-secondary btn-sm">{{ __('Generate') }}</button>
     </form>
-    <p class="text-muted mb-0 mt-2" style="font-size:12px;">"Download PDF / Print" opens a print-ready page — choose <strong>Save as PDF</strong> as the printer to download it as a PDF file.</p>
+    <p class="text-muted mb-0 mt-2" style="font-size:12px;">{{ __('"Download PDF / Print" opens a print-ready page — choose') }} <strong>{{ __('Save as PDF') }}</strong> {{ __('as the printer to download it as a PDF file.') }}</p>
   </div>
 </div>
 
@@ -57,7 +57,7 @@
         @forelse ($rows as $row)
           <tr>@foreach ($row as $val)<td>{{ $val }}</td>@endforeach</tr>
         @empty
-          <tr class="empty-row"><td colspan="{{ count($columns) }}">No records found for this report.</td></tr>
+          <tr class="empty-row"><td colspan="{{ count($columns) }}">{{ __('No records found for this report.') }}</td></tr>
         @endforelse
         </tbody>
       </table>

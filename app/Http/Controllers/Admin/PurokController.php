@@ -32,21 +32,21 @@ class PurokController extends Controller
 
     public function store(Request $request)
     {
-        return $this->save($request, new Purok(), 'Purok added.');
+        return $this->save($request, new Purok(), __('Purok added.'));
     }
 
     public function update(Request $request, Purok $purok)
     {
-        return $this->save($request, $purok, 'Purok updated.');
+        return $this->save($request, $purok, __('Purok updated.'));
     }
 
     public function destroy(Purok $purok)
     {
         try {
             $purok->delete();
-            flash('success', 'Purok deleted.');
+            flash('success', __('Purok deleted.'));
         } catch (QueryException $e) {
-            flash('danger', 'Cannot delete: consumers are still assigned to this purok.');
+            flash('danger', __('Cannot delete: consumers are still assigned to this purok.'));
         }
         return redirect()->to(self::back());
     }
@@ -55,14 +55,14 @@ class PurokController extends Controller
     {
         $name = clean($request->input('purok_name'));
         if ($name === '') {
-            flash('danger', 'Purok name is required.');
+            flash('danger', __('Purok name is required.'));
             return redirect()->to(self::back());
         }
         try {
             $purok->fill(['purok_name' => $name, 'description' => clean($request->input('description')) ?: null])->save();
             flash('success', $message);
         } catch (QueryException $e) {
-            flash('danger', 'A purok with that name already exists.');
+            flash('danger', __('A purok with that name already exists.'));
         }
         return redirect()->to(self::back());
     }

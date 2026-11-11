@@ -207,9 +207,9 @@ class Analytics
     public function collectionSeries(string $range): array
     {
         [$steps, $key, $label] = match ($range) {
-            'day'   => [30, fn ($d) => $d->format('Y-m-d'), fn ($d) => $d->format('M j')],
-            'week'  => [12, fn ($d) => $d->copy()->startOfWeek()->format('Y-m-d'), fn ($d) => $d->copy()->startOfWeek()->format('M j')],
-            default => [12, fn ($d) => $d->format('Y-m'), fn ($d) => $d->format("M 'y")],
+            'day'   => [30, fn ($d) => $d->format('Y-m-d'), fn ($d) => localizeMonths($d->format('M j'))],
+            'week'  => [12, fn ($d) => $d->copy()->startOfWeek()->format('Y-m-d'), fn ($d) => localizeMonths($d->copy()->startOfWeek()->format('M j'))],
+            default => [12, fn ($d) => $d->format('Y-m'), fn ($d) => localizeMonths($d->format("M 'y"))],
         };
         $buckets = [];
         for ($back = $steps - 1; $back >= 0; $back--) {
@@ -269,11 +269,11 @@ class Analytics
     /** "Oct 27, 2026", "Oct 26 – Nov 1, 2026" or "October 2026" for a range's current period. */
     public static function collectionRangeLabel(string $range, $from, $to): string
     {
-        return match ($range) {
+        return localizeMonths(match ($range) {
             'day'   => $from->format('l, M j, Y'),
             'week'  => $from->format('M j') . ' – ' . $to->format('M j, Y'),
             default => $from->format('F Y'),
-        };
+        });
     }
 
     /** Percent change from $before to $now, or null when there is nothing to compare with. */

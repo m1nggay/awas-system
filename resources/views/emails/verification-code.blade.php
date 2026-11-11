@@ -1,8 +1,8 @@
-<p>Hi {{ $name }},</p>
+<p>{{ __('Hi :name,', ['name' => $name]) }}</p>
 <p>{{ $intro }}</p>
 <p style="font-size:28px;font-weight:700;letter-spacing:6px;">{{ $code }}</p>
-<p>This code expires in {{ $ttl }} minutes.</p>
+<p>{{ __('This code expires in :ttl minutes.', ['ttl' => $ttl]) }}</p>
 @if ($next)
-<p><strong>What to do next:</strong> {{ $next }}</p>
+<p><strong>{{ __('What to do next:') }}</strong> {{ $next }}</p>
 @endif
-<p>If you did not request this, you can safely ignore this email.</p>
+<p>{{ __('If you did not request this, you can safely ignore this email.') }}</p>

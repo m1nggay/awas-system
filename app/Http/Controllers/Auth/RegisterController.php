@@ -34,25 +34,25 @@ class RegisterController extends Controller
 
         $errors = [];
         if ($old['meter_number'] === '' || $old['full_name'] === '' || $old['purok_id'] === '' || $old['email'] === '' || $old['username'] === '' || $password === '') {
-            $errors[] = 'Please fill in all required fields.';
+            $errors[] = __('Please fill in all required fields.');
         }
         if ($old['meter_number'] !== '' && !isValidMeterNumber($old['meter_number'])) {
-            $errors[] = 'Meter Number must contain numbers only (e.g. 1001) — no letters or "ADL-" prefix.';
+            $errors[] = __('Meter Number must contain numbers only (e.g. 1001) — no letters or "ADL-" prefix.');
         }
         if (!isset(Consumer::TYPES[$old['consumer_type']])) {
-            $errors[] = 'Please select your Type of Consumer.';
+            $errors[] = __('Please select your Type of Consumer.');
         }
         if ($old['email'] !== '' && !filter_var($old['email'], FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Please enter a valid email address — it is used to verify your account.';
+            $errors[] = __('Please enter a valid email address — it is used to verify your account.');
         }
         if ($old['purok_id'] !== '' && !Purok::whereKey((int)$old['purok_id'])->exists()) {
-            $errors[] = 'Please select a valid purok.';
+            $errors[] = __('Please select a valid purok.');
         }
         if ($password !== '' && ($policy = passwordPolicyError($password))) {
             $errors[] = $policy;
         }
         if ($password !== $confirmPassword) {
-            $errors[] = 'Passwords do not match.';
+            $errors[] = __('Passwords do not match.');
         }
 
         // The consumer account must exist and not be linked to a login yet.
@@ -60,11 +60,11 @@ class RegisterController extends Controller
         if (!$errors) {
             $consumer = DB::table('consumers')->where('meter_number', $old['meter_number'])->first();
             if (!$consumer) {
-                $errors[] = 'No consumer account found with that Meter Number. Please contact the barangay water office.';
+                $errors[] = __('No consumer account found with that Meter Number. Please contact the barangay water office.');
             } elseif (strcasecmp(trim($consumer->full_name), trim($old['full_name'])) !== 0) {
-                $errors[] = 'The full name does not match our records for this Meter Number.';
+                $errors[] = __('The full name does not match our records for this Meter Number.');
             } elseif ((int)$consumer->purok_id !== (int)$old['purok_id']) {
-                $errors[] = 'The purok does not match our records for this Meter Number.';
+                $errors[] = __('The purok does not match our records for this Meter Number.');
             } elseif (!empty($consumer->user_id)) {
                 // A stale, never-verified signup shouldn't permanently block
                 // this meter number from being registered again.
@@ -72,13 +72,13 @@ class RegisterController extends Controller
                 if ($linkedStatus === 'pending') {
                     DB::table('users')->where('user_id', $consumer->user_id)->delete();
                 } else {
-                    $errors[] = 'This consumer account is already linked to a login. Please sign in instead.';
+                    $errors[] = __('This consumer account is already linked to a login. Please sign in instead.');
                 }
             }
         }
 
         if (!$errors && DB::table('users')->where('username', $old['username'])->exists()) {
-            $errors[] = 'That username is already taken. Please choose another.';
+            $errors[] = __('That username is already taken. Please choose another.');
         }
 
         if ($errors) {
@@ -102,13 +102,13 @@ class RegisterController extends Controller
             });
         } catch (\Throwable $e) {
             Log::error('Registration error: ' . $e->getMessage());
-            return back()->withErrors(['A system error occurred while creating your account. Please try again.'])->withInput($old);
+            return back()->withErrors([__('A system error occurred while creating your account. Please try again.')])->withInput($old);
         }
 
         log_activity($newUserId, 'register', "Consumer self-registered (pending email verification) for meter {$old['meter_number']}");
 
         $result = $codes->sendEmailVerification($newUserId, $old['email'], $old['full_name'],
-            'Thanks for creating an AWAS account. Enter this code to verify your email and activate your account:');
+            __('Thanks for creating an AWAS account. Enter this code to verify your email and activate your account:'));
 
         $request->session()->put('email_verify_user_id', $newUserId);
         $request->session()->put('email_verify_started_at', time());

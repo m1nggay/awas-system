@@ -39,18 +39,18 @@ class Handler extends ExceptionHandler
             if ($request->expectsJson()) {
                 return null;
             }
-            return redirect()->back()->withErrors(['Your files were too large to upload. Please use photos smaller than 5 MB each.']);
+            return redirect()->back()->withErrors([__('Your files were too large to upload. Please use photos smaller than 5 MB each.')]);
         });
 
         $this->renderable(function (HttpException $e, $request) {
             if ($e->getStatusCode() !== 419 || $request->expectsJson()) {
                 return null;
             }
-            $message = 'Your page expired. Please try again.';
+            $message = __('Your page expired. Please try again.');
             if (!$request->user()) {
                 return redirect()->route('login')
                     ->withInput($request->only('username'))
-                    ->with('error', 'Your session expired. Please sign in again.');
+                    ->with('error', __('Your session expired. Please sign in again.'));
             }
             flash('warning', $message);
             return redirect()->back();

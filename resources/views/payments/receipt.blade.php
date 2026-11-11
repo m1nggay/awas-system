@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Payment Receipt — {{ $p->payment_reference }}</title>
+<title>{{ __('Payment Receipt — :paymentreference', ['paymentreference' => $p->payment_reference]) }}</title>
 <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}?v={{ @filemtime(public_path('assets/css/style.css')) ?: '1' }}">
 <style>
   /* Same look as the water billing statement (bills/print). */
@@ -52,19 +52,19 @@
   $paymentOnly = request()->boolean('embed');
 @endphp
   <div class="top-bar no-print">
-    <a href="{{ $backUrl }}" class="btn btn-secondary">&larr; Back</a>
+    <a href="{{ $backUrl }}" class="btn btn-secondary">{{ __('← Back') }}</a>
   </div>
 
   <div class="receipt" id="receipt">
     <div class="receipt-head">
       <div>
         <div style="display:flex;align-items:center;gap:8px;font-size:20px;font-weight:700;">
-          <img src="{{ asset('assets/img/logo-round.png') }}" alt="AWAS logo" style="width:34px;height:34px;object-fit:contain;">AWAS
+          <img src="{{ asset('assets/img/logo-round.png') }}" alt="{{ __('AWAS logo') }}" style="width:34px;height:34px;object-fit:contain;">{{ __('AWAS') }}
         </div>
-        <div style="font-size:12px;opacity:.85;">Adlay Water Augmentation System</div>
+        <div style="font-size:12px;opacity:.85;">{{ __('Adlay Water Augmentation System') }}</div>
       </div>
       <div style="text-align:right;">
-        <div style="font-size:16px;font-weight:700;">Payment Receipt</div>
+        <div style="font-size:16px;font-weight:700;">{{ __('Payment Receipt') }}</div>
         <div style="font-size:12px;opacity:.85;">{{ $barangayName }}</div>
       </div>
     </div>
@@ -73,34 +73,34 @@
       <div class="info">
         <div>
           @unless ($paymentOnly)
-            <div class="row"><span class="text-muted">Meter Number</span><strong>{{ $p->meter_number ?: '—' }}</strong></div>
-            <div class="row"><span class="text-muted">Name</span><strong>{{ $p->full_name }}</strong></div>
-            <div class="row"><span class="text-muted">Purok</span><strong>{{ $p->purok_name }}</strong></div>
+            <div class="row"><span class="text-muted">{{ __('Meter Number') }}</span><strong>{{ $p->meter_number ?: '—' }}</strong></div>
+            <div class="row"><span class="text-muted">{{ __('Name') }}</span><strong>{{ $p->full_name }}</strong></div>
+            <div class="row"><span class="text-muted">{{ __('Purok') }}</span><strong>{{ $p->purok_name }}</strong></div>
           @else
-            <div class="row"><span class="text-muted">Payment Reference</span><strong>{{ $p->payment_reference }}</strong></div>
-            <div class="row"><span class="text-muted">For the Bill of</span><strong>{{ billingPeriodLabel($p->billing_period) }}</strong></div>
+            <div class="row"><span class="text-muted">{{ __('Payment Reference') }}</span><strong>{{ $p->payment_reference }}</strong></div>
+            <div class="row"><span class="text-muted">{{ __('For the Bill of') }}</span><strong>{{ billingPeriodLabel($p->billing_period) }}</strong></div>
           @endunless
         </div>
         <div>
           @unless ($paymentOnly)
-            <div class="row"><span class="text-muted">Payment Reference</span><strong>{{ $p->payment_reference }}</strong></div>
-            <div class="row"><span class="text-muted">Month of</span><strong>{{ billingPeriodLabel($p->billing_period) }}</strong></div>
+            <div class="row"><span class="text-muted">{{ __('Payment Reference') }}</span><strong>{{ $p->payment_reference }}</strong></div>
+            <div class="row"><span class="text-muted">{{ __('Month of') }}</span><strong>{{ billingPeriodLabel($p->billing_period) }}</strong></div>
           @endunless
-          <div class="row"><span class="text-muted">Status</span><span class="badge {{ paymentStatusBadgeClass($p->status) }}">{{ $isPaid ? 'Paid' : paymentStatusLabel($p->status) }}</span></div>
+          <div class="row"><span class="text-muted">{{ __('Status') }}</span><span class="badge {{ paymentStatusBadgeClass($p->status) }}">{{ $isPaid ? __('Paid') : paymentStatusLabel($p->status) }}</span></div>
           @if ($isPaid && $p->verified_at)
-            <div class="row"><span class="text-muted">Verified On</span><strong>{{ formatDateTime($p->verified_at) }}</strong></div>
+            <div class="row"><span class="text-muted">{{ __('Verified On') }}</span><strong>{{ formatDateTime($p->verified_at) }}</strong></div>
           @endif
         </div>
       </div>
       @if ($isPending)
-        <div class="status-note text-muted">Acknowledgment of your submitted payment. It becomes an official receipt once the water office verifies it.</div>
+        <div class="status-note text-muted">{{ __('Acknowledgment of your submitted payment. It becomes an official receipt once the water office verifies it.') }}</div>
       @elseif (!$isPaid && $p->rejection_reason)
-        <div class="status-note text-danger">Reason: {{ $p->rejection_reason }}</div>
+        <div class="status-note text-danger">{{ __('Reason: :rejectionreason', ['rejectionreason' => $p->rejection_reason]) }}</div>
       @endif
 
       @unless ($paymentOnly)
         <table class="receipt-table">
-          <thead><tr><th>Previous Reading</th><th>Present Reading</th><th>Consumption</th><th class="num">Bill Total</th></tr></thead>
+          <thead><tr><th>{{ __('Previous Reading') }}</th><th>{{ __('Present Reading') }}</th><th>{{ __('Consumption') }}</th><th class="num">{{ __('Bill Total') }}</th></tr></thead>
           <tbody>
             <tr>
               <td>{{ $p->previous_reading !== null ? number_format($p->previous_reading, 2) : '—' }}</td>
@@ -113,7 +113,7 @@
       @endunless
 
       <table class="receipt-table">
-        <thead><tr><th>Payment Date</th><th>Method</th><th>GCash Ref. No.</th><th class="num">Amount</th></tr></thead>
+        <thead><tr><th>{{ __('Payment Date') }}</th><th>{{ __('Method') }}</th><th>{{ __('GCash Ref. No.') }}</th><th class="num">{{ __('Amount') }}</th></tr></thead>
         <tbody>
           <tr>
             <td>{{ formatDateTime($p->payment_date) }}</td>
@@ -125,22 +125,21 @@
       </table>
 
       <div class="totals">
-        <div class="row grand total-highlight"><span>{{ $isPaid ? 'Amount Paid' : 'Amount Submitted' }}</span><span>{{ formatCurrency($p->amount_paid) }}</span></div>
+        <div class="row grand total-highlight"><span>{{ $isPaid ? __('Amount Paid') : __('Amount Submitted') }}</span><span>{{ formatCurrency($p->amount_paid) }}</span></div>
         @if ($isPaid)
-          <div class="row"><span>Remaining Balance <small class="text-muted">(this bill)</small></span><strong>{{ formatCurrency($balance) }}</strong></div>
+          <div class="row"><span>{{ __('Remaining Balance') }} <small class="text-muted">{{ __('(this bill)') }}</small></span><strong>{{ formatCurrency($balance) }}</strong></div>
         @endif
       </div>
 
       <p class="text-muted" style="margin-top:24px;font-size:11.5px;">
-        This is a system-generated payment receipt from AWAS — Adlay Water Augmentation System of {{ $barangayName }}.
-        Printed {{ formatDateTime(now()) }}.
+        {{ __('This is a system-generated payment receipt from AWAS — Adlay Water Augmentation System of :barangayname. Printed :date.', ['barangayname' => $barangayName, 'date' => formatDateTime(now())]) }}
       </p>
     </div>
   </div>
 
   <div class="actions-bottom no-print">
-    <button type="button" class="btn btn-outline" onclick="window.print()"><i class="ph ph-printer" aria-hidden="true"></i> Print</button>
-    <button type="button" class="btn btn-primary" id="downloadBtn"><i class="ph ph-download-simple" aria-hidden="true"></i> Download Receipt (PDF)</button>
+    <button type="button" class="btn btn-outline" onclick="window.print()"><i class="ph ph-printer" aria-hidden="true"></i> {{ __('Print') }}</button>
+    <button type="button" class="btn btn-primary" id="downloadBtn"><i class="ph ph-download-simple" aria-hidden="true"></i> {{ __('Download Receipt (PDF)') }}</button>
   </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -154,7 +153,7 @@
     // Without the PDF libraries (e.g. offline), fall back to the browser's "Save as PDF".
     if (!window.html2canvas || !window.jspdf) { window.print(); return; }
     btn.disabled = true;
-    btn.textContent = 'Preparing PDF…';
+    btn.textContent = {{ Js::from(__('Preparing PDF…')) }};
     html2canvas(document.getElementById('receipt'), { scale: 2, backgroundColor: '#ffffff', useCORS: true })
       .then(function (canvas) {
         const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });

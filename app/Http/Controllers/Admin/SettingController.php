@@ -50,36 +50,36 @@ class SettingController extends Controller
         foreach ($rates as $i => $rate) {
             $to = trim((string)($tos[$i] ?? ''));
             $isLast = $i === count($rates) - 1;
-            $name = 'Tier ' . ($i + 2);
+            $name = __('Tier :n', ['n' => $i + 2]);
             if (!is_numeric($rate) || (float)$rate < 0) {
-                $errors[] = "$name: enter a rate per m³ (0 or more).";
+                $errors[] = __(':name: enter a rate per m³ (0 or more).', ['name' => $name]);
             }
             if ($to === '' && !$isLast) {
-                $errors[] = "$name: only the last tier can have no \"To\" limit.";
+                $errors[] = __(':name: only the last tier can have no "To" limit.', ['name' => $name]);
             } elseif ($to !== '' && (!is_numeric($to) || (float)$to <= $lower)) {
-                $errors[] = "$name: \"To\" must be more than " . rtrim(rtrim(number_format($lower, 2), '0'), '.') . ' m³.';
+                $errors[] = __(':name: "To" must be more than :lower m³.', ['name' => $name, 'lower' => rtrim(rtrim(number_format($lower, 2), '0'), '.')]);
             }
             $tiers[] = ['to' => $to === '' ? null : (float)$to, 'rate' => round((float)$rate, 2)];
             $lower = $to === '' || !is_numeric($to) ? $lower : (float)$to;
         }
 
         $errors = array_merge(match (true) {
-            $in('barangay_name') === '' => ['Enter the barangay name.'],
-            $in('contact_email') !== '' && !filter_var($in('contact_email'), FILTER_VALIDATE_EMAIL) => ['The support email is not a valid email address.'],
-            $in('currency_symbol') === '' => ['Enter the currency label.'],
+            $in('barangay_name') === '' => [__('Enter the barangay name.')],
+            $in('contact_email') !== '' && !filter_var($in('contact_email'), FILTER_VALIDATE_EMAIL) => [__('The support email is not a valid email address.')],
+            $in('currency_symbol') === '' => [__('Enter the currency label.')],
             default => [],
         }, match (true) {
-            $num('minimum_charge') === null || $num('minimum_charge') < 0 => ['Minimum charge must be 0 or more.'],
-            $num('minimum_cubic_meters') === null || $num('minimum_cubic_meters') <= 0 => ['"Covers the first" must be more than 0 m³.'],
-            !$tiers => ['Add at least one excess rate tier.'],
-            !strtotime($in('rates_effective_from')) => ['Choose the date the rates take effect.'],
+            $num('minimum_charge') === null || $num('minimum_charge') < 0 => [__('Minimum charge must be 0 or more.')],
+            $num('minimum_cubic_meters') === null || $num('minimum_cubic_meters') <= 0 => [__('"Covers the first" must be more than 0 m³.')],
+            !$tiers => [__('Add at least one excess rate tier.')],
+            !strtotime($in('rates_effective_from')) => [__('Choose the date the rates take effect.')],
             default => [],
         }, $errors, match (true) {
-            !$whole('due_day_of_month', 1, 31) => ['Due day must be a day of the month (1–31).'],
-            !$whole('overdue_grace_days', 0, 90) => ['Grace period must be 0–90 days.'],
-            $num('late_penalty_percent') === null || $num('late_penalty_percent') < 0 || $num('late_penalty_percent') > 100 => ['Late penalty must be 0–100%.'],
-            !$whole('disconnection_months', 1, 24) => ['"Disconnect after" must be 1–24 months.'],
-            $num('senior_discount_percent') === null || $num('senior_discount_percent') < 0 || $num('senior_discount_percent') > 100 => ['Senior citizen discount must be 0–100%.'],
+            !$whole('due_day_of_month', 1, 31) => [__('Due day must be a day of the month (1–31).')],
+            !$whole('overdue_grace_days', 0, 90) => [__('Grace period must be 0–90 days.')],
+            $num('late_penalty_percent') === null || $num('late_penalty_percent') < 0 || $num('late_penalty_percent') > 100 => [__('Late penalty must be 0–100%.')],
+            !$whole('disconnection_months', 1, 24) => [__('"Disconnect after" must be 1–24 months.')],
+            $num('senior_discount_percent') === null || $num('senior_discount_percent') < 0 || $num('senior_discount_percent') > 100 => [__('Senior citizen discount must be 0–100%.')],
             default => [],
         });
         if ($errors) {
@@ -94,7 +94,7 @@ class SettingController extends Controller
 
         log_activity($request->user()->user_id, 'settings_update', 'Updated system settings (water rates: '
             . formatCurrency((float)$in('minimum_charge')) . ' for the first ' . $in('minimum_cubic_meters') . ' m³, ' . count($tiers) . ' excess tier(s))');
-        flash('success', 'System settings saved. New bills use these values; bills already made keep their amounts.');
+        flash('success', __('System settings saved. New bills use these values; bills already made keep their amounts.'));
         return redirect()->route('admin.settings.edit');
     }
 
@@ -105,7 +105,7 @@ class SettingController extends Controller
         $message = mb_substr(clean($request->input('maintenance_message')), 0, 500);
         $until = clean($request->input('maintenance_until'));
         if ($until !== '' && !strtotime($until)) {
-            flash('danger', 'Please enter a valid date and time for when the system will be back.');
+            flash('danger', __('Please enter a valid date and time for when the system will be back.'));
             return redirect()->to(route('admin.settings.edit') . '#maintenance');
         }
 
@@ -115,8 +115,8 @@ class SettingController extends Controller
 
         log_activity($request->user()->user_id, 'maintenance_mode', $on ? 'Turned ON maintenance mode' . ($until ? " (until $until)" : '') : 'Turned OFF maintenance mode');
         flash($on ? 'warning' : 'success', $on
-            ? 'Maintenance mode is ON — consumers and meter readers now see the maintenance page and are signed out.'
-            : 'Maintenance mode is OFF — everyone can use AWAS again.');
+            ? __('Maintenance mode is ON — consumers and meter readers now see the maintenance page and are signed out.')
+            : __('Maintenance mode is OFF — everyone can use AWAS again.'));
         return redirect()->to(route('admin.settings.edit') . '#maintenance');
     }
 }

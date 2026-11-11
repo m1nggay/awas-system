@@ -23,6 +23,12 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 Route::get('/', HomeController::class)->name('home');
+// English / Tagalog switch on the public pages (see SetLocale): kept in a cookie and on the account.
+Route::get('/lang/{locale}', function (string $locale) {
+    \Illuminate\Support\Facades\Cookie::queue('locale', $locale, 60 * 24 * 365 * 5);
+    auth()->user()?->forceFill(['locale' => $locale])->save();
+    return redirect()->back(fallback: route('home'));
+})->whereIn('locale', \App\Http\Middleware\SetLocale::LOCALES)->name('locale');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [Auth\LoginController::class, 'show'])->name('login');

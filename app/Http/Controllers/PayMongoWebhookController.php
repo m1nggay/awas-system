@@ -21,18 +21,18 @@ class PayMongoWebhookController extends Controller
     {
         if ((string)config('agas.paymongo.webhook_secret') === '') {
             Log::error('PayMongo webhook received but PAYMONGO_WEBHOOK_SECRET is not configured — rejecting.');
-            return response()->json(['error' => 'Webhook not configured'], 503);
+            return response()->json(['error' => __('Webhook not configured')], 503);
         }
 
         $rawBody = $request->getContent();
         if (!$paymongo->verifyWebhookSignature($rawBody, $request->header('Paymongo-Signature'))) {
             Log::warning('PayMongo webhook signature verification failed.');
-            return response()->json(['error' => 'Invalid signature'], 400);
+            return response()->json(['error' => __('Invalid signature')], 400);
         }
 
         $event = json_decode($rawBody, true);
         if (!is_array($event)) {
-            return response()->json(['error' => 'Invalid payload'], 400);
+            return response()->json(['error' => __('Invalid payload')], 400);
         }
 
         // The resource may be nested as data.attributes.data or data.data. A checkout

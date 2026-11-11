@@ -18,7 +18,7 @@ class CodeMailer
     {
         $otp = OtpService::emailVerification();
         return $otp->issueAndSend($userId, fn (string $code) => $this->mailer->send(
-            $email, $name, 'Verify your AWAS account', 'emails.verification-code',
+            $email, $name, __('Verify your AWAS account'), 'emails.verification-code',
             ['name' => $name, 'code' => $code, 'intro' => $intro, 'ttl' => $otp->ttlMinutes, 'next' => $next]
         ));
     }
@@ -28,10 +28,10 @@ class CodeMailer
     {
         $otp = OtpService::emailChange();
         return $otp->issueAndSend($userId, fn (string $code) => $this->mailer->send(
-            $currentEmail, $name, 'Your AWAS change-email code', 'emails.password-reset-code',
+            $currentEmail, $name, __('Your AWAS change-email code'), 'emails.password-reset-code',
             ['name' => $name, 'code' => $code, 'ttl' => $otp->ttlMinutes,
-             'purpose' => "Use this code to confirm that you want to change your AWAS email address to $newEmail:",
-             'footer'  => 'If you did not request this, someone may know your password — your email stays the same, but please change your password.']
+             'purpose' => __('Use this code to confirm that you want to change your AWAS email address to :newemail:', ['newemail' => $newEmail]),
+             'footer'  => __('If you did not request this, someone may know your password — your email stays the same, but please change your password.')]
         ));
     }
 
@@ -40,10 +40,10 @@ class CodeMailer
     {
         $otp = OtpService::login();
         return $otp->issueAndSend($userId, fn (string $code) => $this->mailer->send(
-            $email, $name, 'Your AWAS login code', 'emails.password-reset-code',
+            $email, $name, __('Your AWAS login code'), 'emails.password-reset-code',
             ['name' => $name, 'code' => $code, 'ttl' => $otp->ttlMinutes,
-             'purpose' => 'Someone (hopefully you) entered your AWAS administrator password. Use this code to finish signing in:',
-             'footer'  => 'If you did not just try to sign in, someone knows your password — change it right away in AWAS (Profile → Change Password).']
+             'purpose' => __('Someone (hopefully you) entered your AWAS administrator password. Use this code to finish signing in:'),
+             'footer'  => __('If you did not just try to sign in, someone knows your password — change it right away in AWAS (Profile → Change Password).')]
         ));
     }
 

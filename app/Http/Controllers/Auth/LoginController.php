@@ -24,7 +24,7 @@ class LoginController extends Controller
         $password = (string)$request->input('password', '');
 
         if ($username === '' || $password === '') {
-            return back()->withInput($request->only('username'))->with('error', 'Please enter both username and password.');
+            return back()->withInput($request->only('username'))->with('error', __('Please enter both username and password.'));
         }
 
         $user = User::where('username', $username)->first();
@@ -41,7 +41,7 @@ class LoginController extends Controller
 
         if (!$user) {
             log_activity(null, 'login_failed', "Unknown username attempt: $username");
-            return $this->failed($request, 'These credentials do not match our records.');
+            return $this->failed($request, __('These credentials do not match our records.'));
         }
 
         // Locked after too many wrong passwords: Forgot Password or the administrator unlocks it.
@@ -61,7 +61,9 @@ class LoginController extends Controller
             }
             log_activity($user->user_id, 'login_failed', "Incorrect password (attempt $attempts of " . User::MAX_LOGIN_ATTEMPTS . ')');
             $left = User::MAX_LOGIN_ATTEMPTS - $attempts;
-            return $this->failed($request, "Incorrect password. $left " . ($left === 1 ? 'attempt' : 'attempts') . ' left before your account is locked.');
+            return $this->failed($request, $left === 1
+                ? __('Incorrect password. 1 attempt left before your account is locked.')
+                : __('Incorrect password. :left attempts left before your account is locked.', ['left' => $left]));
         }
         $user->clearLockout();
 
@@ -78,7 +80,7 @@ class LoginController extends Controller
             return $this->failed($request);
         }
 
-        return self::startSession($request, $user, 'User logged in');
+        return self::startSession($request, $user, __('User logged in'));
     }
 
     /**
@@ -103,7 +105,7 @@ class LoginController extends Controller
         $user->forceFill(['last_login' => now()])->save();
         log_activity($user->user_id, 'login_success', $logMessage);
 
-        flash('success', 'Welcome, ' . $user->welcomeName());
+        flash('success', __('Welcome, :name', ['name' => $user->welcomeName()]));
         return redirect()->route($user->dashboardRoute());
     }
 
@@ -122,11 +124,11 @@ class LoginController extends Controller
 
     public static function lockedMessage(): string
     {
-        return 'Your account is locked due to ' . User::MAX_LOGIN_ATTEMPTS . " failed login attempts. Click 'Forgot Password' to reset it, or contact the AWAS administrator.";
+        return __("Your account is locked due to :count failed login attempts. Click 'Forgot Password' to reset it, or contact the AWAS administrator.", ['count' => User::MAX_LOGIN_ATTEMPTS]);
     }
 
     private function failed(Request $request, string $message = 'Invalid username or password.')
     {
-        return back()->withInput($request->only('username'))->with('error', $message);
+        return back()->withInput($request->only('username'))->with('error', __($message));
     }
 }
