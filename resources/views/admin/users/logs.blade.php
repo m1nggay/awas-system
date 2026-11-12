@@ -9,15 +9,16 @@
 
 <div class="card">
   <div class="card-header">
-    <h3>
-      @if (!$isAdmin)
-        {{ __('Activity Logs') }}
-      @elseif ($user)
-        {{ __('Activity of :fullname', ['fullname' => $user->full_name]) }} <span class="text-muted" style="font-weight:400;">({{ $user->username }} · {{ roleLabel($user->role) }})</span>
-      @else
-        {{ __('All User Activity') }}
-      @endif
-    </h3>
+    {{-- Meter readers: no heading here — the page title already says "Activity Logs". --}}
+    @if ($isAdmin)
+      <h3>
+        @if ($user)
+          {{ __('Activity of :fullname', ['fullname' => $user->full_name]) }} <span class="text-muted" style="font-weight:400;">({{ $user->username }} · {{ roleLabel($user->role) }})</span>
+        @else
+          {{ __('All User Activity') }}
+        @endif
+      </h3>
+    @endif
     <span class="text-muted small">{{ number_format($logs->total()) }} {{ __(Str::plural('entry', $logs->total())) }}</span>
   </div>
   <div class="card-body">
