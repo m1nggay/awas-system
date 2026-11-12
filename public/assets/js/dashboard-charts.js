@@ -144,5 +144,44 @@ window.AwasCharts = (function () {
     });
   }
 
-  return { usage, pair, doughnut, ranked, collections, peso, m3 };
+  /** Whole-number counts per day (e.g. a meter reader's readings); the last bar (today) is darker. */
+  function counts(canvas, labels, values, name) {
+    const last = values.length - 1;
+    return new Chart(canvas, {
+      type: 'bar',
+      data: { labels, datasets: [{ label: name, data: values, borderRadius: 4, maxBarThickness: 26,
+        backgroundColor: values.map((v, i) => (i === last ? C.peak : C.blue)) }] },
+      options: {
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: item => ' ' + name + ': ' + item.raw } } },
+        scales: Object.assign(axes(v => (Number.isInteger(v) ? v : '')), {
+          x: { grid: { display: false }, border: { color: C.grid }, ticks: { autoSkip: true, maxRotation: 0, autoSkipPadding: 8 } },
+        }),
+      },
+    });
+  }
+
+  /** Horizontal stacked bars per group (e.g. each purok): done in green, still to do in light blue. names = [done, left]. */
+  function progress(canvas, labels, done, left, names) {
+    return new Chart(canvas, {
+      type: 'bar',
+      data: { labels, datasets: [
+        { label: names[0], data: done, backgroundColor: '#2a9d8f', borderRadius: 4, maxBarThickness: 26 },
+        { label: names[1], data: left, backgroundColor: '#cfe6f3', borderRadius: 4, maxBarThickness: 26 },
+      ] },
+      options: {
+        indexAxis: 'y',
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } },
+          tooltip: { callbacks: { label: item => ' ' + item.dataset.label + ': ' + item.raw } },
+        },
+        scales: {
+          x: { stacked: true, beginAtZero: true, grid: { color: C.grid }, border: { display: false }, ticks: { precision: 0, maxTicksLimit: 6 } },
+          y: { stacked: true, grid: { display: false }, border: { color: C.grid } },
+        },
+      },
+    });
+  }
+
+  return { usage, pair, doughnut, ranked, collections, counts, progress, peso, m3 };
 })();
