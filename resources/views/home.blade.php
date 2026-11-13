@@ -254,6 +254,9 @@
     .contact-band{padding:28px 20px;border-radius:18px;}
     .contact-band .top .btn{width:100%;}
   }
+  /* ₱ icon (same as style.css: the icon set has no peso sign) */
+  .peso-icon{display:inline-flex !important;align-items:center;justify-content:center;width:1em;height:1em;box-sizing:border-box;border:.085em solid currentColor;border-radius:.24em;font-style:normal;}
+  .peso-icon::before{content:"\20B1";font-family:'Poppins',Arial,sans-serif !important;font-weight:700;font-size:.66em;line-height:1;}
 </style>
 </head>
 <body>
@@ -348,7 +351,7 @@
             <p>{{ __("Field staff log current and previous readings for each household; consumption is calculated the moment it's saved.") }}</p>
           </div>
           <div class="card">
-            <div class="icon"><i class="ph ph-invoice" aria-hidden="true"></i></div>
+            <div class="icon"><i class="ph peso-icon" aria-hidden="true"></i></div>
             <h3>{{ __('Automated billing') }}</h3>
             <p>{{ __("Bills are computed against the barangay's configured rate tiers — no manual math, no spreadsheets to reconcile.") }}</p>
           </div>

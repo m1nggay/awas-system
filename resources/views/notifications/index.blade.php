@@ -22,7 +22,7 @@
     @forelse ($items as $n)
       <div class="notif-list-item {{ $n->is_read ? '' : 'unread' }}">
         <div class="notif-list-icon" aria-hidden="true"><i class="ph {{ match ($n->type) {
-          'bill_due' => 'ph-invoice', 'bill_overdue' => 'ph-warning', 'disconnection' => 'ph-drop-slash', 'payment_received' => 'ph-check-circle', 'announcement' => 'ph-megaphone-simple', default => 'ph-bell-simple',
+          'bill_due' => 'peso-icon', 'bill_overdue' => 'ph-warning', 'disconnection' => 'ph-drop-slash', 'payment_received' => 'ph-check-circle', 'announcement' => 'ph-megaphone-simple', default => 'ph-bell-simple',
         } }}"></i></div>
         <div class="notif-list-body">
           <div class="notif-list-title">{{ translateStored($n->title) }} @unless ($n->is_read)<span class="badge badge-info ms-1">{{ __('New') }}</span>@endunless</div>

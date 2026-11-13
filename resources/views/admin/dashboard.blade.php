@@ -8,7 +8,7 @@
   $statCards = [
       ['Total Consumers', number_format($totalConsumers), 'ph-users-three', ''],
       [__('Consumption (:period)', ['period' => billingPeriodLabel($currentPeriod)]), number_format($totalConsumption, 1) . ' m³', 'ph-drop', ''],
-      ["This Month's Bills", number_format($currentMonthBills), 'ph-invoice', ''],
+      ["This Month's Bills", number_format($currentMonthBills), 'peso-icon', ''],
       ['Paid Bills', number_format($billsByStatus['paid']), 'ph-check-circle', 'success'],
       ['Unpaid Bills', number_format($billsByStatus['unpaid'] + $billsByStatus['partially_paid']), 'ph-hourglass', 'warning'],
       ['Overdue Bills', number_format($billsByStatus['overdue']), 'ph-warning', 'danger'],
@@ -131,7 +131,7 @@
         @if (array_sum($billsByStatus) > 0)
           <div class="chart-box"><canvas id="statusChart"></canvas></div>
         @else
-          <div class="text-center text-muted py-5" style="font-size:13.5px;"><i class="ph ph-invoice" aria-hidden="true"></i> {{ __('No bills yet for :period.', ['period' => billingPeriodLabel($currentPeriod)]) }}<br>{{ __('They appear here once the meter readers record this month\'s readings.') }}</div>
+          <div class="text-center text-muted py-5" style="font-size:13.5px;"><i class="ph peso-icon" aria-hidden="true"></i> {{ __('No bills yet for :period.', ['period' => billingPeriodLabel($currentPeriod)]) }}<br>{{ __('They appear here once the meter readers record this month\'s readings.') }}</div>
         @endif
       </div>
     </div>

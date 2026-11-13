@@ -15,7 +15,7 @@
   <div class="col-6 col-md-3">
     <div class="stat-card {{ $currentBill && $currentBill->status === 'overdue' ? 'danger' : 'warning' }}">
       <div class="stat-info"><div class="label">{{ __('Unpaid Balance') }}</div><div class="value">{{ formatCurrency($totalBalance) }}</div></div>
-      <div class="stat-icon"><i class="ph ph-invoice" aria-hidden="true"></i></div>
+      <div class="stat-icon"><i class="ph peso-icon" aria-hidden="true"></i></div>
     </div>
   </div>
   <div class="col-6 col-md-3">

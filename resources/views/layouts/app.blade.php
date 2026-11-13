@@ -9,8 +9,8 @@
                 ['admin.consumers.index', 'admin.consumers.*', 'ph-users-three', 'Consumers'],
                 ['admin.applications.index', 'admin.applications.*', 'ph-clipboard-text', 'Applications', $pendingApplicationCount ?? 0],
                 ['admin.readings.index', 'admin.readings.*', 'ph-gauge', 'Recorded Readings'],
-                ['admin.bills.index', 'admin.bills.*', 'ph-invoice', 'Water Bills'],
-                ['admin.payments.index', 'admin.payments.*', 'ph-hand-coins', 'Payments'],
+                ['admin.bills.index', 'admin.bills.*', 'peso-icon', 'Water Bills'],
+                ['admin.payments.index', 'admin.payments.*', 'peso-icon', 'Payments'],
             ],
             'Administration' => [
                 // Most used first: talking to consumers, monitoring, then setup.
